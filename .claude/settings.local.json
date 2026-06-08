@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:1420)",
+      "Bash(npx tsc *)",
+      "Bash(npx playwright *)"
+    ]
+  }
+}

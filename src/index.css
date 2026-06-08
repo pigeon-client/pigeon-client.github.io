@@ -1,0 +1,165 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+@import "highlight.js/styles/github-dark.css";
+
+:root {
+  --bg-primary: #f5f5f7;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: rgba(255, 255, 255, 0.72);
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.08);
+  --bg-modal-overlay: rgba(0, 0, 0, 0.3);
+  --bg-code: #f5f5f7;
+
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #aeaeb2;
+  --text-inverse: #ffffff;
+
+  --border-primary: #d2d2d7;
+  --border-secondary: #e6e6ea;
+
+  --accent-blue: #007aff;
+  --accent-green: #34c759;
+  --accent-orange: #ff9500;
+  --accent-red: #ff3b30;
+  --accent-purple: #af52de;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+
+  /* HeroUI semantic token overrides */
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --surface: #ffffff;
+  --surface-foreground: #1d1d1f;
+  --default: #e6e6ea;
+  --default-foreground: #1d1d1f;
+  --accent: #007aff;
+  --accent-foreground: #ffffff;
+  --muted: #6e6e73;
+  --border: #d2d2d7;
+  --separator: #e6e6ea;
+  --success: #34c759;
+  --success-foreground: #ffffff;
+  --warning: #ff9500;
+  --warning-foreground: #ffffff;
+  --danger: #ff3b30;
+  --danger-foreground: #ffffff;
+  --radius: 0.75rem;
+  --field-background: #ffffff;
+  --field-foreground: #1d1d1f;
+  --field-placeholder: #aeaeb2;
+  --field-border: #d2d2d7;
+  --field-radius: calc(var(--radius) * 1);
+  --field-border-width: 1px;
+  --segment: #ffffff;
+  --segment-foreground: #1d1d1f;
+  --backdrop: rgba(0, 0, 0, 0.3);
+}
+
+.dark {
+  /* Postman dark palette */
+  --bg-primary: #252525;
+  --bg-secondary: #2c2c2c;
+  --bg-tertiary: #1e1e1e;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.10);
+  --bg-modal-overlay: rgba(0, 0, 0, 0.65);
+  --bg-code: #1a1a1a;
+
+  --text-primary: #e8e8e8;
+  --text-secondary: #ababab;
+  --text-tertiary: #5d5d5d;
+
+  --border-primary: #3d3d3d;
+  --border-secondary: #454545;
+
+  --accent-blue: #4b9eff;
+  --accent-green: #49cc90;
+  --accent-orange: #ff6c37;
+  --accent-red: #f93e3e;
+  --accent-purple: #b79ee3;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.65);
+
+  /* HeroUI semantic token overrides */
+  --background: #252525;
+  --foreground: #e8e8e8;
+  --surface: #2c2c2c;
+  --surface-foreground: #e8e8e8;
+  --default: #3d3d3d;
+  --default-foreground: #e8e8e8;
+  --muted: #ababab;
+  --border: #3d3d3d;
+  --separator: #3d3d3d;
+  --field-background: #2c2c2c;
+  --field-foreground: #e8e8e8;
+  --field-placeholder: #5d5d5d;
+  --field-border: #3d3d3d;
+  --segment: #3d3d3d;
+  --segment-foreground: #e8e8e8;
+  --backdrop: rgba(0, 0, 0, 0.65);
+}
+
+@theme {
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-active: var(--bg-active);
+  --color-bg-modal-overlay: var(--bg-modal-overlay);
+  --color-bg-code: var(--bg-code);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+  --color-border-primary: var(--border-primary);
+  --color-border-secondary: var(--border-secondary);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-green: var(--accent-green);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-red: var(--accent-red);
+  --color-accent-purple: var(--accent-purple);
+  --color-shadow-sm: var(--shadow-sm);
+  --color-shadow-md: var(--shadow-md);
+  --color-shadow-lg: var(--shadow-lg);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "SFMono-Regular", "JetBrains Mono", "Fira Code", monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Code block styling */
+pre code.hljs {
+  background: transparent;
+  padding: 0;
+}
