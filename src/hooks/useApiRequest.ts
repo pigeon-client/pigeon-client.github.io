@@ -1,8 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
-import { RequestConfig, ApiResponse } from '../types';
-import { parseUrl } from '../lib/url';
+import { RequestConfig, ApiResponse, HistoryItem } from '../types';
+import { parseUrl, extractEndpoint } from '../lib/url';
 import { replaceEnvVariables } from '../lib/env';
 import { useEnvStore } from '../store/envStore';
+import { useHistoryStore } from '../store/historyStore';
 
 export function useApiRequest() {
   const activeEnv = useEnvStore((state) => state.activeEnv);
@@ -66,25 +67,79 @@ export function useApiRequest() {
       body = Array.from(new Uint8Array(arrayBuffer)).join(',');
     }
 
+    // Capture sent headers before sending
+    const sentHeaders: Record<string, string> = {};
+    for (const h of headers) {
+      sentHeaders[h.key] = h.value;
+    }
+
     const startTime = performance.now();
 
-    const response = await invoke<ApiResponse>('send_api_request', {
-      method: config.method,
-      url,
-      headers,
-      body,
-      bodyType: config.bodyType,
-    });
+    let response: ApiResponse;
+    let responseError: Error | null = null;
+
+    try {
+      response = await invoke<ApiResponse>('send_api_request', {
+        method: config.method,
+        url,
+        headers,
+        body,
+        bodyType: config.bodyType,
+      });
+    } catch (e) {
+      response = {
+        status: 0,
+        statusText: String(e),
+        headers: {},
+        body: [],
+        contentType: 'text/plain',
+        responseTime: Math.round(performance.now() - startTime),
+        size: 0,
+        resolvedUrl: url,
+        sentHeaders,
+      };
+      responseError = e instanceof Error ? e : new Error(String(e));
+    }
 
     const endTime = performance.now();
 
-    return {
+    const result: ApiResponse = {
       ...response,
       responseTime: Math.round(endTime - startTime),
+      resolvedUrl: url,
+      sentHeaders,
     };
+
+    // Auto-save draft + history (non-blocking - never fails the request)
+    autoSave(config, result).catch(() => {});
+
+    if (responseError) throw responseError;
+
+    return result;
   };
 
   return { sendRequest };
+}
+
+/** Auto-save draft and add to history. Always awaited for reliability. */
+async function autoSave(config: RequestConfig, result: ApiResponse) {
+  const historyStore = useHistoryStore.getState();
+  // Save/update draft
+  await historyStore.saveOrUpdateDraft({
+    ...config,
+    name: extractEndpoint(config.url),
+  });
+  // Add to history
+  const historyItem: HistoryItem = {
+    name: config.name || extractEndpoint(config.url),
+    method: config.method,
+    url: config.url,
+    statusCode: result.status,
+    responseTime: result.responseTime,
+    timestamp: Date.now(),
+    request: { ...config, name: config.name || extractEndpoint(config.url) },
+  };
+  await historyStore.addToHistory(historyItem);
 }
 
 async function sendMultipartRequest(
@@ -119,7 +174,12 @@ async function sendMultipartRequest(
     const respHeaders: Record<string, string> = {};
     res.headers.forEach((value, key) => { respHeaders[key] = value; });
 
-    return {
+    const sentHeaders: Record<string, string> = {};
+    for (const h of headers) {
+      sentHeaders[h.key] = h.value;
+    }
+
+    const multipartResult: ApiResponse = {
       status: res.status,
       statusText: res.statusText,
       headers: respHeaders,
@@ -127,7 +187,13 @@ async function sendMultipartRequest(
       contentType: respHeaders['content-type'] || 'application/octet-stream',
       responseTime: Math.round(endTime - startTime),
       size: bodyBytes.length,
+      resolvedUrl: url,
+      sentHeaders,
     };
+
+    autoSave(config, multipartResult).catch(() => {});
+
+    return multipartResult;
   } catch (err) {
     return {
       status: 0,
@@ -137,6 +203,8 @@ async function sendMultipartRequest(
       contentType: 'text/plain',
       responseTime: 0,
       size: 0,
+      resolvedUrl: url,
+      sentHeaders: {},
     };
   }
 }

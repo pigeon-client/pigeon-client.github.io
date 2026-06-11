@@ -1,11 +1,10 @@
 import { useTabStore } from '../store/tabStore';
-import { useHistoryStore } from '../store/historyStore';
 import { useEnvStore } from '../store/envStore';
 import { parseUrl, extractEndpoint } from '../lib/url';
 import { replaceEnvVariables } from '../lib/env';
 import { useApiRequest } from '../hooks/useApiRequest';
 import { HttpMethod } from '../types';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Upload } from 'lucide-react';
 
 const METHOD_COLORS: Record<string, string> = {
   GET: '#49cc90',
@@ -17,15 +16,17 @@ const METHOD_COLORS: Record<string, string> = {
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
-export function UrlBar() {
+interface UrlBarProps {
+  onImportClick: () => void;
+}
+
+export function UrlBar({ onImportClick }: UrlBarProps) {
   const tabs = useTabStore((s) => s.tabs);
   const activeTabId = useTabStore((s) => s.activeTabId);
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
   const setTabLoading = useTabStore((s) => s.setTabLoading);
   const updateTabResponse = useTabStore((s) => s.updateTabResponse);
   const setTabName = useTabStore((s) => s.setTabName);
-  const addToHistory = useHistoryStore((s) => s.addToHistory);
-  const saveDraft = useHistoryStore((s) => s.saveDraft);
   const activeEnv = useEnvStore((s) => s.activeEnv);
   const { sendRequest } = useApiRequest();
 
@@ -40,16 +41,6 @@ export function UrlBar() {
     try {
       const result = await sendRequest(request);
       updateTabResponse(activeTab.id, result);
-      addToHistory({
-        name: request.name,
-        method: request.method,
-        url: request.url,
-        statusCode: result.status,
-        responseTime: result.responseTime,
-        timestamp: Date.now(),
-        request: { ...request },
-      });
-      saveDraft({ ...request });
     } catch {
       updateTabResponse(activeTab.id, {
         status: 0,
@@ -59,6 +50,8 @@ export function UrlBar() {
         contentType: 'text/plain',
         responseTime: 0,
         size: 0,
+        resolvedUrl: request.url ?? '',
+        sentHeaders: {},
       });
     } finally {
       setTabLoading(activeTab.id, false);
@@ -70,12 +63,11 @@ export function UrlBar() {
     return activeEnv ? replaceEnvVariables(parsed, activeEnv) : parsed;
   })();
 
-  const methodColor = METHOD_COLORS[request.method] ?? '#e8e8e8';
+  const methodColor = METHOD_COLORS[request.method] ?? '#e0e0e0';
 
   return (
-    <div className="px-3 py-2.5 border-b border-border-primary bg-bg-secondary shrink-0">
-      <div className="flex items-stretch h-9 rounded border border-border-primary overflow-hidden bg-bg-primary">
-
+    <div className="px-3 py-2 bg-bg-secondary shrink-0">
+      <div className="flex items-stretch h-9 rounded-lg border border-border-primary overflow-hidden bg-bg-primary">
         {/* Method dropdown */}
         <div className="relative flex items-center shrink-0 border-r border-border-primary">
           <select
@@ -83,7 +75,7 @@ export function UrlBar() {
             onChange={(e) => updateTabRequest(activeTab.id, { method: e.target.value as HttpMethod })}
             style={{ color: methodColor }}
             className="appearance-none h-full pl-3 pr-7 text-xs font-bold bg-transparent
-              cursor-pointer focus:outline-none"
+              cursor-pointer focus:outline-none focus:ring-0"
           >
             {METHODS.map((m) => (
               <option key={m} value={m} style={{ color: METHOD_COLORS[m] }}>{m}</option>
@@ -109,10 +101,19 @@ export function UrlBar() {
               handleSend();
             }
           }}
-          placeholder="Enter URL or paste text"
+          placeholder="Enter request URL or paste cURL command"
           className="flex-1 px-3 text-sm bg-transparent text-text-primary
             placeholder:text-text-tertiary focus:outline-none"
         />
+
+        {/* Import cURL button */}
+        <button
+          onClick={onImportClick}
+          className="btn-icon shrink-0"
+          title="Import cURL"
+        >
+          <Upload size={16} />
+        </button>
 
         {/* Send button */}
         <button

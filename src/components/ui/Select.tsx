@@ -13,10 +13,7 @@ export function Select({ icon, children, className = '', ...props }: SelectProps
         </div>
       )}
       <select
-        className={`appearance-none px-3 py-2 pr-8 text-sm font-medium bg-bg-secondary text-text-primary
-          border border-border-primary rounded-lg cursor-pointer
-          focus:outline-none focus:ring-2 focus:ring-accent-blue/30 focus:border-accent-blue
-          transition-all duration-150 ${icon ? 'pl-9' : ''} ${className}`}
+        className={`select-base font-medium ${icon ? 'pl-9' : ''} ${className}`}
         {...props}
       >
         {children}

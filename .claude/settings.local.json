@@ -4,7 +4,18 @@
       "Bash(npm run *)",
       "Bash(curl -s http://localhost:1420)",
       "Bash(npx tsc *)",
-      "Bash(npx playwright *)"
+      "Bash(npx playwright *)",
+      "Bash(identify /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png)",
+      "Bash(sips -z 32 32 /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png --out /Users/k1n1/Desktop/pigeon/src-tauri/icons/32x32.png)",
+      "Bash(sips -z 128 128 /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png --out /Users/k1n1/Desktop/pigeon/src-tauri/icons/128x128.png)",
+      "Bash(sips -z 256 256 /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png --out /Users/k1n1/Desktop/pigeon/src-tauri/icons/128x128@2x.png)",
+      "Bash(sips -z 1024 1024 /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png --out /Users/k1n1/Desktop/pigeon/src-tauri/icons/icon.png)",
+      "Bash(mkdir -p /tmp/pigeon.iconset)",
+      "Bash(sips -z 16 16 /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png --out /tmp/pigeon.iconset/icon_16x16.png)",
+      "Bash(sips -z 32 32 /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png --out /tmp/pigeon.iconset/icon_16x16@2x.png)",
+      "Bash(sips -z 32 32 /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png --out /tmp/pigeon.iconset/icon_32x32.png)",
+      "Bash(sips -z 64 64 /Users/k1n1/Desktop/pigeon/logo/macOS/Icon-1024.png --out /tmp/pigeon.iconset/icon_32x32@2x.png)"
     ]
   }
 }

@@ -1,0 +1,69 @@
+{
+  "feature": "auto-update-marketing-site",
+  "created": "2026-06-12T00:00:00.000Z",
+  "state": "done",
+  "lastAction": "Final verification complete - feature approved and ready for production",
+  "lastUpdated": "2026-06-12T00:00:00.000Z",
+  "history": [
+    {
+      "state": "proposed",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "user",
+      "action": "Feature requested: GitHub Releases auto-update + GitHub Pages marketing site"
+    },
+    {
+      "state": "pm-review",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "pm-agent",
+      "action": "Evaluated feature request and wrote 01-requirements.md"
+    },
+    {
+      "state": "pm-requests-design",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "pm-agent",
+      "action": "Requests design concept for marketing site UI and update notification UX"
+    },
+    {
+      "state": "designer-working",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "designer-agent",
+      "action": "Created 02-design.md with marketing site layout and update UX flow"
+    },
+    {
+      "state": "em-review",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "pm-agent",
+      "action": "PM approved design, forwarding to EM for feasibility review"
+    },
+    {
+      "state": "in-development",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "em-agent",
+      "action": "EM approved - all phases feasible with noted concerns"
+    },
+    {
+      "state": "in-qa",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "qa-agent",
+      "action": "QA testing complete - 1 major bug found (deploy-site.yml writes release.json to wrong location), 1 minor issue (.node-version missing)"
+    },
+    {
+      "state": "qa-approved",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "qa-agent",
+      "action": "QA re-test complete - all bugs fixed, all tests pass"
+    },
+    {
+      "state": "final-verification",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "pm-agent + designer-agent",
+      "action": "Final verification - implementation complete, all tests pass, feature ready for release"
+    },
+    {
+      "state": "done",
+      "time": "2026-06-12T00:00:00.000Z",
+      "by": "workflow-manager",
+      "action": "Feature complete - all phases implemented, tested, and verified"
+    }
+  ]
+}

@@ -54,3 +54,37 @@ export function extractEndpoint(url: string): string {
     return url;
   }
 }
+
+/**
+ * Extract path segments from URL for auto-folder creation
+ * e.g., "https://api.example.com/v2/users/123" → ["example.com", "api.example.com", "v2", "users"]
+ */
+export function extractPathSegments(url: string): string[] {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname;
+    const mainDomain = extractMainDomain(hostname);
+    const pathParts = parsed.pathname
+      .replace(/\/+$/, '')       // strip trailing slash
+      .split('/')
+      .filter(Boolean)
+      .slice(0, -1);             // exclude the last segment (it's the request name)
+    return [mainDomain, hostname, ...pathParts];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Normalize URL for draft matching (strip query, trailing slash, protocol)
+ * e.g., "https://api.example.com/v2/users?page=1" → "GET:api.example.com/v2/users"
+ */
+export function normalizeUrlForMatch(method: string, url: string): string {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname.replace(/\/+$/, '');
+    return `${method.toUpperCase()}:${parsed.hostname}${path}`;
+  } catch {
+    return `${method.toUpperCase()}:${url}`;
+  }
+}

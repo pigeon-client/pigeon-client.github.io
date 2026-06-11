@@ -1,0 +1,154 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - generic [ref=e9]: Pigeon
+    - generic [ref=e10]:
+      - generic [ref=e11] [cursor=pointer]:
+        - generic [ref=e13]: /posts/1
+        - button [ref=e14]:
+          - img [ref=e15]
+      - button "New Tab" [ref=e18] [cursor=pointer]:
+        - img [ref=e19]
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - combobox [ref=e22] [cursor=pointer]:
+          - option "No Environment" [selected]
+        - img
+      - button "Settings" [ref=e23] [cursor=pointer]:
+        - img [ref=e24]
+  - generic [ref=e28]:
+    - generic [ref=e29]:
+      - combobox [ref=e30] [cursor=pointer]:
+        - option "GET" [selected]
+        - option "POST"
+        - option "PUT"
+        - option "PATCH"
+        - option "DELETE"
+      - img
+    - textbox "Enter request URL or paste cURL command" [ref=e31]: https://jsonplaceholder.typicode.com/posts/2
+    - button "Import cURL" [ref=e32] [cursor=pointer]:
+      - img [ref=e33]
+    - button "Send" [ref=e36] [cursor=pointer]
+  - generic [ref=e37]:
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - button "Collapse sidebar" [ref=e40] [cursor=pointer]:
+          - img [ref=e41]
+        - button "New" [ref=e44] [cursor=pointer]:
+          - img [ref=e45]
+          - text: New
+      - generic [ref=e46]:
+        - button "Collections" [ref=e47] [cursor=pointer]:
+          - img [ref=e48]
+          - generic [ref=e50]: Collections
+        - button "History" [ref=e51] [cursor=pointer]:
+          - img [ref=e52]
+          - generic [ref=e55]: History
+        - button "Drafts" [ref=e56] [cursor=pointer]:
+          - img [ref=e57]
+          - generic [ref=e60]: Drafts
+      - generic [ref=e62]:
+        - img
+        - textbox "Filter..." [ref=e63]
+      - generic [ref=e266]:
+        - generic [ref=e267] [cursor=pointer]:
+          - img [ref=e268]
+          - img [ref=e270]
+          - generic [ref=e272]: My Collection
+          - generic [ref=e273]: "2"
+          - button "Add root folder" [ref=e274]:
+            - img [ref=e275]
+          - button "Add request" [ref=e277]:
+            - img [ref=e278]
+          - button [ref=e281]:
+            - img [ref=e282]
+        - generic [ref=e285]:
+          - generic [ref=e287] [cursor=pointer]:
+            - img [ref=e288]
+            - img [ref=e290]
+            - generic [ref=e312]: My API Folder
+            - generic [ref=e293]: "0"
+            - button "Add folder" [ref=e294]:
+              - img [ref=e295]
+            - button "Rename" [ref=e297]:
+              - img [ref=e298]
+            - button [ref=e300]:
+              - img [ref=e301]
+          - generic [ref=e304] [cursor=pointer]:
+            - generic [ref=e305]: GET
+            - generic [ref=e306]: Get Posts
+            - button [ref=e307]:
+              - img [ref=e308]
+    - generic [ref=e67]:
+      - generic [ref=e71]:
+        - generic [ref=e73]:
+          - button "Params" [ref=e74] [cursor=pointer]: Params
+          - button "Authorization" [ref=e76] [cursor=pointer]
+          - button "Headers" [ref=e77] [cursor=pointer]
+          - button "Body" [ref=e78] [cursor=pointer]
+          - button "Settings" [ref=e79] [cursor=pointer]
+        - generic [ref=e81]:
+          - paragraph [ref=e82]: Query Params
+          - generic [ref=e83]:
+            - generic [ref=e85]: Key
+            - generic [ref=e87]:
+              - button [ref=e88] [cursor=pointer]:
+                - img [ref=e89]
+              - textbox "Key" [ref=e92]
+              - textbox "Value" [ref=e94]
+              - button "Add row" [ref=e95] [cursor=pointer]:
+                - img [ref=e96]
+      - button "Toggle layout orientation" [ref=e99] [cursor=pointer]:
+        - img [ref=e100]
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e203]:
+            - generic [ref=e204]: 0 Request Failed
+            - generic [ref=e205]:
+              - img [ref=e206]
+              - text: 0ms
+            - generic [ref=e209]: 0.0 KB
+            - generic [ref=e210]: text
+          - button "Collapse response" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+        - generic [ref=e112]:
+          - generic [ref=e211]:
+            - button "Body" [ref=e212]
+            - button "Headers" [ref=e213]
+            - button "Console" [active] [ref=e214]
+          - button "Clear response" [ref=e215] [cursor=pointer]:
+            - img [ref=e216]
+          - button "Copy as cURL" [ref=e220] [cursor=pointer]:
+            - img [ref=e221]
+          - button "Copy response body" [ref=e223] [cursor=pointer]:
+            - img [ref=e224]
+          - button "Download response" [ref=e227] [cursor=pointer]:
+            - img [ref=e228]
+        - generic [ref=e232]:
+          - generic [ref=e313]:
+            - heading "Resolved URL" [level=4] [ref=e314]
+            - code [ref=e315]: https://jsonplaceholder.typicode.com/posts/2
+          - generic [ref=e316]:
+            - heading "Request Headers Sent" [level=4] [ref=e317]
+            - paragraph [ref=e318]: No headers captured
+          - generic [ref=e319]:
+            - heading "Timing" [level=4] [ref=e320]
+            - generic [ref=e321]:
+              - generic [ref=e322]: "Response time:"
+              - generic [ref=e323]: 0ms
+          - generic [ref=e324]:
+            - heading "Response Info" [level=4] [ref=e325]
+            - generic [ref=e326]:
+              - generic [ref=e327]: "Content-Type:"
+              - generic [ref=e328]: text/plain
+              - generic [ref=e329]: "Size:"
+              - generic [ref=e330]: 0.0 KB (0.00 MB)
+              - generic [ref=e331]: "Type:"
+              - generic [ref=e332]: text
+  - generic [ref=e125]:
+    - generic [ref=e126]:
+      - generic [ref=e127]: 3 requests
+      - generic [ref=e128]: 1 collection
+      - generic [ref=e129]: 2 drafts
+    - generic [ref=e130]: "?help"

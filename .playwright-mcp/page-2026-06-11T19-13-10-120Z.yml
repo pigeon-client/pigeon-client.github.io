@@ -1,0 +1,90 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - generic [ref=e9]: Pigeon
+    - generic [ref=e10]:
+      - generic [ref=e11] [cursor=pointer]:
+        - generic [ref=e13]: Untitled Request
+        - button [ref=e14]:
+          - img [ref=e15]
+      - generic [ref=e152] [cursor=pointer]:
+        - generic [ref=e154]: Untitled Request
+        - button [ref=e155]:
+          - img [ref=e156]
+      - generic [ref=e206] [cursor=pointer]:
+        - generic [ref=e208]: Untitled Request
+        - button [ref=e209]:
+          - img [ref=e210]
+      - button "New Tab" [ref=e18] [cursor=pointer]:
+        - img [ref=e19]
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - combobox [ref=e22] [cursor=pointer]:
+          - option "No Environment" [selected]
+        - img
+      - button "Settings" [ref=e23] [cursor=pointer]:
+        - img [ref=e24]
+  - generic [ref=e28]:
+    - generic [ref=e29]:
+      - combobox [ref=e30] [cursor=pointer]:
+        - option "GET" [selected]
+        - option "POST"
+        - option "PUT"
+        - option "PATCH"
+        - option "DELETE"
+      - img
+    - textbox "Enter request URL or paste cURL command" [ref=e31]
+    - button "Import cURL" [ref=e32] [cursor=pointer]:
+      - img [ref=e33]
+    - button "Send" [disabled] [ref=e36]
+  - generic [ref=e37]:
+    - generic [ref=e38]:
+      - button "Expand sidebar" [ref=e331] [cursor=pointer]:
+        - img [ref=e332]
+      - generic [ref=e46]:
+        - generic "Collections" [ref=e334] [cursor=pointer]:
+          - img [ref=e335]
+        - generic "History" [ref=e337] [cursor=pointer]:
+          - img [ref=e338]
+        - generic "Drafts" [ref=e341] [cursor=pointer]:
+          - img [ref=e342]
+    - generic [ref=e88]:
+      - generic [ref=e214]:
+        - generic [ref=e216]:
+          - button "Params" [ref=e217] [cursor=pointer]
+          - button "Authorization" [ref=e219] [cursor=pointer]
+          - button "Headers" [ref=e220] [cursor=pointer]
+          - button "Body" [ref=e221] [cursor=pointer]: Body
+          - button "Settings" [ref=e222] [cursor=pointer]
+        - generic [ref=e315]:
+          - generic [ref=e316]:
+            - button "none" [ref=e317] [cursor=pointer]: none
+            - button "JSON" [ref=e320] [cursor=pointer]: JSON
+            - button "form-data" [ref=e322] [cursor=pointer]: form-data
+            - button "x-www-form-urlencoded" [ref=e324] [cursor=pointer]: x-www-form-urlencoded
+            - button "raw" [ref=e326] [cursor=pointer]: raw
+            - button "binary" [ref=e328] [cursor=pointer]: binary
+          - generic [ref=e330]: This request does not have a body
+      - button "Toggle layout orientation" [ref=e120] [cursor=pointer]:
+        - img [ref=e121]
+      - generic [ref=e241]:
+        - generic [ref=e242]:
+          - generic [ref=e243]: Response
+          - button "Collapse response" [ref=e244] [cursor=pointer]:
+            - img [ref=e245]
+        - generic [ref=e247]:
+          - img [ref=e248]
+          - generic [ref=e253]:
+            - paragraph [ref=e254]: Ready to send a request
+            - paragraph [ref=e255]: Enter a URL above and click Send to get started
+          - 'button "Try: curl https://jsonplaceholder.typicode.com/posts/1" [ref=e256] [cursor=pointer]':
+            - img [ref=e257]
+            - text: "Try:"
+            - code [ref=e259]: curl https://jsonplaceholder.typicode.com/posts/1
+  - generic [ref=e146]:
+    - generic [ref=e147]:
+      - generic [ref=e148]: 0 requests
+      - generic [ref=e149]: 0 collections
+      - generic [ref=e150]: 0 drafts
+    - generic [ref=e151]: "?help"

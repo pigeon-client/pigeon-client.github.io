@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { Button } from '@heroui/react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import hljs from 'highlight.js';
 import { SegmentedControl } from './ui/SegmentedControl';
 import { Badge } from './ui/Badge';
-import { Clock, Download, Clipboard, XCircle, ChevronDown } from 'lucide-react';
+import { Clock, Download, Clipboard, XCircle, ChevronDown, ChevronUp, Terminal, Image, FileCode } from 'lucide-react';
 import { generateCurl } from '../lib/curl';
 import { useTabStore } from '../store/tabStore';
 
@@ -18,77 +17,43 @@ function getStatusVariant(status: number): 'success' | 'warning' | 'error' | 'in
   return 'info';
 }
 
-function AstronautIllustration() {
+function RocketIllustration() {
   return (
-    <svg viewBox="0 0 280 230" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-52 h-44 opacity-80">
-      {/* Stars */}
-      <circle cx="32" cy="45" r="2" fill="#5d5d5d" />
-      <circle cx="62" cy="22" r="1.5" fill="#5d5d5d" />
-      <circle cx="18" cy="155" r="1.5" fill="#5d5d5d" />
-      <circle cx="255" cy="35" r="2" fill="#5d5d5d" />
-      <circle cx="265" cy="62" r="1.5" fill="#5d5d5d" />
-      <circle cx="258" cy="158" r="2" fill="#5d5d5d" />
-      <circle cx="42" cy="185" r="1.5" fill="#5d5d5d" />
-      <circle cx="238" cy="190" r="1.5" fill="#5d5d5d" />
-
-      {/* Rocket (upper right) */}
-      <path d="M210 55 L222 25 L234 55 Z" stroke="#ff6c37" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
-      <rect x="216" y="53" width="12" height="10" rx="2" fill="none" stroke="#ff6c37" strokeWidth="1.5" />
-      <path d="M208 55 L204 63" stroke="#ff6c37" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M236 55 L240 63" stroke="#ff6c37" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="222" cy="40" r="5" stroke="#ff6c37" strokeWidth="1.5" />
-      {/* Rocket flame */}
-      <path d="M217 62 Q222 74 227 62" stroke="#ff6c37" strokeWidth="1.5" fill="none" />
-
-      {/* Dashed tether from hand to rocket */}
-      <path d="M202 118 Q215 100 222 65" stroke="#5d5d5d" strokeWidth="0.8" strokeDasharray="3,2.5" fill="none" />
-
-      {/* Moon surface */}
-      <path d="M45 210 Q95 200 140 202 Q185 204 235 210" stroke="#5d5d5d" strokeWidth="1.5" fill="none" />
-      <path d="M52 210 Q56 204 63 210" stroke="#5d5d5d" strokeWidth="1" fill="none" />
-      <path d="M185 207 Q190 201 197 207" stroke="#5d5d5d" strokeWidth="1" fill="none" />
-
-      {/* Astronaut body */}
-      <ellipse cx="140" cy="158" rx="33" ry="40" stroke="#5d5d5d" strokeWidth="2" fill="none" />
-
-      {/* Helmet */}
-      <circle cx="140" cy="112" r="29" stroke="#5d5d5d" strokeWidth="2" fill="none" />
-      {/* Visor */}
-      <path d="M120 110 Q140 97 160 110 Q160 127 140 130 Q120 127 120 110 Z"
-        fill="#5d5d5d" fillOpacity="0.2" stroke="#5d5d5d" strokeWidth="1.5" />
-
-      {/* Helmet antenna */}
-      <line x1="153" y1="85" x2="160" y2="72" stroke="#5d5d5d" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="161" cy="70" r="3" fill="#ff6c37" />
-
-      {/* Neck connector */}
-      <rect x="133" y="140" width="14" height="9" rx="2" stroke="#5d5d5d" strokeWidth="1.5" fill="none" />
-
-      {/* Left arm (dangling) */}
-      <path d="M109 150 Q88 143 74 148" stroke="#5d5d5d" strokeWidth="9" strokeLinecap="round" fill="none" />
-      <circle cx="72" cy="149" r="8" stroke="#5d5d5d" strokeWidth="1.5" fill="none" />
-
-      {/* Right arm (reaching for rocket) */}
-      <path d="M171 148 Q193 133 202 120" stroke="#5d5d5d" strokeWidth="9" strokeLinecap="round" fill="none" />
-      <circle cx="204" cy="118" r="8" stroke="#5d5d5d" strokeWidth="1.5" fill="none" />
-
-      {/* Legs */}
-      <path d="M126 196 L120 212" stroke="#5d5d5d" strokeWidth="9" strokeLinecap="round" fill="none" />
-      <path d="M154 196 L160 212" stroke="#5d5d5d" strokeWidth="9" strokeLinecap="round" fill="none" />
-      {/* Boots */}
-      <path d="M113 211 Q121 207 129 211 L130 214 Q121 220 113 214 Z" stroke="#5d5d5d" strokeWidth="1.5" fill="none" />
-      <path d="M152 211 Q160 207 168 211 L169 214 Q161 220 152 214 Z" stroke="#5d5d5d" strokeWidth="1.5" fill="none" />
-
-      {/* Chest control panel */}
-      <rect x="131" y="157" width="18" height="12" rx="2" stroke="#5d5d5d" strokeWidth="1" fill="none" />
-      <circle cx="136" cy="163" r="2" fill="#5d5d5d" fillOpacity="0.4" />
-      <circle cx="143" cy="163" r="2" fill="#5d5d5d" fillOpacity="0.4" />
-
-      {/* Backpack */}
-      <rect x="160" y="143" width="17" height="24" rx="4" stroke="#5d5d5d" strokeWidth="1.5" fill="none" />
-      <rect x="163" y="148" width="11" height="10" rx="2" stroke="#5d5d5d" strokeWidth="1" fill="none" />
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+      className="text-text-tertiary">
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+      <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
     </svg>
   );
+}
+
+/** Detect response type */
+type ResponseType = 'json' | 'html' | 'xml' | 'image' | 'audio' | 'video' | 'octet' | 'text' | 'form' | 'other';
+
+function detectType(contentType: string): ResponseType {
+  const ct = contentType.toLowerCase();
+  if (ct.includes('json')) return 'json';
+  if (ct.includes('html')) return 'html';
+  if (ct.includes('xml')) return 'xml';
+  if (ct.startsWith('image/')) return 'image';
+  if (ct.startsWith('audio/')) return 'audio';
+  if (ct.startsWith('video/')) return 'video';
+  if (ct.includes('octet-stream')) return 'octet';
+  if (ct.includes('text/')) return 'text';
+  if (ct.includes('form')) return 'form';
+  return 'other';
+}
+
+/** Check if body is likely binary (non-text) */
+function isBinaryBody(body: number[]): boolean {
+  const sample = body.slice(0, 4096);
+  for (const byte of sample) {
+    if (byte === 0 || (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13)) return true;
+  }
+  return false;
 }
 
 export function ResponsePanel({ tabId }: { tabId: string }) {
@@ -97,56 +62,94 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
   const tab = tabs.find((t) => t.id === tabId);
   const response = tab?.response ?? null;
   const isLoading = tab?.isLoading ?? false;
-
-  const [activeTab, setActiveTab] = useState<'body' | 'headers'>('body');
-  const [previewMode, setPreviewMode] = useState<'raw' | 'preview'>('raw');
-  const codeRef = useRef<HTMLElement>(null);
   const request = tab?.request;
 
+  const [activeTab, setActiveTab] = useState<'body' | 'headers' | 'preview' | 'console'>('body');
+  const [collapsed, setCollapsed] = useState(false);
+  const codeRef = useRef<HTMLElement>(null);
+
+  const bodyBytes = response?.body ?? [];
+  const bodyStr = useMemo(() => formatBody(bodyBytes), [bodyBytes]);
+  const respType = response ? detectType(response.contentType) : 'text';
+  const isBinary = bodyBytes.length > 0 && isBinaryBody(bodyBytes);
+  const isImage = respType === 'image';
+  const isHtml = respType === 'html';
+
+  // Tab options
+  const tabOptions = [
+    { value: 'body', label: 'Body' },
+    { value: 'headers', label: 'Headers' },
+    ...(isHtml ? [{ value: 'preview', label: 'Preview' }] : []),
+    ...(isImage ? [{ value: 'preview', label: 'Preview' }] : []),
+    { value: 'console', label: 'Console' },
+  ];
+
+  // Syntax highlight
   useEffect(() => {
-    if (codeRef.current && response) {
-      let code = formatBody(response.body);
-      if (response.contentType?.includes('json')) {
+    if (codeRef.current && response && bodyBytes.length > 0 && !isImage && !isBinary) {
+      let code = bodyStr;
+      if (respType === 'json') {
         try { code = JSON.stringify(JSON.parse(code), null, 2); } catch {}
       }
       codeRef.current.textContent = code;
       codeRef.current.className = '';
-      if (response.contentType?.includes('json')) codeRef.current.classList.add('language-json');
-      else if (response.contentType?.includes('html')) codeRef.current.classList.add('language-html');
-      else if (response.contentType?.includes('xml')) codeRef.current.classList.add('language-xml');
+      if (respType === 'json') codeRef.current.classList.add('language-json');
+      else if (respType === 'html') codeRef.current.classList.add('language-html');
+      else if (respType === 'xml') codeRef.current.classList.add('language-xml');
       hljs.highlightElement(codeRef.current);
     }
-  }, [response, previewMode]);
+  }, [response, bodyStr, bodyBytes.length, isImage, isBinary, respType]);
 
-  /* ── Response header bar ── */
-  const ResponseHeader = () => (
-    <div className="flex items-center px-4 py-2 border-b border-border-primary bg-bg-secondary shrink-0">
-      <span className="text-xs font-medium text-text-secondary">Response</span>
-      <div className="flex-1" />
-      {response && (
-        <>
-          <span className="mr-2">
-            <Badge variant={getStatusVariant(response.status)}>
-              {response.status} {response.statusText}
-            </Badge>
-          </span>
-          <span className="flex items-center gap-1 text-[11px] text-text-secondary mr-3">
-            <Clock size={11} />
-            {response.responseTime}ms
-          </span>
-          <span className="text-[11px] text-text-secondary mr-3">
-            {(response.body.length / 1024).toFixed(2)} KB
-          </span>
-        </>
-      )}
-      <ChevronDown size={14} className="text-text-tertiary" />
-    </div>
-  );
+  const resolvedUrl = response?.resolvedUrl ?? '';
+  const sentHeaders: Record<string, string> = response?.sentHeaders ?? {};
+  const responseSize = bodyBytes.length;
 
+  /* ── Collapsed state ── */
+  if (collapsed) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="panel-header">
+          <div className="flex items-center gap-3">
+            {response && (
+              <>
+                <Badge variant={getStatusVariant(response.status)} className="text-[11px]">
+                  {response.status} {response.statusText}
+                </Badge>
+                <span className="text-[11px] text-text-secondary flex items-center gap-1">
+                  <Clock size={11} /> {response.responseTime}ms
+                </span>
+                <span className="text-[11px] text-text-secondary">
+                  {(responseSize / 1024).toFixed(1)} KB
+                </span>
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => setCollapsed(false)}
+            className="btn-icon"
+            title="Expand response"
+          >
+            <ChevronUp size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Loading state ── */
   if (isLoading) {
     return (
       <div className="h-full flex flex-col">
-        <ResponseHeader />
+        <div className="panel-header">
+          <span className="text-xs font-medium text-text-secondary">Response</span>
+          <button
+            onClick={() => setCollapsed(true)}
+            className="btn-icon"
+            title="Collapse response"
+          >
+            <ChevronDown size={14} />
+          </button>
+        </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="w-6 h-6 border-2 border-accent-orange/30 border-t-accent-orange rounded-full animate-spin" />
         </div>
@@ -154,66 +157,185 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
     );
   }
 
-  if (!response || (response.status === 0 && response.body.length === 0)) {
+  /* ── Empty state ── */
+  if (!response || (response.status === 0 && bodyBytes.length === 0 && !resolvedUrl)) {
     return (
       <div className="h-full flex flex-col">
-        <ResponseHeader />
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 py-8">
-          <AstronautIllustration />
-          <p className="text-sm text-text-secondary">Enter the URL and click Send to get a response</p>
+        <div className="panel-header">
+          <span className="text-xs font-medium text-text-secondary">Response</span>
+          <button
+            onClick={() => setCollapsed(true)}
+            className="btn-icon"
+            title="Collapse response"
+          >
+            <ChevronDown size={14} />
+          </button>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12">
+          <RocketIllustration />
+          <div className="text-center">
+            <p className="text-sm font-medium text-text-secondary mb-1">Ready to send a request</p>
+            <p className="text-xs text-text-tertiary max-w-xs">
+              Enter a URL above and click Send to get started
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              const tabStore = useTabStore.getState();
+              const tid = tabStore.activeTabId;
+              if (tid) tabStore.updateTabRequest(tid, {
+                method: 'GET',
+                url: 'https://jsonplaceholder.typicode.com/posts/1'
+              });
+            }}
+            className="btn-ghost"
+          >
+            <Terminal size={12} />
+            Try: <code className="font-mono">curl https://jsonplaceholder.typicode.com/posts/1</code>
+          </button>
         </div>
       </div>
     );
   }
 
-  const bodyStr = formatBody(response.body);
-  const isHtml = response.contentType?.includes('text/html') ?? false;
+  /* ── Render body content based on type ── */
+  const renderBody = () => {
+    if (isImage && bodyBytes.length > 0) {
+      const blob = new Blob([new Uint8Array(bodyBytes)], { type: response.contentType });
+      const dataUrl = URL.createObjectURL(blob);
+      return (
+        <div className="flex items-center justify-center p-4">
+          <img src={dataUrl} alt="Response image" className="max-w-full max-h-full rounded"
+            onLoad={() => URL.revokeObjectURL(dataUrl)} />
+        </div>
+      );
+    }
 
+    if (isBinary || respType === 'octet') {
+      const size = bodyBytes.length;
+      return (
+        <div className="flex flex-col items-center justify-center gap-3 py-12 text-text-tertiary">
+          <FileCode size={32} />
+          <p className="text-sm">Binary Response ({response.contentType})</p>
+          <p className="text-xs">{(size / 1024).toFixed(1)} KB — {(size / 1048576).toFixed(2)} MB</p>
+          <button
+            onClick={() => {
+              const blob = new Blob([new Uint8Array(bodyBytes)], { type: response.contentType ?? '' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = `response-${Date.now()}`; a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="btn-ghost"
+          >
+            <Download size={12} /> Download File
+          </button>
+        </div>
+      );
+    }
+
+    if (bodyBytes.length > 0) {
+      return (
+        <pre className="text-xs font-mono bg-bg-code text-accent-orange rounded-lg p-4 overflow-auto max-h-full border border-accent-orange/10">
+          <code ref={codeRef} className="text-accent-orange" />
+        </pre>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-center py-12 text-text-tertiary text-sm">
+        Empty response body
+      </div>
+    );
+  };
+
+  /* ── Response content ── */
   return (
     <div className="h-full flex flex-col">
-      <ResponseHeader />
+      {/* Response header */}
+      <div className="panel-header">
+        <div className="flex items-center gap-3">
+          <Badge variant={getStatusVariant(response.status)} className="text-[11px]">
+            {response.status} {response.statusText}
+          </Badge>
+          <span className="text-[11px] text-text-secondary flex items-center gap-1">
+            <Clock size={11} /> {response.responseTime}ms
+          </span>
+          <span className="text-[11px] text-text-secondary">
+            {(responseSize / 1024).toFixed(1)} KB
+          </span>
+          <span className="text-[10px] text-text-tertiary font-medium uppercase tracking-wider">
+            {respType}
+          </span>
+        </div>
+        <button
+          onClick={() => setCollapsed(true)}
+          className="btn-icon"
+          title="Collapse response"
+        >
+          <ChevronDown size={14} />
+        </button>
+      </div>
 
-      {/* Action buttons */}
+      {/* Tabs + Action buttons */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border-primary bg-bg-secondary shrink-0">
         <SegmentedControl
-          options={[
-            { value: 'body', label: 'Body' },
-            { value: 'headers', label: 'Headers' },
-          ]}
+          options={tabOptions}
           value={activeTab}
-          onChange={(v) => setActiveTab(v as 'body' | 'headers')}
+          onChange={(v) => setActiveTab(v as 'body' | 'headers' | 'preview' | 'console')}
         />
-        {activeTab === 'body' && isHtml && (
-          <SegmentedControl
-            options={[
-              { value: 'raw', label: 'Raw' },
-              { value: 'preview', label: 'Preview' },
-            ]}
-            value={previewMode}
-            onChange={(v) => setPreviewMode(v as 'raw' | 'preview')}
-          />
-        )}
         <div className="flex-1" />
-        <Button variant="ghost" size="sm" onPress={() => updateTabResponse(tabId, null)}>
-          <XCircle size={12} /> Clear
-        </Button>
-        {request && (
-          <Button variant="ghost" size="sm" onPress={() => navigator.clipboard.writeText(generateCurl(request))}>
-            <Clipboard size={12} /> cURL
-          </Button>
+        {isImage && activeTab === 'body' && (
+          <button
+            onClick={() => {
+              const blob = new Blob([new Uint8Array(bodyBytes)], { type: response.contentType ?? '' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = `image-${Date.now()}`; a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="btn-icon"
+            title="Download image"
+          >
+            <Image size={14} />
+          </button>
         )}
-        <Button variant="ghost" size="sm" onPress={() => navigator.clipboard.writeText(bodyStr)}>
-          <Clipboard size={12} /> Copy
-        </Button>
-        <Button variant="ghost" size="sm" onPress={() => {
-          const blob = new Blob([new Uint8Array(response.body)], { type: response.contentType ?? '' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url; a.download = `response-${Date.now()}`; a.click();
-          URL.revokeObjectURL(url);
-        }}>
-          <Download size={12} /> Download
-        </Button>
+        <button
+          onClick={() => updateTabResponse(tabId, null)}
+          className="btn-icon"
+          title="Clear response"
+        >
+          <XCircle size={14} />
+        </button>
+        {request && (
+          <button
+            onClick={() => navigator.clipboard.writeText(generateCurl(request))}
+            className="btn-icon"
+            title="Copy as cURL"
+          >
+            <Terminal size={14} />
+          </button>
+        )}
+        <button
+          onClick={() => navigator.clipboard.writeText(bodyStr)}
+          className="btn-icon"
+          title="Copy response body"
+        >
+          <Clipboard size={14} />
+        </button>
+        <button
+          onClick={() => {
+            const blob = new Blob([new Uint8Array(bodyBytes)], { type: response.contentType ?? '' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `response-${Date.now()}`; a.click();
+            URL.revokeObjectURL(url);
+          }}
+          className="btn-icon"
+          title="Download response"
+        >
+          <Download size={14} />
+        </button>
       </div>
 
       {/* Content */}
@@ -227,16 +349,63 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
               </div>
             ))}
           </div>
-        ) : isHtml && previewMode === 'preview' ? (
+        ) : activeTab === 'preview' && isHtml ? (
           <iframe
             srcDoc={bodyStr}
             className="w-full h-full border border-border-primary rounded bg-white"
             sandbox="allow-scripts"
           />
+        ) : activeTab === 'preview' && isImage ? (
+          <div className="flex items-center justify-center p-4 h-full">
+            {(() => {
+              const blob = new Blob([new Uint8Array(bodyBytes)], { type: response.contentType });
+              const dataUrl = URL.createObjectURL(blob);
+              return <img src={dataUrl} alt="Response" className="max-w-full max-h-full object-contain rounded"
+                onLoad={() => setTimeout(() => URL.revokeObjectURL(dataUrl), 1000)} />;
+            })()}
+          </div>
+        ) : activeTab === 'console' ? (
+          <div className="space-y-4 text-xs">
+            <div>
+              <h4 className="font-medium text-text-secondary mb-2">Resolved URL</h4>
+              <code className="text-text-primary bg-bg-code px-2 py-1 rounded block break-all">{resolvedUrl || 'N/A'}</code>
+            </div>
+            <div>
+              <h4 className="font-medium text-text-secondary mb-2">Request Headers Sent</h4>
+              {Object.keys(sentHeaders).length === 0 ? (
+                <p className="text-text-tertiary">No headers captured</p>
+              ) : (
+                <div className="space-y-1">
+                  {Object.entries(sentHeaders).map(([k, v]) => (
+                    <div key={k} className="flex gap-3 py-0.5">
+                      <span className="font-medium text-text-primary min-w-[160px]">{k}</span>
+                      <span className="text-text-secondary">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-text-secondary mb-2">Timing</h4>
+              <div className="flex items-center gap-4">
+                <span className="text-text-tertiary">Response time:</span>
+                <span className="font-mono text-text-primary">{response.responseTime}ms</span>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-medium text-text-secondary mb-2">Response Info</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <span className="text-text-tertiary">Content-Type:</span>
+                <span className="text-text-primary">{response.contentType}</span>
+                <span className="text-text-tertiary">Size:</span>
+                <span className="text-text-primary">{(responseSize / 1024).toFixed(1)} KB ({(responseSize / 1048576).toFixed(2)} MB)</span>
+                <span className="text-text-tertiary">Type:</span>
+                <span className="text-text-primary uppercase">{respType}</span>
+              </div>
+            </div>
+          </div>
         ) : (
-          <pre className="text-xs font-mono bg-bg-code text-text-primary rounded p-4 overflow-auto max-h-full">
-            <code ref={codeRef} />
-          </pre>
+          renderBody()
         )}
       </div>
     </div>

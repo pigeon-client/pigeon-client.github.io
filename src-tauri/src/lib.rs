@@ -1,7 +1,25 @@
 use std::collections::HashMap;
+use std::sync::OnceLock;
+use std::time::Duration;
 use tauri::State;
 
 mod db;
+
+/// Global reqwest client with connection pooling & keep-alive
+fn get_http_client() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .timeout(Duration::from_secs(60))
+            .connect_timeout(Duration::from_secs(10))
+            .pool_max_idle_per_host(32)    // reuse up to 32 connections per host
+            .pool_idle_timeout(Duration::from_secs(90)) // keep idle for 90s
+            .tcp_keepalive(Duration::from_secs(30))
+            .danger_accept_invalid_certs(false)
+            .build()
+            .expect("Failed to create HTTP client")
+    })
+}
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -29,10 +47,7 @@ async fn send_api_request(
     body: Option<String>,
     body_type: String,
 ) -> Result<ApiResponse, String> {
-    let client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(false)
-        .build()
-        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+    let client = get_http_client();
 
     let reqwest_method = match method.to_uppercase().as_str() {
         "GET" => reqwest::Method::GET,
@@ -145,6 +160,18 @@ fn delete_draft(state: State<db::DbState>, id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn update_draft(state: State<db::DbState>, id: i64, data: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::update_draft(&conn, id, &data)
+}
+
+#[tauri::command]
+fn update_history(state: State<db::DbState>, id: i64, data: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::update_history(&conn, id, &data)
+}
+
+#[tauri::command]
 fn add_history(state: State<db::DbState>, data: String, timestamp: i64) -> Result<i64, String> {
     let conn = state.conn.lock().map_err(|e| e.to_string())?;
     db::add_history(&conn, &data, timestamp)
@@ -162,6 +189,32 @@ fn delete_history(state: State<db::DbState>, id: i64) -> Result<(), String> {
     db::delete_history(&conn, id)
 }
 
+// --- Collection Commands ---
+
+#[tauri::command]
+fn save_collection(state: State<db::DbState>, id: String, data: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::save_collection(&conn, &id, &data)
+}
+
+#[tauri::command]
+fn get_collections(state: State<db::DbState>) -> Result<Vec<(String, String)>, String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::get_collections(&conn)
+}
+
+#[tauri::command]
+fn update_collection(state: State<db::DbState>, id: String, data: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::update_collection(&conn, &id, &data)
+}
+
+#[tauri::command]
+fn delete_collection(state: State<db::DbState>, id: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::delete_collection(&conn, &id)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let db_conn = db::init_db();
@@ -171,15 +224,23 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(db_state)
         .invoke_handler(tauri::generate_handler![
             send_api_request,
             save_draft,
             get_drafts,
             delete_draft,
+            update_draft,
+            update_history,
             add_history,
             get_history,
             delete_history,
+            save_collection,
+            get_collections,
+            update_collection,
+            delete_collection,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

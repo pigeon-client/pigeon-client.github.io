@@ -57,13 +57,10 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
             </button>
           ))}
         </div>
-        <button className="px-4 py-2.5 text-xs text-accent-orange hover:text-accent-orange/80 shrink-0 transition-colors cursor-pointer">
-          Cookies
-        </button>
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {activeTab === 'params' && (
           <div>
             <p className="text-xs font-medium text-text-secondary mb-2">Query Params</p>

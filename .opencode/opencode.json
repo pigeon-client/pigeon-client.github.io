@@ -1,0 +1,46 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "workflow-manager",
+  "instructions": [".opencode/skills/feature-workflow/SKILL.md"],
+  "agent": {
+    "workflow-manager": {
+      "description": "Orchestrates the feature development workflow from request to delivery",
+      "mode": "primary"
+    },
+    "pm-agent": {
+      "description": "Product Manager - evaluates features, writes requirements, coordinates with designer",
+      "mode": "subagent"
+    },
+    "em-agent": {
+      "description": "Engineering Manager - reviews requirements for feasibility",
+      "mode": "subagent"
+    },
+    "designer-agent": {
+      "description": "Designer - creates design concepts when requested by PM",
+      "mode": "subagent"
+    },
+    "dev-agent": {
+      "description": "Developer - implements features and fixes bugs",
+      "mode": "subagent"
+    },
+    "qa-agent": {
+      "description": "QA - tests features with Playwright, reports bugs",
+      "mode": "subagent"
+    }
+  },
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp"],
+      "enabled": true
+    }
+  },
+  "permission": {
+    "read": "allow",
+    "edit": "allow",
+    "bash": "allow",
+    "todowrite": "allow",
+    "question": "allow",
+    "webfetch": "allow"
+  }
+}

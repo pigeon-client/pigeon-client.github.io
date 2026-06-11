@@ -1,0 +1,121 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - generic [ref=e9]: Pigeon
+    - generic [ref=e10]:
+      - generic [ref=e11] [cursor=pointer]:
+        - generic [ref=e13]: /posts/1
+        - button [ref=e14]:
+          - img [ref=e15]
+      - button "New Tab" [ref=e18] [cursor=pointer]:
+        - img [ref=e19]
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - combobox [ref=e22] [cursor=pointer]:
+          - option "No Environment" [selected]
+        - img
+      - button "Settings" [ref=e23] [cursor=pointer]:
+        - img [ref=e24]
+  - generic [ref=e28]:
+    - generic [ref=e29]:
+      - combobox [ref=e30] [cursor=pointer]:
+        - option "GET" [selected]
+        - option "POST"
+        - option "PUT"
+        - option "PATCH"
+        - option "DELETE"
+      - img
+    - textbox "Enter request URL or paste cURL command" [ref=e31]: https://jsonplaceholder.typicode.com/posts/2
+    - button "Import cURL" [ref=e32] [cursor=pointer]:
+      - img [ref=e33]
+    - button "Send" [ref=e36] [cursor=pointer]
+  - generic [ref=e37]:
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - button "Collapse sidebar" [ref=e40] [cursor=pointer]:
+          - img [ref=e41]
+        - button "New" [ref=e44] [cursor=pointer]:
+          - img [ref=e45]
+          - text: New
+      - generic [ref=e46]:
+        - button "Collections" [ref=e47] [cursor=pointer]:
+          - img [ref=e48]
+          - generic [ref=e50]: Collections
+        - button "History" [ref=e51] [cursor=pointer]:
+          - img [ref=e52]
+          - generic [ref=e55]: History
+        - button "Drafts" [ref=e56] [cursor=pointer]:
+          - img [ref=e57]
+          - generic [ref=e60]: Drafts
+      - generic [ref=e62]:
+        - img
+        - textbox "Filter..." [ref=e63]
+      - generic [ref=e204]:
+        - generic [ref=e205]: Today
+        - generic [ref=e215] [cursor=pointer]:
+          - generic [ref=e216]: —
+          - generic [ref=e217]: GET
+          - generic [ref=e218]: /posts/1
+          - generic [ref=e219]: 01:36
+          - button [ref=e220]:
+            - img [ref=e221]
+        - generic [ref=e224] [cursor=pointer]:
+          - generic [ref=e225]: —
+          - generic [ref=e226]: GET
+          - generic [ref=e227]: /posts/1
+          - generic [ref=e228]: 01:36
+          - button [ref=e229]:
+            - img [ref=e230]
+    - generic [ref=e67]:
+      - generic [ref=e71]:
+        - generic [ref=e73]:
+          - button "Params" [ref=e74] [cursor=pointer]: Params
+          - button "Authorization" [ref=e76] [cursor=pointer]
+          - button "Headers" [ref=e77] [cursor=pointer]
+          - button "Body" [ref=e78] [cursor=pointer]
+          - button "Settings" [ref=e79] [cursor=pointer]
+        - generic [ref=e81]:
+          - paragraph [ref=e82]: Query Params
+          - generic [ref=e83]:
+            - generic [ref=e85]: Key
+            - generic [ref=e87]:
+              - button [ref=e88] [cursor=pointer]:
+                - img [ref=e89]
+              - textbox "Key" [ref=e92]
+              - textbox "Value" [ref=e94]
+              - button "Add row" [ref=e95] [cursor=pointer]:
+                - img [ref=e96]
+      - button "Toggle layout orientation" [ref=e99] [cursor=pointer]:
+        - img [ref=e100]
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e233]:
+            - generic [ref=e234]: 0 Request Failed
+            - generic [ref=e235]:
+              - img [ref=e236]
+              - text: 0ms
+            - generic [ref=e239]: 0.0 KB
+            - generic [ref=e240]: text
+          - button "Collapse response" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+        - generic [ref=e112]:
+          - generic [ref=e241]:
+            - button "Body" [ref=e242]
+            - button "Headers" [ref=e243]
+            - button "Console" [ref=e244]
+          - button "Clear response" [ref=e245] [cursor=pointer]:
+            - img [ref=e246]
+          - button "Copy as cURL" [ref=e250] [cursor=pointer]:
+            - img [ref=e251]
+          - button "Copy response body" [ref=e253] [cursor=pointer]:
+            - img [ref=e254]
+          - button "Download response" [ref=e257] [cursor=pointer]:
+            - img [ref=e258]
+        - generic [ref=e262]: Empty response body
+  - generic [ref=e125]:
+    - generic [ref=e126]:
+      - generic [ref=e127]: 2 requests
+      - generic [ref=e128]: 0 collections
+      - generic [ref=e129]: 2 drafts
+    - generic [ref=e130]: "?help"

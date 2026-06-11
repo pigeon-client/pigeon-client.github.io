@@ -1,0 +1,43 @@
+{
+  "bugs": [
+    {
+      "id": 1,
+      "title": "Creating a new tab hides the entire request editor (display: none)",
+      "description": "When creating a new tab via Cmd+N or clicking the New Tab button, the tab-wrapping divs in App.tsx used the Tailwind `hidden` CSS class to toggle visibility. Fixed by using inline `style={{ display: tab.id === activeTabId ? 'flex' : 'none' }}`.",
+      "severity": "critical",
+      "status": "verified",
+      "fixedIn": "src/App.tsx",
+      "fixDescription": "Changed from CSS class toggle to inline style attribute for tab visibility.",
+      "testStep": "1. Load the app at http://localhost:1420\n2. Press Cmd+N OR click the New Tab button\n3. Verify: The request editor tabs remain visible",
+      "verifiedAt": "2026-06-12T19:13:00Z",
+      "reVerifiedAt": "2026-06-12T22:20:00Z",
+      "verifiedBy": "qa-agent"
+    },
+    {
+      "id": 2,
+      "title": "Sidebar collapse width transition may leave gap or misalign layout",
+      "description": "The sidebar collapse animation relies on CSS transitions which may not properly recalculate flex children when combined with tab creation. Fixed as downstream effect of bug #1.",
+      "severity": "minor",
+      "status": "verified",
+      "fixedIn": "src/App.tsx (as downstream of bug #1 fix)",
+      "fixDescription": "Downstream effect of bug #1 fix.",
+      "testStep": "1. Load app at http://localhost:1420\n2. Press Cmd+N\n3. Click collapse sidebar button — verify layout remains aligned",
+      "verifiedAt": "2026-06-12T19:13:00Z",
+      "reVerifiedAt": "2026-06-12T22:20:00Z",
+      "verifiedBy": "qa-agent"
+    },
+    {
+      "id": 3,
+      "title": "History has duplicate entries when same request sent multiple times",
+      "description": "The `addToHistory` function in `historyStore.ts` does not deduplicate entries. When the same method+URL is sent twice, two separate history entries are created with identical data (same URL, same timestamp). Additionally, the third request to a different URL (`/posts/2`) was captured in history with the wrong URL (`/posts/1`). The `addToHistory` function should check for existing entries with the same method+URL before adding, or update the existing entry instead.",
+      "severity": "major",
+      "status": "verified",
+      "fixedIn": "src/store/historyStore.ts, src/lib/db.ts, src-tauri/src/db.rs, src-tauri/src/lib.rs",
+      "fixDescription": "Added dedup logic to addToHistory(): before inserting a new entry, it checks if an entry with the same method+normalized URL already exists. If found, it updates the existing entry in-place (status, responseTime, timestamp) instead of creating a duplicate. Added updateHistory() Tauri command and Rust db function for in-place updates.",
+      "testStep": "1. Load app at http://localhost:1420\n2. Send GET request to `https://jsonplaceholder.typicode.com/posts/1`\n3. Send the SAME request again\n4. Switch to History tab in sidebar\n5. Observe: Only ONE entry for GET /posts/1 (with updated timestamp)\n6. Change URL to `/posts/2` and send again\n7. Observe: Two entries - one for /posts/1, one for /posts/2",
+      "verifiedAt": "2026-06-12T20:15:00Z",
+      "reVerifiedAt": "",
+      "verifiedBy": "qa-agent"
+    }
+  ]
+}

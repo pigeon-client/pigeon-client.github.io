@@ -80,7 +80,7 @@ export function KeyValueEditor({
   };
 
   return (
-    <div className="border border-border-primary rounded overflow-hidden">
+    <div className="border border-border-primary rounded-lg overflow-hidden">
       <div className="flex items-center px-2 py-1.5 text-[11px] font-medium text-text-secondary border-b border-border-primary bg-bg-hover/40">
         <span className="w-5 shrink-0" />
         <span className="flex-1 pl-1">Key</span>
@@ -91,15 +91,11 @@ export function KeyValueEditor({
         const isEmpty = item.key === '' && item.value === '' && !item.isFile;
         return (
           <div key={`${index}`} className="relative">
-            <div
-              className="flex items-center gap-2 px-2 py-1 hover:bg-bg-hover group transition-colors border-b border-border-primary/50 last:border-0"
-            >
+            <div className="kv-row group">
               <button
                 onClick={() => update(index, 'enabled', !item.enabled)}
-                className={`w-4 h-4 shrink-0 rounded-sm border-2 flex items-center justify-center transition-colors cursor-pointer ${
-                  item.enabled
-                    ? 'bg-accent-orange border-accent-orange'
-                    : 'border-border-primary bg-transparent'
+                className={`checkbox-orange ${
+                  item.enabled ? 'checkbox-orange-on' : 'checkbox-orange-off'
                 }`}
               >
                 {item.enabled && (
@@ -124,7 +120,7 @@ export function KeyValueEditor({
                   }}
                   onKeyDown={(e) => { onKeyDown?.(e, index); }}
                   onFocus={() => { onKeyFocus?.(index); }}
-                  className={`w-full px-2 py-1 text-sm bg-transparent text-text-primary border-none
+                  className={`w-full px-2 py-1 text-xs bg-transparent text-text-primary border-none
                     placeholder:text-text-tertiary/60 font-medium
                     focus:outline-none focus:ring-0
                     transition-all ${!item.enabled ? 'opacity-50' : ''}`}
@@ -151,7 +147,7 @@ export function KeyValueEditor({
 
               <div className="flex-[2] flex items-center gap-1">
                 {showFilePicker && item.isFile && item.file ? (
-                  <div className="flex items-center gap-2 flex-1 px-2 py-1 text-sm text-text-secondary truncate">
+                  <div className="flex items-center gap-2 flex-1 px-2 py-1 text-xs text-text-secondary truncate">
                     <Paperclip size={14} className="text-accent-orange shrink-0" />
                     <span className="truncate">{item.fileName}</span>
                     <span className="text-[10px] text-text-tertiary shrink-0">
@@ -175,7 +171,7 @@ export function KeyValueEditor({
                     placeholder={valuePlaceholder}
                     value={item.value}
                     onChange={(e) => update(index, 'value', e.target.value)}
-                    className={`flex-1 px-2 py-1 text-sm bg-transparent text-text-primary border-none
+                    className={`flex-1 px-2 py-1 text-xs bg-transparent text-text-primary border-none
                       placeholder:text-text-tertiary/60 font-mono
                       focus:outline-none focus:ring-0
                       transition-all ${!item.enabled ? 'opacity-50' : ''}`}
@@ -184,7 +180,7 @@ export function KeyValueEditor({
                 {showFilePicker && !item.isFile && (
                   <button
                     onClick={() => handleFilePick(index)}
-                    className="p-1 rounded text-text-tertiary hover:text-accent-orange hover:bg-bg-hover transition-all shrink-0 cursor-pointer"
+                    className="btn-icon"
                     title="Attach file"
                   >
                     <Paperclip size={14} />

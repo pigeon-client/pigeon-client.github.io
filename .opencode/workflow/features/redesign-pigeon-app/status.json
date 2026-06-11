@@ -1,0 +1,20 @@
+{
+  "feature": "redesign-pigeon-app",
+  "created": "2026-06-11T18:00:00Z",
+  "state": "done",
+  "lastAction": "Final verification complete. Round 3 fixes verified by QA: draft auto-save works end-to-end with correct nested tree, no duplicates, delete via draftIndex, URL normalization for matching. History dedup and collections regressions confirmed. 0 bugs remaining.",
+  "lastUpdated": "2026-06-12T23:10:00Z",
+  "history": [
+    { "state": "proposed", "time": "2026-06-11T18:00:00Z", "by": "user", "action": "Feature requested" },
+    { "state": "pm-review", "time": "2026-06-11T18:05:00Z", "by": "pm-agent", "action": "Evaluated feature request" },
+    { "state": "pm-requests-design", "time": "2026-06-11T18:10:00Z", "by": "pm-agent", "action": "Wrote requirements - 01-requirements.md" },
+    { "state": "designer-working", "time": "2026-06-11T18:45:00Z", "by": "designer-agent", "action": "Created design concept - 02-design.md" },
+    { "state": "pm-approves-design", "time": "2026-06-11T18:50:00Z", "by": "pm-agent", "action": "Design approved" },
+    { "state": "em-review", "time": "2026-06-11T19:15:00Z", "by": "em-agent", "action": "Feasibility: approved" },
+    { "state": "in-development", "time": "2026-06-11T19:30:00Z", "by": "dev-agent", "action": "Full redesign" },
+    { "state": "in-development", "time": "2026-06-12T21:00:00Z", "by": "workflow-manager", "action": "Round 2 fixes" },
+    { "state": "in-development", "time": "2026-06-12T23:00:00Z", "by": "workflow-manager", "action": "Round 3: draft tree rewrite + URL normalization" },
+    { "state": "qa-approved", "time": "2026-06-12T23:08:00Z", "by": "qa-agent", "action": "All tests pass. 0 bugs." },
+    { "state": "done", "time": "2026-06-12T23:10:00Z", "by": "workflow-manager", "action": "Final verification complete. Feature delivered." }
+  ]
+}

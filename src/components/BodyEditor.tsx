@@ -1,9 +1,8 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import hljs from 'highlight.js';
 import { BodyType, KeyValue } from '../types';
 import { KeyValueEditor } from './KeyValueEditor';
 import { useAutoClose } from '../hooks/useAutoClose';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Wand2 } from 'lucide-react';
 
 interface BodyEditorProps {
   bodyType: BodyType;
@@ -18,7 +17,6 @@ interface BodyEditorProps {
   onFileChange: (file: File | null) => void;
 }
 
-// JSON is its own first-class radio; "raw" covers Text/XML/HTML only
 type RadioId = 'none' | 'json' | 'form-data' | 'x-www-form-urlencoded' | 'raw' | 'binary';
 
 const RAW_FORMATS: { label: string; value: BodyType }[] = [
@@ -58,7 +56,6 @@ export function BodyEditor({
   onFileChange,
 }: BodyEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const codeRef = useRef<HTMLElement>(null);
   const lineNumRef = useRef<HTMLDivElement>(null);
   const { handleKeyDown } = useAutoClose(textareaRef);
 
@@ -96,17 +93,10 @@ export function BodyEditor({
   };
 
   const isJson = bodyType === 'application/json';
-  const highlighted = isJson && body
-    ? hljs.highlight(body, { language: 'json' }).value
-    : (bodyType === 'text/xml' && body ? hljs.highlight(body, { language: 'xml' }).value : '');
-
   const lineCount = body ? body.split('\n').length : 1;
 
+  // Sync scroll between textarea and line numbers
   const handleScroll = useCallback(() => {
-    if (codeRef.current && textareaRef.current) {
-      codeRef.current.scrollTop = textareaRef.current.scrollTop;
-      codeRef.current.scrollLeft = textareaRef.current.scrollLeft;
-    }
     if (lineNumRef.current && textareaRef.current) {
       lineNumRef.current.scrollTop = textareaRef.current.scrollTop;
     }
@@ -139,9 +129,13 @@ export function BodyEditor({
           );
         })}
 
-        {/* JSON: Beautify button on the right */}
+        {/* JSON: Beautify button */}
         {activeRadio === 'json' && (
-          <button onClick={formatJson} className="ml-auto text-xs text-accent-orange hover:underline cursor-pointer">
+          <button
+            onClick={formatJson}
+              className="btn-ghost"
+          >
+            <Wand2 size={12} />
             Beautify
           </button>
         )}
@@ -153,7 +147,7 @@ export function BodyEditor({
               value={rawFormat}
               onChange={(e) => handleRawFormatChange(e.target.value as BodyType)}
               className="appearance-none pl-2.5 pr-6 py-0.5 text-xs bg-bg-hover text-text-primary
-                border border-border-primary rounded cursor-pointer focus:outline-none"
+                border border-border-primary rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent-orange/30"
             >
               {RAW_FORMATS.map((f) => (
                 <option key={f.value} value={f.value}>{f.label}</option>
@@ -173,44 +167,32 @@ export function BodyEditor({
 
       {/* JSON or raw: line-numbered code editor */}
       {isCodeEditor && (
-        <div
-          className="flex border border-border-primary rounded overflow-hidden bg-bg-code"
-          style={{ height: '280px' }}
-        >
+        <div className="flex border border-border-primary rounded-lg overflow-hidden bg-bg-code min-h-[200px] max-h-[400px]">
           {/* Line numbers */}
           <div
             ref={lineNumRef}
-            className="py-3 px-2 text-right select-none text-[11px] font-mono leading-[1.5]
-              text-text-tertiary border-r border-border-primary overflow-hidden shrink-0"
-            style={{ minWidth: '36px' }}
+            className="py-3 px-2 text-right text-xs font-mono leading-[1.6] select-none
+              text-text-tertiary bg-bg-hover border-r border-border-primary overflow-hidden shrink-0"
+            style={{ minWidth: '40px' }}
           >
             {Array.from({ length: Math.max(lineCount, 1) }, (_, i) => (
-              <div key={i} style={{ height: '1.5em' }}>{i + 1}</div>
+              <div key={i} style={{ height: '1.6em', lineHeight: '1.6' }}>{i + 1}</div>
             ))}
           </div>
 
-          {/* Editor */}
-          <div className="relative flex-1">
-            {(isJson || bodyType === 'text/xml') && highlighted ? (
-              <pre className="absolute inset-0 p-3 text-xs font-mono leading-[1.5] overflow-hidden whitespace-pre-wrap break-words m-0 pointer-events-none">
-                <code ref={codeRef} className="!bg-transparent !p-0" dangerouslySetInnerHTML={{ __html: highlighted }} />
-              </pre>
-            ) : null}
-            <textarea
-              ref={textareaRef}
-              value={body}
-              onChange={(e) => onBodyChange(e.target.value)}
-              onScroll={handleScroll}
-              placeholder={isJson ? '{\n  "key": "value"\n}' : 'Enter request body...'}
-              className={`absolute inset-0 w-full h-full p-3 text-xs font-mono leading-[1.5]
-                bg-transparent border-none resize-none focus:outline-none focus:ring-0
-                ${(isJson || bodyType === 'text/xml') && highlighted
-                  ? 'text-transparent caret-text-primary'
-                  : 'text-text-primary placeholder:text-text-tertiary'
-                }`}
-              spellCheck={false}
-            />
-          </div>
+          {/* Textarea (single, no overlay) */}
+          <textarea
+            ref={textareaRef}
+            value={body}
+            onChange={(e) => onBodyChange(e.target.value)}
+            onScroll={handleScroll}
+            placeholder={isJson ? '{\n  "key": "value"\n}' : 'Enter request body...'}
+            className="flex-1 p-3 text-xs font-mono leading-[1.6] bg-transparent text-text-primary
+              border-none resize-none focus:outline-none focus:ring-0
+              placeholder:text-text-tertiary"
+            spellCheck={false}
+            style={{ tabSize: 2 }}
+          />
         </div>
       )}
 
@@ -224,7 +206,7 @@ export function BodyEditor({
         />
       )}
 
-      {/* form-data (multipart) — with file picker */}
+      {/* form-data (multipart) */}
       {activeRadio === 'form-data' && (
         <KeyValueEditor
           items={multipart}
@@ -255,7 +237,7 @@ export function BodyEditor({
           {file && (
             <>
               <span className="text-[11px] text-text-tertiary">{(file.size / 1024).toFixed(1)} KB</span>
-              <button onClick={() => onFileChange(null)} className="text-xs text-accent-red hover:underline">
+              <button onClick={() => onFileChange(null)} className="text-xs text-accent-red hover:underline cursor-pointer">
                 Remove
               </button>
             </>
