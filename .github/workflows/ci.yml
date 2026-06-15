@@ -20,10 +20,11 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
+      - name: Disable release age check
+        run: echo 'minimum-release-age=0' > .npmrc
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        env:
-          npm_config_minimum_release_age: 0
 
       - name: Biome check (lint + format)
         run: pnpm ci:check
@@ -45,10 +46,11 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
+      - name: Disable release age check
+        run: echo 'minimum-release-age=0' > .npmrc
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        env:
-          npm_config_minimum_release_age: 0
 
       - name: Build
         run: pnpm build

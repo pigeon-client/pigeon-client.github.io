@@ -81,10 +81,11 @@ jobs:
             patchelf \
             libxdo-dev
 
+      - name: Disable release age check
+        run: echo 'minimum-release-age=0' > .npmrc
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        env:
-          npm_config_minimum_release_age: 0
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
