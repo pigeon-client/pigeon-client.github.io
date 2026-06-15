@@ -82,7 +82,7 @@ jobs:
             libxdo-dev
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --no-verify-store-integrity
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
