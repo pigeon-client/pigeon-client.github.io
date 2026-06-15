@@ -21,7 +21,9 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --no-verify-store-integrity
+        run: pnpm install --frozen-lockfile
+        env:
+          npm_config_minimum_release_age: 0
 
       - name: Biome check (lint + format)
         run: pnpm ci:check
@@ -44,7 +46,9 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --no-verify-store-integrity
+        run: pnpm install --frozen-lockfile
+        env:
+          npm_config_minimum_release_age: 0
 
       - name: Build
         run: pnpm build
