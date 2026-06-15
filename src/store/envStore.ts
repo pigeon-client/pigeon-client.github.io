@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { Environment } from '../types';
+import { create } from "zustand";
+import type { Environment } from "../types";
 
 interface EnvState {
   environments: Environment[];
@@ -7,7 +7,7 @@ interface EnvState {
 
   setEnvironments: (envs: Environment[]) => void;
   setActiveEnv: (env: Environment | null) => void;
-  addEnvironment: (env: Omit<Environment, 'id'>) => void;
+  addEnvironment: (env: Omit<Environment, "id">) => void;
   updateEnvironment: (id: number, env: Partial<Environment>) => void;
   deleteEnvironment: (id: number) => void;
 }
@@ -27,9 +27,7 @@ export const useEnvStore = create<EnvState>((set) => ({
 
   updateEnvironment: (id, envUpdate) =>
     set((state) => ({
-      environments: state.environments.map((e) =>
-        e.id === id ? { ...e, ...envUpdate } : e
-      ),
+      environments: state.environments.map((e) => (e.id === id ? { ...e, ...envUpdate } : e)),
     })),
 
   deleteEnvironment: (id) =>

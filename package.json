@@ -2,8 +2,16 @@
   "name": "pigeon",
   "private": true,
   "version": "0.1.0",
+  "packageManager": "pnpm@11.6.0",
   "type": "module",
   "scripts": {
+    "check": "biome check",
+    "check:write": "biome check --write --unsafe",
+    "ci:check": "biome ci",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "lint": "biome lint",
+    "lint:staged": "biome lint --staged",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -29,6 +37,8 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.0",
+    "@evilmartians/lefthook": "^2.1.9",
     "@tailwindcss/postcss": "^4.3.0",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",

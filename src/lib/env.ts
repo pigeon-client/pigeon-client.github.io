@@ -1,14 +1,14 @@
-import { Environment } from '../types';
+import type { Environment } from "../types";
 
 /**
  * Replace env variables in a string using {{varName}} syntax
  */
 export function replaceEnvVariables(str: string, env: Environment | null): string {
-  if (!env || !env.variables) return str;
-  
+  if (!env?.variables) return str;
+
   return str.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
     const trimmedKey = key.trim();
-    if (env.variables.hasOwnProperty(trimmedKey)) {
+    if (Object.hasOwn(env.variables, trimmedKey)) {
       return env.variables[trimmedKey];
     }
     return match;
@@ -20,13 +20,13 @@ export function replaceEnvVariables(str: string, env: Environment | null): strin
  */
 export function parseEnvString(str: string): Record<string, string> {
   const result: Record<string, string> = {};
-  const lines = str.split('\n');
-  
+  const lines = str.split("\n");
+
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    
-    const equalIndex = trimmed.indexOf('=');
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const equalIndex = trimmed.indexOf("=");
     if (equalIndex > 0) {
       const key = trimmed.substring(0, equalIndex).trim();
       const value = trimmed.substring(equalIndex + 1).trim();
@@ -35,6 +35,6 @@ export function parseEnvString(str: string): Record<string, string> {
       }
     }
   }
-  
+
   return result;
 }

@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { KeyValue } from '../types';
-import { Plus, X, Paperclip } from 'lucide-react';
+import { Paperclip } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import type { KeyValue } from "../types";
 
 interface KeyValueEditorProps {
   items: KeyValue[];
@@ -18,11 +18,51 @@ interface KeyValueEditorProps {
   onSelectSuggestion?: (index: number, value: string) => void;
 }
 
+function Checkbox({ on, onClick }: { on: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={on ? "Disable row" : "Enable row"}
+      onClick={onClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 16,
+        height: 16,
+        borderRadius: 4,
+        background: on ? "var(--accent)" : "transparent",
+        border: on ? "none" : "1.5px solid var(--border)",
+        cursor: "pointer",
+        flexShrink: 0,
+        transition: "all 0.1s",
+        padding: 0,
+      }}
+    >
+      {on && (
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#fff"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export function KeyValueEditor({
   items,
   onChange,
-  keyPlaceholder = 'Key',
-  valuePlaceholder = '',
+  keyPlaceholder = "Key",
+  valuePlaceholder = "Value",
   showFilePicker = false,
   inputRefs,
   suggestions,
@@ -34,23 +74,20 @@ export function KeyValueEditor({
   onSelectSuggestion,
 }: KeyValueEditorProps) {
   useEffect(() => {
-    if (items.length === 0) {
-      onChange([{ key: '', value: '', enabled: true }]);
-    }
-  }, []);
+    if (items.length === 0) onChange([{ key: "", value: "", enabled: true }]);
+  }, [onChange, items.length]);
 
-  const addRow = () => {
-    onChange([...items, { key: '', value: '', enabled: true }]);
-  };
+  const itemsWithKeys = useMemo(
+    () => items.map((item, i) => ({ ...item, _rowKey: `row-${i}-${item.key}` })),
+    [items],
+  );
 
-  const update = (index: number, field: 'key' | 'value' | 'enabled', val: string | boolean) => {
-    const updated = items.map((item, i) =>
-      i === index ? { ...item, [field]: val } : item
-    );
-    if (index === items.length - 1 && field !== 'enabled' && val !== '') {
+  const update = (index: number, field: "key" | "value" | "enabled", val: string | boolean) => {
+    const updated = items.map((item, i) => (i === index ? { ...item, [field]: val } : item));
+    if (index === items.length - 1 && field !== "enabled" && val !== "") {
       const last = updated[updated.length - 1];
-      if (last.key !== '' || last.value !== '') {
-        onChange([...updated, { key: '', value: '', enabled: true }]);
+      if (last.key !== "" || last.value !== "") {
+        onChange([...updated, { key: "", value: "", enabled: true }]);
         return;
       }
     }
@@ -59,156 +96,256 @@ export function KeyValueEditor({
 
   const remove = (index: number) => {
     if (items.length <= 1) {
-      onChange([{ key: '', value: '', enabled: true }]);
+      onChange([{ key: "", value: "", enabled: true }]);
       return;
     }
     onChange(items.filter((_, i) => i !== index));
   };
 
-  const handleFilePick = (index: number) => {
-    const input = document.createElement('input');
-    input.type = 'file';
+  const pickFile = (index: number) => {
+    const input = document.createElement("input");
+    input.type = "file";
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
-      const updated = items.map((item, i) =>
-        i === index ? { ...item, isFile: true, file, fileName: file.name, value: file.name } : item
+      onChange(
+        items.map((item, i) =>
+          i === index
+            ? { ...item, isFile: true, file, fileName: file.name, value: file.name }
+            : item,
+        ),
       );
-      onChange(updated);
     };
     input.click();
   };
 
   return (
-    <div className="border border-border-primary rounded-lg overflow-hidden">
-      <div className="flex items-center px-2 py-1.5 text-[11px] font-medium text-text-secondary border-b border-border-primary bg-bg-hover/40">
-        <span className="w-5 shrink-0" />
-        <span className="flex-1 pl-1">Key</span>
+    <div>
+      {/* Column headers */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "28px 1fr 1.4fr 28px",
+          gap: 0,
+          fontSize: 10.5,
+          fontWeight: 600,
+          color: "var(--text-placeholder)",
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          padding: "0 0 8px",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        <span />
+        <span>Key</span>
+        <span>Value</span>
+        <span />
       </div>
 
-      {items.map((item, index) => {
-        const isLast = index === items.length - 1;
-        const isEmpty = item.key === '' && item.value === '' && !item.isFile;
-        return (
-          <div key={`${index}`} className="relative">
-            <div className="kv-row group">
-              <button
-                onClick={() => update(index, 'enabled', !item.enabled)}
-                className={`checkbox-orange ${
-                  item.enabled ? 'checkbox-orange-on' : 'checkbox-orange-off'
-                }`}
+      {itemsWithKeys.map((item, index) => (
+        <div
+          key={item._rowKey}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "28px 1fr 1.4fr 28px",
+            alignItems: "center",
+            height: 36,
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Checkbox on={item.enabled} onClick={() => update(index, "enabled", !item.enabled)} />
+          </span>
+
+          <div style={{ position: "relative" }}>
+            <input
+              ref={(el) => {
+                if (inputRefs) inputRefs.current[index] = el;
+              }}
+              type="text"
+              placeholder={keyPlaceholder}
+              value={item.key}
+              onChange={(e) =>
+                onKeyChange
+                  ? onKeyChange(index, e.target.value)
+                  : update(index, "key", e.target.value)
+              }
+              onKeyDown={(e) => onKeyDown?.(e, index)}
+              onFocus={() => onKeyFocus?.(index)}
+              style={{
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                fontFamily: "var(--font-mono)",
+                fontSize: 13,
+                color: "#4A9EFA",
+                opacity: item.enabled ? 1 : 0.5,
+              }}
+            />
+            {showForIndex === index && suggestions && suggestions.length > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: "100%",
+                  zIndex: 50,
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                }}
               >
-                {item.enabled && (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                )}
-              </button>
-
-              <div className="flex-1 relative">
-                <input
-                  ref={(el) => { if (inputRefs) inputRefs.current[index] = el; }}
-                  type="text"
-                  placeholder={keyPlaceholder}
-                  value={item.key}
-                  onChange={(e) => {
-                    if (onKeyChange) {
-                      onKeyChange(index, e.target.value);
-                    } else {
-                      update(index, 'key', e.target.value);
-                    }
-                  }}
-                  onKeyDown={(e) => { onKeyDown?.(e, index); }}
-                  onFocus={() => { onKeyFocus?.(index); }}
-                  className={`w-full px-2 py-1 text-xs bg-transparent text-text-primary border-none
-                    placeholder:text-text-tertiary/60 font-medium
-                    focus:outline-none focus:ring-0
-                    transition-all ${!item.enabled ? 'opacity-50' : ''}`}
-                />
-                {/* Suggestions dropdown */}
-                {showForIndex === index && suggestions && suggestions.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full z-50 mt-0.5 bg-bg-secondary border border-border-primary rounded-lg shadow-lg overflow-hidden">
-                    {suggestions.map((s, i) => (
-                      <button
-                        key={s}
-                        onMouseDown={(e) => { e.preventDefault(); onSelectSuggestion?.(index, s); }}
-                        className={`w-full px-3 py-1.5 text-xs text-left font-mono transition-colors cursor-pointer ${
-                          i === activeIndex
-                            ? 'bg-accent-orange/20 text-accent-orange'
-                            : 'text-text-primary hover:bg-bg-hover'
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-[2] flex items-center gap-1">
-                {showFilePicker && item.isFile && item.file ? (
-                  <div className="flex items-center gap-2 flex-1 px-2 py-1 text-xs text-text-secondary truncate">
-                    <Paperclip size={14} className="text-accent-orange shrink-0" />
-                    <span className="truncate">{item.fileName}</span>
-                    <span className="text-[10px] text-text-tertiary shrink-0">
-                      ({(item.file.size / 1024).toFixed(1)} KB)
-                    </span>
-                    <button
-                      onClick={() => {
-                        const updated = items.map((it, i) =>
-                          i === index ? { ...it, isFile: false, file: null, fileName: undefined, value: '' } : it
-                        );
-                        onChange(updated);
-                      }}
-                      className="text-[10px] text-accent-red hover:text-red-600 ml-auto"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <input
-                    type="text"
-                    placeholder={valuePlaceholder}
-                    value={item.value}
-                    onChange={(e) => update(index, 'value', e.target.value)}
-                    className={`flex-1 px-2 py-1 text-xs bg-transparent text-text-primary border-none
-                      placeholder:text-text-tertiary/60 font-mono
-                      focus:outline-none focus:ring-0
-                      transition-all ${!item.enabled ? 'opacity-50' : ''}`}
-                  />
-                )}
-                {showFilePicker && !item.isFile && (
+                {suggestions.map((s, i) => (
                   <button
-                    onClick={() => handleFilePick(index)}
-                    className="btn-icon"
-                    title="Attach file"
+                    type="button"
+                    key={s}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      onSelectSuggestion?.(index, s);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "6px 12px",
+                      textAlign: "left",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 12,
+                      background: i === activeIndex ? "rgba(124,110,250,0.15)" : "transparent",
+                      color: i === activeIndex ? "var(--accent)" : "var(--text-primary)",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
                   >
-                    <Paperclip size={14} />
+                    {s}
                   </button>
-                )}
+                ))}
               </div>
-
-              {isLast && isEmpty ? (
-                <button
-                  onClick={addRow}
-                  className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-text-tertiary hover:text-accent-orange hover:bg-bg-hover transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
-                  title="Add row"
-                >
-                  <Plus size={14} />
-                </button>
-              ) : (
-                <button
-                  onClick={() => remove(index)}
-                  className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-text-tertiary hover:text-accent-red hover:bg-bg-hover transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
-                  title="Remove"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
+            )}
           </div>
-        );
-      })}
+
+          <div>
+            {showFilePicker && item.isFile && item.file ? (
+              <button
+                type="button"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  fontFamily: "inherit",
+                  color: "inherit",
+                }}
+                onClick={() => pickFile(index)}
+              >
+                <Paperclip size={12} style={{ color: "var(--accent)" }} />
+                <span
+                  style={{
+                    color: "var(--text-secondary)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {item.fileName}
+                </span>
+              </button>
+            ) : (
+              <input
+                type="text"
+                placeholder={valuePlaceholder}
+                value={item.value}
+                onChange={(e) => update(index, "value", e.target.value)}
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 13,
+                  color: "var(--text-primary)",
+                  opacity: item.enabled ? 1 : 0.5,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              />
+            )}
+          </div>
+
+          <button
+            type="button"
+            aria-label="Remove row"
+            onClick={() => remove(index)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--text-placeholder)",
+              cursor: "pointer",
+              transition: "color 0.1s",
+            }}
+            className="hover:text-[#F87171]"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+        </div>
+      ))}
+
+      {/* Add row */}
+      <button
+        type="button"
+        onClick={() => onChange([...items, { key: "", value: "", enabled: true }])}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          marginTop: 10,
+          background: "transparent",
+          border: "none",
+          color: "var(--text-secondary)",
+          fontFamily: "inherit",
+          fontSize: 12.5,
+          fontWeight: 500,
+          cursor: "pointer",
+          padding: 0,
+        }}
+        className="hover:text-[var(--accent)]"
+      >
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add param
+      </button>
     </div>
   );
 }

@@ -1,0 +1,20 @@
+# Managed by the Pigeon team. Do not edit unless you know what you're doing.
+
+pre-commit:
+  parallel: true
+  commands:
+    biome:
+      glob: "*.{js,ts,jsx,tsx,json,jsonc,mjs,cjs}"
+      run: npx --no-install biome check --write --unsafe --diagnostic-level=warn --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+      skip:
+        - script: 'test ! -f node_modules/.bin/biome'
+
+pre-push:
+  parallel: true
+  commands:
+    biome:
+      glob: "*.{js,ts,jsx,tsx,json,jsonc,mjs,cjs}"
+      run: npx --no-install biome check --diagnostic-level=error --no-errors-on-unmatched {push_files}
+      skip:
+        - script: 'test ! -f node_modules/.bin/biome'

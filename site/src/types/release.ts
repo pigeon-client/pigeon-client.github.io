@@ -20,7 +20,7 @@ export interface ParsedRelease {
 }
 
 export interface PlatformAsset {
-  platform: 'darwin-arm64' | 'darwin-x64' | 'windows' | 'linux';
+  platform: "darwin-arm64" | "darwin-x64" | "windows" | "linux";
   name: string;
   downloadUrl: string;
   size?: number;

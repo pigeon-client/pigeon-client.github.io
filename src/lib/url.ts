@@ -5,17 +5,17 @@
  */
 export function parseUrl(input: string): string {
   input = input.trim();
-  
+
   // Port shortcut: :3000, :3000/api, :3000?query=1
-  if (input.startsWith(':')) {
+  if (input.startsWith(":")) {
     return `http://localhost${input}`;
   }
-  
+
   // If already has protocol, respect it
-  if (input.startsWith('http://') || input.startsWith('https://')) {
+  if (input.startsWith("http://") || input.startsWith("https://")) {
     return input;
   }
-  
+
   // Default to http:// for domains without protocol
   return `http://${input}`;
 }
@@ -28,7 +28,7 @@ export function extractDomain(url: string): string {
     const parsed = new URL(url);
     return parsed.hostname;
   } catch {
-    return 'unknown';
+    return "unknown";
   }
 }
 
@@ -36,9 +36,9 @@ export function extractDomain(url: string): string {
  * Extract main domain (e.g., api.example.com -> example.com)
  */
 export function extractMainDomain(hostname: string): string {
-  const parts = hostname.split('.');
+  const parts = hostname.split(".");
   if (parts.length <= 2) return hostname;
-  return parts.slice(-2).join('.');
+  return parts.slice(-2).join(".");
 }
 
 /**
@@ -48,7 +48,7 @@ export function extractEndpoint(url: string): string {
   try {
     const parsed = new URL(url);
     const path = parsed.pathname;
-    if (path === '/' || !path) return parsed.hostname;
+    if (path === "/" || !path) return parsed.hostname;
     return path;
   } catch {
     return url;
@@ -65,10 +65,10 @@ export function extractPathSegments(url: string): string[] {
     const hostname = parsed.hostname;
     const mainDomain = extractMainDomain(hostname);
     const pathParts = parsed.pathname
-      .replace(/\/+$/, '')       // strip trailing slash
-      .split('/')
+      .replace(/\/+$/, "") // strip trailing slash
+      .split("/")
       .filter(Boolean)
-      .slice(0, -1);             // exclude the last segment (it's the request name)
+      .slice(0, -1); // exclude the last segment (it's the request name)
     return [mainDomain, hostname, ...pathParts];
   } catch {
     return [];
@@ -82,7 +82,7 @@ export function extractPathSegments(url: string): string[] {
 export function normalizeUrlForMatch(method: string, url: string): string {
   try {
     const parsed = new URL(url);
-    const path = parsed.pathname.replace(/\/+$/, '');
+    const path = parsed.pathname.replace(/\/+$/, "");
     return `${method.toUpperCase()}:${parsed.hostname}${path}`;
   } catch {
     return `${method.toUpperCase()}:${url}`;

@@ -1,11 +1,16 @@
-import { create } from 'zustand';
-import { Collection, CollectionNode, RequestConfig, MAX_NESTING_DEPTH } from '../types';
+import { create } from "zustand";
 import {
-  saveCollection as dbSaveCollection,
-  getCollections as dbGetCollections,
-  updateCollection as dbUpdateCollection,
   deleteCollection as dbDeleteCollection,
-} from '../lib/db';
+  getCollections as dbGetCollections,
+  saveCollection as dbSaveCollection,
+  updateCollection as dbUpdateCollection,
+} from "../lib/db";
+import {
+  type Collection,
+  type CollectionNode,
+  MAX_NESTING_DEPTH,
+  type RequestConfig,
+} from "../types";
 
 interface CollectionState {
   collections: Collection[];
@@ -18,10 +23,19 @@ interface CollectionState {
 
   // Tree operations
   addFolder: (collectionId: string, parentId: string | null, name: string) => Promise<boolean>;
-  addRequest: (collectionId: string, parentId: string | null, name: string, request: RequestConfig) => Promise<boolean>;
+  addRequest: (
+    collectionId: string,
+    parentId: string | null,
+    name: string,
+    request: RequestConfig,
+  ) => Promise<boolean>;
   removeNode: (collectionId: string, nodeId: string) => Promise<void>;
   renameNode: (collectionId: string, nodeId: string, name: string) => Promise<void>;
-  moveNode: (collectionId: string, nodeId: string, targetParentId: string | null) => Promise<boolean>;
+  moveNode: (
+    collectionId: string,
+    nodeId: string,
+    targetParentId: string | null,
+  ) => Promise<boolean>;
 
   reorderCollections: (ids: string[]) => void;
 }
@@ -35,9 +49,9 @@ function stripFiles(request: RequestConfig): RequestConfig {
 }
 
 function getDepth(node: CollectionNode, current: number = 0): number {
-  if (node.type === 'request') return current;
+  if (node.type === "request") return current;
   let max = current;
-  for (const child of (node.children ?? [])) {
+  for (const child of node.children ?? []) {
     const d = getDepth(child, current + 1);
     if (d > max) max = d;
   }
@@ -46,8 +60,8 @@ function getDepth(node: CollectionNode, current: number = 0): number {
 
 function removeById(nodes: CollectionNode[], id: string): CollectionNode[] {
   return nodes
-    .filter(n => n.id !== id)
-    .map(n => n.type === 'folder' ? { ...n, children: removeById(n.children ?? [], id) } : n);
+    .filter((n) => n.id !== id)
+    .map((n) => (n.type === "folder" ? { ...n, children: removeById(n.children ?? [], id) } : n));
 }
 
 let nodeCounter = 0;
@@ -110,7 +124,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
 
     const newFolder: CollectionNode = {
       id: genNodeId(),
-      type: 'folder',
+      type: "folder",
       name,
       children: [],
     };
@@ -119,7 +133,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     if (parentId) {
       // Check depth constraint
       const parentNode = findNode(updated.root, parentId);
-      if (!parentNode || parentNode.type !== 'folder') return false;
+      if (parentNode?.type !== "folder") return false;
       const depth = getDepth(parentNode);
       if (depth >= MAX_NESTING_DEPTH) return false;
       parentNode.children = [...(parentNode.children ?? []), newFolder];
@@ -141,7 +155,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
 
     const newRequest: CollectionNode = {
       id: genNodeId(),
-      type: 'request',
+      type: "request",
       name,
       request: stripFiles(request),
       method: request.method,
@@ -151,7 +165,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     const updated = { ...collection };
     if (parentId) {
       const parentNode = findNode(updated.root, parentId);
-      if (!parentNode || parentNode.type !== 'folder') return false;
+      if (parentNode?.type !== "folder") return false;
       parentNode.children = [...(parentNode.children ?? []), newRequest];
     } else {
       updated.root = [...updated.root, newRequest];
@@ -212,7 +226,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     // Add to target
     if (targetParentId) {
       const parentNode = findNode(updated.root, targetParentId);
-      if (!parentNode || parentNode.type !== 'folder') return false;
+      if (parentNode?.type !== "folder") return false;
       parentNode.children = [...(parentNode.children ?? []), node];
     } else {
       updated.root = [...updated.root, node];
@@ -229,7 +243,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     set((s) => {
       const map = new Map(s.collections.map((c) => [c.id, c]));
       return {
-        collections: ids.map((id) => map.get(id)!).filter(Boolean),
+        collections: ids
+          .map((id) => map.get(id))
+          .filter((c): c is NonNullable<typeof c> => c != null),
       };
     });
   },
@@ -239,7 +255,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
 export function findNode(nodes: CollectionNode[], id: string): CollectionNode | null {
   for (const node of nodes) {
     if (node.id === id) return node;
-    if (node.type === 'folder') {
+    if (node.type === "folder") {
       const found = findNode(node.children ?? [], id);
       if (found) return found;
     }

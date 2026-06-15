@@ -1,5 +1,16 @@
-import { create } from 'zustand';
-import { RequestConfig, ApiResponse } from '../types';
+import { create } from "zustand";
+import type { ApiResponse, RequestConfig } from "../types";
+
+function pathFromUrl(url: string): string {
+  if (!url) return "Untitled Request";
+  try {
+    const u = new URL(url.startsWith("http") ? url : `https://${url}`);
+    return u.pathname && u.pathname !== "/" ? u.pathname : u.hostname || "Untitled Request";
+  } catch {
+    const m = url.match(/(?:https?:\/\/)?[^/]*(\/[^?# ]*)/);
+    return m?.[1] || url || "Untitled Request";
+  }
+}
 
 export interface Tab {
   id: string;
@@ -17,6 +28,8 @@ interface TabState {
 
   addTab: () => string;
   closeTab: (id: string) => void;
+  closeOtherTabs: (id: string) => void;
+  closeAllTabs: () => void;
   setActiveTab: (id: string) => void;
   updateTabRequest: (id: string, req: Partial<RequestConfig>) => void;
   updateTabResponse: (id: string, res: ApiResponse | null) => void;
@@ -26,17 +39,25 @@ interface TabState {
 }
 
 const defaultRequest = (): RequestConfig => ({
-  name: 'Untitled Request',
-  method: 'GET',
-  url: '',
+  name: "Untitled Request",
+  method: "GET",
+  url: "",
   params: [],
   headers: [],
-  bodyType: 'none',
-  body: '',
+  bodyType: "none",
+  body: "",
   formData: [],
   multipart: [],
   file: null,
-  auth: { type: 'none', username: '', password: '', token: '', apiKey: '', apiValue: '', apiAddTo: 'header' },
+  auth: {
+    type: "none",
+    username: "",
+    password: "",
+    token: "",
+    apiKey: "",
+    apiValue: "",
+    apiAddTo: "header",
+  },
 });
 
 let tabCounter = 1;
@@ -50,9 +71,9 @@ export const useTabStore = create<TabState>((set) => ({
     const id = `tab-${tabCounter++}`;
     const tab: Tab = {
       id,
-      name: 'Untitled Request',
+      name: "Untitled Request",
       nameLocked: false,
-      request: { ...defaultRequest(), name: 'Untitled Request' },
+      request: { ...defaultRequest(), name: "Untitled Request" },
       response: null,
       isLoading: false,
     };
@@ -75,14 +96,16 @@ export const useTabStore = create<TabState>((set) => ({
       if (filtered.length === 0) {
         const newId = `tab-${tabCounter++}`;
         return {
-          tabs: [{
-            id: newId,
-            name: 'Untitled Request',
-            nameLocked: false,
-            request: { ...defaultRequest(), name: 'Untitled Request' },
-            response: null,
-            isLoading: false,
-          }],
+          tabs: [
+            {
+              id: newId,
+              name: "Untitled Request",
+              nameLocked: false,
+              request: { ...defaultRequest(), name: "Untitled Request" },
+              response: null,
+              isLoading: false,
+            },
+          ],
           activeTabId: newId,
         };
       }
@@ -90,13 +113,40 @@ export const useTabStore = create<TabState>((set) => ({
     });
   },
 
+  closeOtherTabs: (id) =>
+    set((s) => {
+      const keep = s.tabs.filter((t) => t.id === id);
+      if (keep.length === 0) return s;
+      return { tabs: keep, activeTabId: id };
+    }),
+
+  closeAllTabs: () => {
+    const newId = `tab-${tabCounter++}`;
+    set({
+      tabs: [
+        {
+          id: newId,
+          name: "Untitled Request",
+          nameLocked: false,
+          request: { ...defaultRequest(), name: "Untitled Request" },
+          response: null,
+          isLoading: false,
+        },
+      ],
+      activeTabId: newId,
+    });
+  },
+
   setActiveTab: (id) => set({ activeTabId: id }),
 
   updateTabRequest: (id, req) =>
     set((s) => ({
-      tabs: s.tabs.map((t) =>
-        t.id === id ? { ...t, request: { ...t.request, ...req } } : t
-      ),
+      tabs: s.tabs.map((t) => {
+        if (t.id !== id) return t;
+        const newRequest = { ...t.request, ...req };
+        const name = !t.nameLocked && req.url !== undefined ? pathFromUrl(req.url) : t.name;
+        return { ...t, request: newRequest, name };
+      }),
     })),
 
   updateTabResponse: (id, res) =>
@@ -111,7 +161,9 @@ export const useTabStore = create<TabState>((set) => ({
 
   setTabName: (id, name) =>
     set((s) => ({
-      tabs: s.tabs.map((t) => (t.id === id ? { ...t, name, nameLocked: true, request: { ...t.request, name } } : t)),
+      tabs: s.tabs.map((t) =>
+        t.id === id ? { ...t, name, nameLocked: true, request: { ...t.request, name } } : t,
+      ),
     })),
   setTabNameLocked: (id, locked) =>
     set((s) => ({

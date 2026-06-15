@@ -1,9 +1,9 @@
-import { invoke } from '@tauri-apps/api/core';
-import { RequestConfig, ApiResponse, HistoryItem } from '../types';
-import { parseUrl, extractEndpoint } from '../lib/url';
-import { replaceEnvVariables } from '../lib/env';
-import { useEnvStore } from '../store/envStore';
-import { useHistoryStore } from '../store/historyStore';
+import { invoke } from "@tauri-apps/api/core";
+import { replaceEnvVariables } from "../lib/env";
+import { extractEndpoint, parseUrl } from "../lib/url";
+import { useEnvStore } from "../store/envStore";
+import { useHistoryStore } from "../store/historyStore";
+import type { ApiResponse, HistoryItem, RequestConfig } from "../types";
 
 export function useApiRequest() {
   const activeEnv = useEnvStore((state) => state.activeEnv);
@@ -15,10 +15,13 @@ export function useApiRequest() {
     // Append query params from the params editor
     const activeParams = config.params?.filter((p) => p.enabled && p.key) ?? [];
     if (activeParams.length > 0) {
-      const separator = url.includes('?') ? '&' : '?';
+      const separator = url.includes("?") ? "&" : "?";
       const queryString = activeParams
-        .map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(replaceEnvVariables(p.value, activeEnv))}`)
-        .join('&');
+        .map(
+          (p) =>
+            `${encodeURIComponent(p.key)}=${encodeURIComponent(replaceEnvVariables(p.value, activeEnv))}`,
+        )
+        .join("&");
       url += separator + queryString;
     }
 
@@ -30,31 +33,31 @@ export function useApiRequest() {
       }));
 
     // Apply auth
-    if (config.auth.type === 'basic' && config.auth.username) {
+    if (config.auth.type === "basic" && config.auth.username) {
       const encoded = btoa(`${config.auth.username}:${config.auth.password}`);
-      headers.push({ key: 'Authorization', value: `Basic ${encoded}` });
-    } else if (config.auth.type === 'bearer' && config.auth.token) {
-      headers.push({ key: 'Authorization', value: `Bearer ${config.auth.token}` });
-    } else if (config.auth.type === 'api-key' && config.auth.apiKey && config.auth.apiValue) {
-      if (config.auth.apiAddTo === 'header') {
+      headers.push({ key: "Authorization", value: `Basic ${encoded}` });
+    } else if (config.auth.type === "bearer" && config.auth.token) {
+      headers.push({ key: "Authorization", value: `Bearer ${config.auth.token}` });
+    } else if (config.auth.type === "api-key" && config.auth.apiKey && config.auth.apiValue) {
+      if (config.auth.apiAddTo === "header") {
         headers.push({ key: config.auth.apiKey, value: config.auth.apiValue });
       } else {
-        const separator = url.includes('?') ? '&' : '?';
+        const separator = url.includes("?") ? "&" : "?";
         url += `${separator}${encodeURIComponent(config.auth.apiKey)}=${encodeURIComponent(config.auth.apiValue)}`;
       }
     }
 
     // For multipart with files, use browser's fetch + FormData
-    if (config.bodyType === 'multipart/form-data') {
+    if (config.bodyType === "multipart/form-data") {
       return sendMultipartRequest(config, url, headers);
     }
 
     let body: string | null = null;
-    if (config.bodyType === 'application/json' && config.body) {
+    if (config.bodyType === "application/json" && config.body) {
       body = replaceEnvVariables(config.body, activeEnv);
-    } else if (config.bodyType === 'text/plain' || config.bodyType === 'text/xml') {
+    } else if (config.bodyType === "text/plain" || config.bodyType === "text/xml") {
       body = replaceEnvVariables(config.body, activeEnv);
-    } else if (config.bodyType === 'application/x-www-form-urlencoded') {
+    } else if (config.bodyType === "application/x-www-form-urlencoded") {
       const params = new URLSearchParams();
       config.formData
         .filter((f) => f.enabled && f.key)
@@ -62,9 +65,9 @@ export function useApiRequest() {
           params.append(f.key, replaceEnvVariables(f.value, activeEnv));
         });
       body = params.toString();
-    } else if (config.bodyType === 'application/octet-stream' && config.file) {
+    } else if (config.bodyType === "application/octet-stream" && config.file) {
       const arrayBuffer = await config.file.arrayBuffer();
-      body = Array.from(new Uint8Array(arrayBuffer)).join(',');
+      body = Array.from(new Uint8Array(arrayBuffer)).join(",");
     }
 
     // Capture sent headers before sending
@@ -79,7 +82,7 @@ export function useApiRequest() {
     let responseError: Error | null = null;
 
     try {
-      response = await invoke<ApiResponse>('send_api_request', {
+      response = await invoke<ApiResponse>("send_api_request", {
         method: config.method,
         url,
         headers,
@@ -92,7 +95,7 @@ export function useApiRequest() {
         statusText: String(e),
         headers: {},
         body: [],
-        contentType: 'text/plain',
+        contentType: "text/plain",
         responseTime: Math.round(performance.now() - startTime),
         size: 0,
         resolvedUrl: url,
@@ -150,7 +153,7 @@ async function sendMultipartRequest(
   const formData = new FormData();
 
   for (const field of config.multipart) {
-    if (!field.enabled || !field.key) continue;
+    if (!(field.enabled && field.key)) continue;
     if (field.isFile && field.file) {
       formData.append(field.key, field.file);
     } else {
@@ -164,7 +167,7 @@ async function sendMultipartRequest(
   try {
     const res = await fetch(url, {
       method: config.method,
-      headers: headers.reduce((acc, h) => ({ ...acc, [h.key]: h.value }), {} as Record<string, string>),
+      headers: Object.fromEntries(headers.filter((h) => h.key).map((h) => [h.key, h.value])),
       body: formData,
     });
 
@@ -172,7 +175,9 @@ async function sendMultipartRequest(
     const bodyBytes = new Uint8Array(await res.arrayBuffer());
 
     const respHeaders: Record<string, string> = {};
-    res.headers.forEach((value, key) => { respHeaders[key] = value; });
+    res.headers.forEach((value, key) => {
+      respHeaders[key] = value;
+    });
 
     const sentHeaders: Record<string, string> = {};
     for (const h of headers) {
@@ -184,7 +189,7 @@ async function sendMultipartRequest(
       statusText: res.statusText,
       headers: respHeaders,
       body: Array.from(bodyBytes),
-      contentType: respHeaders['content-type'] || 'application/octet-stream',
+      contentType: respHeaders["content-type"] || "application/octet-stream",
       responseTime: Math.round(endTime - startTime),
       size: bodyBytes.length,
       resolvedUrl: url,
@@ -200,7 +205,7 @@ async function sendMultipartRequest(
       statusText: String(err),
       headers: {},
       body: [],
-      contentType: 'text/plain',
+      contentType: "text/plain",
       responseTime: 0,
       size: 0,
       resolvedUrl: url,

@@ -1,28 +1,28 @@
-import { useState } from 'react';
-import { PlatformAsset } from '../types/release';
-import { PlatformCard } from './PlatformCard';
+import { useState } from "react";
+import type { PlatformAsset } from "../types/release";
+import { PlatformCard } from "./PlatformCard";
 
 interface DownloadSectionProps {
   assets: PlatformAsset[];
-  detectedOS: PlatformAsset['platform'];
+  detectedOS: PlatformAsset["platform"];
 }
 
 export function DownloadSection({ assets, detectedOS }: DownloadSectionProps) {
-  const [selected, setSelected] = useState<PlatformAsset['platform']>(detectedOS);
+  const [selected, setSelected] = useState<PlatformAsset["platform"]>(detectedOS);
 
-  const selectedAsset = assets.find(a => a.platform === selected) || null;
+  const selectedAsset = assets.find((a) => a.platform === selected) || null;
 
   const handleDownload = () => {
     if (selectedAsset) {
-      window.open(selectedAsset.downloadUrl, '_blank');
+      window.open(selectedAsset.downloadUrl, "_blank");
     }
   };
 
-  const labels: Record<PlatformAsset['platform'], string> = {
-    'darwin-arm64': 'macOS (Apple Silicon)',
-    'darwin-x64': 'macOS (Intel)',
-    'windows': 'Windows',
-    'linux': 'Linux',
+  const labels: Record<PlatformAsset["platform"], string> = {
+    "darwin-arm64": "macOS (Apple Silicon)",
+    "darwin-x64": "macOS (Intel)",
+    windows: "Windows",
+    linux: "Linux",
   };
 
   return (
@@ -37,14 +37,10 @@ export function DownloadSection({ assets, detectedOS }: DownloadSectionProps) {
         {selectedAsset ? (
           <div className="primary-download-card">
             <div className="download-info">
-              <h3 className="download-title">
-                {labels[selectedAsset.platform]}
-              </h3>
-              <p className="download-version">
-                Version displayed on site
-              </p>
+              <h3 className="download-title">{labels[selectedAsset.platform]}</h3>
+              <p className="download-version">Version displayed on site</p>
             </div>
-            <button className="download-btn" onClick={handleDownload}>
+            <button type="button" className="download-btn" onClick={handleDownload}>
               Download
             </button>
           </div>
@@ -60,8 +56,8 @@ export function DownloadSection({ assets, detectedOS }: DownloadSectionProps) {
             <p className="other-platforms-label">Other platforms:</p>
             <div className="platform-grid">
               {assets
-                .filter(a => a.platform !== selected)
-                .map(asset => (
+                .filter((a) => a.platform !== selected)
+                .map((asset) => (
                   <PlatformCard
                     key={asset.platform}
                     asset={asset}

@@ -1,14 +1,14 @@
-import { PlatformAsset } from '../types/release';
+import type { PlatformAsset } from "../types/release";
 
 interface HeroSectionProps {
   primaryDownload: PlatformAsset | null;
   detectedOS: string;
 }
 
-export function HeroSection({ primaryDownload, detectedOS }: HeroSectionProps) {
+export function HeroSection({ primaryDownload, detectedOS: _detectedOS }: HeroSectionProps) {
   const handleGetStarted = () => {
     if (primaryDownload) {
-      window.open(primaryDownload.downloadUrl, '_blank');
+      window.open(primaryDownload.downloadUrl, "_blank");
     }
   };
 
@@ -19,6 +19,7 @@ export function HeroSection({ primaryDownload, detectedOS }: HeroSectionProps) {
         <p className="hero-tagline">API Testing, Simplified.</p>
 
         <button
+          type="button"
           className="hero-cta"
           onClick={handleGetStarted}
           disabled={!primaryDownload}

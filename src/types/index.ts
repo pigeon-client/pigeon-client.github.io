@@ -1,14 +1,14 @@
 // Request types
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
 
 export type BodyType =
-  | 'none'
-  | 'application/json'
-  | 'application/x-www-form-urlencoded'
-  | 'multipart/form-data'
-  | 'text/plain'
-  | 'text/xml'
-  | 'application/octet-stream';
+  | "none"
+  | "application/json"
+  | "application/x-www-form-urlencoded"
+  | "multipart/form-data"
+  | "text/plain"
+  | "text/xml"
+  | "application/octet-stream";
 
 export interface Header {
   key: string;
@@ -47,13 +47,13 @@ export interface RequestConfig {
 }
 
 export interface AuthConfig {
-  type: 'none' | 'basic' | 'bearer' | 'api-key';
+  type: "none" | "basic" | "bearer" | "api-key";
   username: string;
   password: string;
   token: string;
   apiKey: string;
   apiValue: string;
-  apiAddTo: 'header' | 'query';
+  apiAddTo: "header" | "query";
 }
 
 export interface ApiResponse {
@@ -90,10 +90,10 @@ export const MAX_NESTING_DEPTH = 10;
 
 export interface CollectionNode {
   id: string;
-  type: 'folder' | 'request';
+  type: "folder" | "request";
   name: string;
-  children?: CollectionNode[];   // folders only
-  request?: RequestConfig;        // requests only
+  children?: CollectionNode[]; // folders only
+  request?: RequestConfig; // requests only
   method?: HttpMethod;
   url?: string;
 }
@@ -101,14 +101,14 @@ export interface CollectionNode {
 export interface Collection {
   id?: string;
   name: string;
-  root: CollectionNode[];       // tree of folders & requests
+  root: CollectionNode[]; // tree of folders & requests
   createdAt: number;
 }
 
 /** Draft auto-folder hierarchy: domain → subdomain → path folders */
 export interface DraftNode {
   id: string;
-  type: 'folder' | 'request';
+  type: "folder" | "request";
   name: string;
   children: DraftNode[];
   request?: RequestConfig;
@@ -117,5 +117,3 @@ export interface DraftNode {
   /** Key used to match existing drafts (method + normalized URL) */
   matchKey?: string;
 }
-
-

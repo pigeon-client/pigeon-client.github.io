@@ -1,11 +1,20 @@
-import { create } from 'zustand';
-import { HistoryItem, RequestConfig } from '../types';
-import { normalizeUrlForMatch, parseUrl } from '../lib/url';
-import { saveDraft as dbSaveDraft, getDrafts, deleteDraft as dbDeleteDraft, updateDraft as dbUpdateDraft, saveHistory, updateHistory as dbUpdateHistory, getHistory, deleteHistoryEntry } from '../lib/db';
+import { create } from "zustand";
+import {
+  deleteDraft as dbDeleteDraft,
+  saveDraft as dbSaveDraft,
+  updateDraft as dbUpdateDraft,
+  updateHistory as dbUpdateHistory,
+  deleteHistoryEntry,
+  getDrafts,
+  getHistory,
+  saveHistory,
+} from "../lib/db";
+import { normalizeUrlForMatch, parseUrl } from "../lib/url";
+import type { HistoryItem, RequestConfig } from "../types";
 
 /** Normalize a draft URL to ensure it has a protocol for consistent matching */
 function normalizeDraftUrl(url: string): string {
-  return url.startsWith('http://') || url.startsWith('https://') ? url : parseUrl(url);
+  return url.startsWith("http://") || url.startsWith("https://") ? url : parseUrl(url);
 }
 
 interface HistoryState {
@@ -43,8 +52,12 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const history = historyRows.map((r) => ({ ...r.data, id: r.id }));
     const draftDbIds = new Map<number, number>();
     const historyDbIds = new Map<number, number>();
-    drafts.forEach((d, i) => { if (d.id !== undefined) draftDbIds.set(i, d.id); });
-    history.forEach((h, i) => { if (h.id !== undefined) historyDbIds.set(i, h.id); });
+    drafts.forEach((d, i) => {
+      if (d.id !== undefined) draftDbIds.set(i, d.id);
+    });
+    history.forEach((h, i) => {
+      if (h.id !== undefined) historyDbIds.set(i, h.id);
+    });
     set({ drafts, history, draftDbIds, historyDbIds, loaded: true });
   },
 

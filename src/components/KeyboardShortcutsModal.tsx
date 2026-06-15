@@ -1,62 +1,120 @@
-import { X } from 'lucide-react';
+import { Modal, ModalHeader } from "./ImportModal";
 
 interface KeyboardShortcutsModalProps {
   onClose: () => void;
 }
 
-const shortcuts = [
-  { keys: ['⌘', 'Enter'], action: 'Send request' },
-  { keys: ['⌘', 'N'], action: 'New tab/request' },
-  { keys: ['⌘', 'W'], action: 'Close current tab' },
-  { keys: ['⌘', '⇧', '1-9'], action: 'Switch to tab' },
-  { keys: ['⌘', 'F'], action: 'Focus sidebar search' },
-  { keys: ['⌘', 'S'], action: 'Save to collection' },
-  { keys: ['Tab'], action: 'Navigate between fields' },
-  { keys: ['Esc'], action: 'Close modals / blur focused element' },
-  { keys: ['?'], action: 'Show this reference' },
+const SECTIONS: { label: string; shortcuts: { keys: string[]; action: string }[] }[] = [
+  {
+    label: "Requests",
+    shortcuts: [
+      { keys: ["⌘", "Enter"], action: "Send request" },
+      { keys: ["⌘", "N"], action: "New tab" },
+      { keys: ["⌘", "W"], action: "Close tab" },
+      { keys: ["⌘", "⇧", "1–9"], action: "Switch to tab" },
+    ],
+  },
+  {
+    label: "Navigation",
+    shortcuts: [
+      { keys: ["⌘", "F"], action: "Focus sidebar search" },
+      { keys: ["⌘", "S"], action: "Save to collection" },
+      { keys: ["Tab"], action: "Navigate between fields" },
+      { keys: ["Esc"], action: "Close modal / blur focus" },
+    ],
+  },
+  {
+    label: "Other",
+    shortcuts: [
+      { keys: ["?"], action: "Show keyboard shortcuts" },
+      { keys: ["⌘", ","], action: "Open settings" },
+      { keys: ["⌘", "⇧", "E"], action: "Open environment manager" },
+    ],
+  },
 ];
 
-function Kbd({ children }: { children: React.ReactNode }) {
+function Key({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="px-1.5 py-0.5 text-[11px] font-mono bg-bg-hover text-text-primary border border-border-primary rounded min-w-[24px] text-center">
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: 26,
+        height: 24,
+        padding: "0 6px",
+        background: "var(--bg-input)",
+        border: "1px solid var(--border)",
+        borderRadius: 5,
+        fontFamily: "var(--font-mono)",
+        fontSize: 11.5,
+        color: "var(--text-primary)",
+        fontWeight: 600,
+        userSelect: "none",
+        boxShadow: "0 1px 0 var(--border)",
+      }}
+    >
       {children}
-    </kbd>
+    </span>
   );
 }
 
 export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps) {
   return (
-    <div className="backdrop" onClick={onClose}>
-      <div
-        className="modal-card w-[480px] max-h-[70vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="modal-header">
-          <h2 className="text-sm font-semibold text-text-primary">Keyboard Shortcuts</h2>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
-        </div>
+    <Modal onClose={onClose} width={480}>
+      <ModalHeader title="Keyboard Shortcuts" onClose={onClose} />
 
-        {/* Shortcuts list */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1">
-          {shortcuts.map(({ keys, action }) => (
+      <div style={{ padding: "20px 24px", overflowY: "auto", maxHeight: "calc(80vh - 64px)" }}>
+        {SECTIONS.map((section) => (
+          <div key={section.label} style={{ marginBottom: 24 }}>
             <div
-              key={action}
-              className="flex items-center justify-between py-2.5 border-b border-border-primary/50 last:border-0"
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: "var(--text-secondary)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                marginBottom: 12,
+              }}
             >
-              <span className="text-xs text-text-secondary">{action}</span>
-              <div className="flex items-center gap-1">
-                {keys.map((key, i) => (
-                  <span key={i} className="flex items-center gap-0.5">
-                    {i > 0 && <span className="text-text-tertiary text-xs mx-0.5">+</span>}
-                    <Kbd>{key}</Kbd>
-                  </span>
-                ))}
-              </div>
+              {section.label}
             </div>
-          ))}
-        </div>
+            {section.shortcuts.map(({ keys, action }) => (
+              <div
+                key={action}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 0",
+                  borderBottom: "1px solid var(--border)",
+                }}
+              >
+                <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{action}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  {keys.map((key, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: Keys within a shortcut are unique list items
+                    <span key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      {i > 0 && (
+                        <span
+                          style={{
+                            color: "var(--text-placeholder)",
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
+                          +
+                        </span>
+                      )}
+                      <Key>{key}</Key>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
-    </div>
+    </Modal>
   );
 }

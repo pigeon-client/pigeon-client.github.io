@@ -8,8 +8,8 @@
   --accent-hover: #ff8c5a;
   --success: #3fb950;
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
   --space-1: 8px;
   --space-2: 16px;
@@ -148,7 +148,9 @@ button {
   font-weight: 600;
   border: none;
   border-radius: 8px;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
 }
 
 .hero-cta:hover:not(:disabled) {
@@ -194,7 +196,9 @@ button {
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: var(--space-4);
-  transition: border-color 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
 }
 
 .feature-card:hover {
@@ -321,7 +325,9 @@ button {
   color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 500;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
 }
 
 .platform-card:hover {
