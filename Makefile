@@ -2,7 +2,7 @@ APP_NAME = Pigeon
 BUNDLE_ID = com.k1n1.pigeon
 export PATH := $(HOME)/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$(PATH)
 
-.PHONY: all dev build build-release clean install deps open lint format format-check ci-check
+.PHONY: all dev run build build-release clean install deps open lint format format-check ci-check
 
 all: build
 
@@ -21,6 +21,8 @@ ci-check:
 dev:
 	pnpm run tauri dev
 
+run: dev
+
 build:
 	pnpm run tauri build
 
@@ -31,13 +33,11 @@ clean:
 	rm -rf dist
 	rm -rf src-tauri/target
 	rm -rf node_modules
-	rm -f pnpm-lock.yaml
 
 deps:
-	pnpm install
+	pnpm install --frozen-lockfile
 
-install: deps build-release
-	@echo "App built at: src-tauri/target/release/bundle/dmg/$(APP_NAME)*.dmg"
+install: deps
 
 open:
 	open src-tauri/target/release/bundle/dmg/

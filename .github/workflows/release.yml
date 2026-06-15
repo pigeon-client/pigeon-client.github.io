@@ -81,9 +81,6 @@ jobs:
             patchelf \
             libxdo-dev
 
-      - name: Disable release age check
-        run: echo 'minimum-release-age=0' > .npmrc
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
