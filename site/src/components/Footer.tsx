@@ -3,7 +3,7 @@ export function Footer() {
     <footer className="site-footer">
       <div className="footer-content">
         <a
-          href="https://github.com/pigeon-client/pigeon"
+          href="https://github.com/pigeon-client/pigeon-client.github.io"
           target="_blank"
           rel="noopener noreferrer"
           className="footer-link"

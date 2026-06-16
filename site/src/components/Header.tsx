@@ -10,7 +10,7 @@ export function Header({ release }: HeaderProps) {
       <div className="header-inner">
         <div className="header-left">
           <a
-            href="https://github.com/pigeon-client/pigeon"
+            href="https://github.com/pigeon-client/pigeon-client.github.io"
             target="_blank"
             rel="noopener noreferrer"
             className="github-link"
