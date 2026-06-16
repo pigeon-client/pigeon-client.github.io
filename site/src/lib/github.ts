@@ -4,10 +4,10 @@ import type { PlatformAsset } from "../types/release";
  * Parse release data (imported at build time from release.json)
  */
 export function parseRelease(release: {
-  tag_name: string;
-  body: string;
-  published_at: string;
-  assets: { name: string; browser_download_url: string }[];
+  tag_name?: string;
+  body?: string;
+  published_at?: string;
+  assets?: { name: string; browser_download_url: string }[];
 }): {
   version: string;
   notes: string;
@@ -16,7 +16,7 @@ export function parseRelease(release: {
 } {
   const assets: PlatformAsset[] = [];
 
-  for (const asset of release.assets) {
+  for (const asset of release.assets ?? []) {
     const name = asset.name.toLowerCase();
 
     if (
@@ -58,9 +58,9 @@ export function parseRelease(release: {
   }
 
   return {
-    version: release.tag_name.replace(/^v/, ""),
-    notes: release.body || "",
-    publishedAt: release.published_at,
+    version: (release.tag_name ?? "").replace(/^v/, "") || "0.0.0",
+    notes: release.body ?? "",
+    publishedAt: release.published_at ?? "",
     assets,
   };
 }
