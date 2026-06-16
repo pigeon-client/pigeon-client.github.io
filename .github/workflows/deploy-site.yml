@@ -35,8 +35,8 @@ jobs:
         run: |
           curl -sf \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/releases/latest \
-            > src/release.json || true
+            -o src/release.json \
+            https://api.github.com/repos/${{ github.repository }}/releases/latest || true
         working-directory: site
 
       - name: Build
