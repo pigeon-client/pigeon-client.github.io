@@ -3,12 +3,22 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'site/**'
+      - '**.md'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'site/**'
+      - '**.md'
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  lint-typecheck:
-    name: Lint & Type Check
+  ci:
+    name: Lint, Type Check & Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,28 +33,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Biome check (lint + format)
+      - name: Biome check
         run: pnpm ci:check
 
-      - name: TypeScript check
-        run: pnpm exec tsc --noEmit
-
-  build:
-    name: Vite Build
-    runs-on: ubuntu-latest
-    needs: lint-typecheck
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
+      - name: Build (tsc + vite)
         run: pnpm build

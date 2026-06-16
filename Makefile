@@ -6,6 +6,11 @@ export PATH := $(HOME)/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$(PATH)
 
 all: build
 
+deps:
+	pnpm install --frozen-lockfile
+
+install: deps
+
 lint:
 	pnpm run lint
 
@@ -27,17 +32,10 @@ build:
 	pnpm run tauri build
 
 build-release:
-	pnpm run tauri build -- --bundles dmg
+	pnpm run tauri build --bundles dmg
 
 clean:
-	rm -rf dist
-	rm -rf src-tauri/target
-	rm -rf node_modules
-
-deps:
-	pnpm install --frozen-lockfile
-
-install: deps
+	rm -rf dist src-tauri/target node_modules
 
 open:
 	open src-tauri/target/release/bundle/dmg/

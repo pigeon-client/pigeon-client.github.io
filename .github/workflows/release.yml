@@ -101,13 +101,13 @@ jobs:
     steps:
       - name: Publish draft → public
         uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
-            github.rest.repos.updateRelease({
+            await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: ${{ needs.create-release.outputs.release_id }},
               draft: false,
             })
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
