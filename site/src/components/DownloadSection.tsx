@@ -46,8 +46,14 @@ export function DownloadSection({ assets, detectedOS }: DownloadSectionProps) {
           </div>
         ) : (
           <div className="download-unavailable">
-            <p>No download available for your platform.</p>
-            <p>Check the GitHub releases for manual builds.</p>
+            <p>No builds available yet.</p>
+            <a
+              href="https://github.com/pigeon-client/pigeon-client.github.io/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Check GitHub Releases ↗
+            </a>
           </div>
         )}
 

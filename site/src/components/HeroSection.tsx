@@ -18,14 +18,20 @@ export function HeroSection({ primaryDownload, detectedOS: _detectedOS }: HeroSe
         <h1 className="hero-title">PIGEON</h1>
         <p className="hero-tagline">API Testing, Simplified.</p>
 
-        <button
-          type="button"
-          className="hero-cta"
-          onClick={handleGetStarted}
-          disabled={!primaryDownload}
-        >
-          Get Started for Your Platform ▼
-        </button>
+        {primaryDownload ? (
+          <button type="button" className="hero-cta" onClick={handleGetStarted}>
+            Download for Your Platform ▼
+          </button>
+        ) : (
+          <a
+            href="https://github.com/pigeon-client/pigeon-client.github.io/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hero-cta"
+          >
+            View Releases on GitHub ↗
+          </a>
+        )}
         <p className="hero-subtext">or scroll to learn more</p>
       </div>
     </section>
