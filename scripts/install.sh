@@ -19,12 +19,14 @@ hdiutil attach "$TMP_DMG" -mountpoint "$VOLUME" -nobrowse
 
 echo "Copying to Applications..."
 cp -r "$VOLUME/Pigeon.app" /Applications/
+sync
 
 echo "Removing quarantine attribute..."
 xattr -cr /Applications/Pigeon.app
 
 echo "Unmounting DMG..."
-hdiutil detach "$VOLUME" -force
+sleep 1
+hdiutil detach "$VOLUME" -force 2>/dev/null || hdiutil detach "$VOLUME" -force || true
 
 echo "Cleaning up..."
 rm -f "$TMP_DMG"
