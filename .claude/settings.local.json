@@ -59,7 +59,11 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Release exists:', d.get\\('name'\\), '| draft:', d.get\\('draft'\\), '| id:', d.get\\('id'\\)\\) if 'id' in d else print\\('No release for tag v0.1.0 \\(clean\\)'\\)\")",
       "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/releases\")",
       "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/actions/runs?per_page=3\")",
-      "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/actions/runs/27709648931/jobs\")"
+      "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/actions/runs/27709648931/jobs\")",
+      "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/actions/runs/27709648931\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Run status:', d.get\\('status'\\), '| conclusion:', d.get\\('conclusion'\\)\\)\")",
+      "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/releases/tags/v0.1.0\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Release v0.1.0:', 'draft' if d.get\\('draft'\\) else 'PUBLISHED', '| assets:', [a['name'] for a in d.get\\('assets',[]\\)]\\) if 'id' in d else print\\('No release object'\\)\")"
     ]
   }
 }

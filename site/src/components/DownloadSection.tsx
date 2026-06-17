@@ -62,17 +62,22 @@ export function DownloadSection({ assets, detectedOS }: DownloadSectionProps) {
         {selectedAsset && isMac && (
           <div className="install-note">
             <p className="install-note-title">First launch on macOS</p>
-            <p>Pigeon isn't notarized by Apple, so macOS blocks it on first open. To run it:</p>
+            <p>
+              Pigeon isn't notarized by Apple, so the first launch shows{" "}
+              <em>"Apple could not verify…"</em>. This is expected — open it once this way:
+            </p>
             <ol>
-              <li>Drag Pigeon into your Applications folder.</li>
+              <li>Open the .dmg and drag Pigeon into Applications.</li>
               <li>
-                <strong>Right-click</strong> the app → <strong>Open</strong> → <strong>Open</strong>{" "}
-                in the dialog.
+                Double-click Pigeon, then click {""}
+                <strong>Done</strong> on the warning.
+              </li>
+              <li>
+                Go to <strong>System Settings → Privacy &amp; Security</strong>, scroll down, and
+                click <strong>Open Anyway</strong>.
               </li>
             </ol>
-            <p>
-              Still see <em>"Pigeon is damaged"</em>? Open Terminal and run:
-            </p>
+            <p>Or skip all that with one Terminal command:</p>
             <pre>
               <code>xattr -cr /Applications/Pigeon.app</code>
             </pre>

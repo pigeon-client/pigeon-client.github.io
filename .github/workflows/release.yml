@@ -27,11 +27,13 @@ jobs:
           body: |
             ## Install
 
-            **macOS** — Pigeon is not notarized by Apple, so the first launch is blocked.
+            **macOS** — Pigeon is not notarized by Apple, so the first launch shows
+            *"Apple could not verify…"*. This is expected for unsigned apps. To open it:
             1. Open the `.dmg` and drag **Pigeon** into Applications.
-            2. **Right-click** Pigeon → **Open** → **Open**.
+            2. Double-click Pigeon, then click **Done** on the warning.
+            3. Go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**.
 
-            If you see *"Pigeon is damaged and can't be opened"*, run this once in Terminal:
+            Or skip all that with one Terminal command:
             ```
             xattr -cr /Applications/Pigeon.app
             ```
