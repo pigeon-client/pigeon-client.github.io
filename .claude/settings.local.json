@@ -63,7 +63,14 @@
       "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/actions/runs/27709648931\")",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Run status:', d.get\\('status'\\), '| conclusion:', d.get\\('conclusion'\\)\\)\")",
       "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/releases/tags/v0.1.0\")",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Release v0.1.0:', 'draft' if d.get\\('draft'\\) else 'PUBLISHED', '| assets:', [a['name'] for a in d.get\\('assets',[]\\)]\\) if 'id' in d else print\\('No release object'\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Release v0.1.0:', 'draft' if d.get\\('draft'\\) else 'PUBLISHED', '| assets:', [a['name'] for a in d.get\\('assets',[]\\)]\\) if 'id' in d else print\\('No release object'\\)\")",
+      "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/actions/runs?per_page=5\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('state:', 'PUBLISHED' if not d.get\\('draft'\\) else 'draft', '| assets:', len\\(d.get\\('assets',[]\\)\\)\\) if 'id' in d else print\\('GONE'\\)\")",
+      "Bash(git -C /Users/k1n1/Desktop/pigeon log -1 --oneline)",
+      "Read(//Applications/Pigeon.app/**)",
+      "Read(//Users/k1n1/Downloads/**)",
+      "Read(//Volumes/**)",
+      "Bash(curl -s \"https://api.github.com/repos/pigeon-client/pigeon-client.github.io/actions/runs?per_page=8\")"
     ]
   }
 }
