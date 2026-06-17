@@ -30,25 +30,29 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
-            target: x86_64-apple-darwin
-            args: '--target x86_64-apple-darwin'
-            artifact_name: pigeon-x86_64-apple-darwin
-
+          # macOS Apple Silicon → .dmg
           - platform: macos-14
             target: aarch64-apple-darwin
-            args: '--target aarch64-apple-darwin'
-            artifact_name: pigeon-aarch64-apple-darwin
+            args: '--target aarch64-apple-darwin --bundles dmg'
+            artifact_name: macOS-Apple-Silicon
 
-          - platform: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            args: ''
-            artifact_name: pigeon-x86_64-linux
+          # macOS Intel → .dmg
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            args: '--target x86_64-apple-darwin --bundles dmg'
+            artifact_name: macOS-Intel
 
+          # Windows → .exe (NSIS installer)
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
-            args: '--target x86_64-pc-windows-msvc'
-            artifact_name: pigeon-x86_64-windows
+            args: '--target x86_64-pc-windows-msvc --bundles nsis'
+            artifact_name: Windows-x64
+
+          # Linux → .AppImage + .deb
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            args: '--bundles appimage,deb'
+            artifact_name: Linux-x64
 
     runs-on: ${{ matrix.platform }}
     steps:
