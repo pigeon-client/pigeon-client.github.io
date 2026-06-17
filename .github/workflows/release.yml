@@ -22,7 +22,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          append_body: true
           draft: true
+          body: |
+            ## Install
+
+            **macOS** — Pigeon is not notarized by Apple, so the first launch is blocked.
+            1. Open the `.dmg` and drag **Pigeon** into Applications.
+            2. **Right-click** Pigeon → **Open** → **Open**.
+
+            If you see *"Pigeon is damaged and can't be opened"*, run this once in Terminal:
+            ```
+            xattr -cr /Applications/Pigeon.app
+            ```
+
+            **Windows** — run the `.exe` installer. SmartScreen may warn (unsigned): **More info → Run anyway**.
+
+            **Linux** — `.AppImage` (chmod +x, then run) or install the `.deb`.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -33,16 +49,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # macOS Apple Silicon → .dmg
+          # macOS Apple Silicon → .dmg (+ app for updater)
           - platform: macos-14
             target: aarch64-apple-darwin
-            args: '--target aarch64-apple-darwin --bundles dmg'
+            args: '--target aarch64-apple-darwin --bundles app,dmg'
             artifact_name: macOS-Apple-Silicon
 
-          # macOS Intel → .dmg
+          # macOS Intel → .dmg (+ app for updater)
           - platform: macos-latest
             target: x86_64-apple-darwin
-            args: '--target x86_64-apple-darwin --bundles dmg'
+            args: '--target x86_64-apple-darwin --bundles app,dmg'
             artifact_name: macOS-Intel
 
           # Windows → .exe (NSIS installer)

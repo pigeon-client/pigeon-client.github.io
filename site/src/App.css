@@ -296,6 +296,51 @@ button {
   color: var(--text-muted);
 }
 
+.install-note {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.install-note-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.install-note ol {
+  margin: var(--space-1) 0 var(--space-2);
+  padding-left: var(--space-3);
+}
+
+.install-note pre {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: var(--space-1) var(--space-2);
+  overflow-x: auto;
+  margin: var(--space-1) 0;
+}
+
+.install-note code {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+}
+
+.install-note-foot {
+  margin-top: var(--space-1);
+  font-style: italic;
+  opacity: 0.8;
+}
+
 .other-platforms {
   margin-top: var(--space-4);
 }

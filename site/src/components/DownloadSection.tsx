@@ -25,6 +25,8 @@ export function DownloadSection({ assets, detectedOS }: DownloadSectionProps) {
     linux: "Linux",
   };
 
+  const isMac = selected === "darwin-arm64" || selected === "darwin-x64";
+
   return (
     <section className="download-section">
       <h2 className="section-title">Download</h2>
@@ -54,6 +56,27 @@ export function DownloadSection({ assets, detectedOS }: DownloadSectionProps) {
             >
               Check GitHub Releases ↗
             </a>
+          </div>
+        )}
+
+        {selectedAsset && isMac && (
+          <div className="install-note">
+            <p className="install-note-title">First launch on macOS</p>
+            <p>Pigeon isn't notarized by Apple, so macOS blocks it on first open. To run it:</p>
+            <ol>
+              <li>Drag Pigeon into your Applications folder.</li>
+              <li>
+                <strong>Right-click</strong> the app → <strong>Open</strong> → <strong>Open</strong>{" "}
+                in the dialog.
+              </li>
+            </ol>
+            <p>
+              Still see <em>"Pigeon is damaged"</em>? Open Terminal and run:
+            </p>
+            <pre>
+              <code>xattr -cr /Applications/Pigeon.app</code>
+            </pre>
+            <p className="install-note-foot">You only need to do this once.</p>
           </div>
         )}
 
