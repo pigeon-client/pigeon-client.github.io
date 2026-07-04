@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { HistoryItem, RequestConfig } from "../types";
+import type { RequestConfig } from "@/shared/types";
+import type { HistoryItem } from "../types";
 
 function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;

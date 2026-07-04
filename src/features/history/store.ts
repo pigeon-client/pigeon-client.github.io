@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { normalizeUrlForMatch, parseUrl } from "@/shared/lib/url";
+import type { RequestConfig } from "@/shared/types";
 import {
   deleteDraft as dbDeleteDraft,
   saveDraft as dbSaveDraft,
@@ -9,8 +10,8 @@ import {
   getDrafts,
   getHistory,
   saveHistory,
-} from "../lib/db";
-import type { HistoryItem, RequestConfig } from "../types";
+} from "./services/db";
+import type { HistoryItem } from "./types";
 
 /** Normalize a draft URL to ensure it has a protocol for consistent matching */
 function normalizeDraftUrl(url: string): string {

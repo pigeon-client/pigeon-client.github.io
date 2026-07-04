@@ -1,11 +1,11 @@
 import { ChevronRight, Plus, Upload } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useCollectionStore } from "@/features/collections";
+import { useHistoryStore } from "@/features/history";
 import { extractPathSegments, parseUrl } from "@/shared/lib/url";
 import { METHOD_COLORS, MethodBadge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Tab } from "@/shared/ui/tabs-shim";
-import { useHistoryStore } from "../store/historyStore";
 import { useTabStore } from "../store/tabStore";
 import type { CollectionNode, HistoryItem, RequestConfig } from "../types";
 

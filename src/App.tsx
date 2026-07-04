@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useCollectionStore } from "@/features/collections";
+import { useHistoryStore } from "@/features/history";
 import { cn } from "@/shared/lib/utils";
 import { METHOD_COLORS } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -15,7 +16,6 @@ import { ResponsePanel } from "./components/ResponsePanel";
 import { Sidebar } from "./components/Sidebar";
 import { UrlBar } from "./components/UrlBar";
 import { checkForUpdates } from "./lib/updater";
-import { useHistoryStore } from "./store/historyStore";
 import { useTabStore } from "./store/tabStore";
 
 /* ── Empty state when no URL has been typed yet ── */
