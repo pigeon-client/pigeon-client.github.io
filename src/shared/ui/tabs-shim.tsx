@@ -38,7 +38,7 @@ export function Tab({ active = false, onClick, variant = "underline", children }
       onClick={onClick}
       data-state={active ? "active" : "inactive"}
       className={
-        "inline-flex h-9 items-center gap-1.5 border-b-2 px-3 text-xs font-medium transition-colors " +
+        "inline-flex h-8 items-center gap-1.5 border-b-2 px-3 text-xs font-medium transition-colors " +
         (active
           ? "border-primary text-foreground"
           : "border-transparent text-muted-foreground hover:text-foreground")

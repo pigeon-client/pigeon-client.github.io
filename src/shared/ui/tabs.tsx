@@ -22,7 +22,7 @@ const tabsTriggerVariants = cva(
         sidebar:
           "h-7 px-3 rounded text-xs text-muted-foreground hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm",
         underline:
-          "h-9 px-3 text-xs text-muted-foreground border-b-2 border-transparent hover:text-foreground data-[state=active]:text-foreground data-[state=active]:border-primary",
+          "h-8 px-3 text-xs text-muted-foreground border-b-2 border-transparent hover:text-foreground data-[state=active]:text-foreground data-[state=active]:border-primary",
         pills:
           "h-7 px-3 rounded-full text-xs text-muted-foreground hover:text-foreground data-[state=active]:bg-primary/15 data-[state=active]:text-primary",
       },
