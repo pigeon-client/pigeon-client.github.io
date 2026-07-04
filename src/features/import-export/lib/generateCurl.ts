@@ -1,5 +1,5 @@
 import { parseUrl } from "@/shared/lib/url";
-import type { RequestConfig } from "../types";
+import type { RequestConfig } from "@/shared/types";
 
 /**
  * Generate cURL command from request config

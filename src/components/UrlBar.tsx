@@ -2,10 +2,10 @@ import { ChevronDown, Loader2, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { replaceEnvVariables, useEnvStore } from "@/features/environments";
 import { useApiRequest } from "@/features/execution";
+import { parseCurl } from "@/features/import-export";
 import { extractEndpoint, parseUrl } from "@/shared/lib/url";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
-import { parseCurl } from "../services/curlService";
 import { useTabStore } from "../store/tabStore";
 import type { HttpMethod } from "../types";
 

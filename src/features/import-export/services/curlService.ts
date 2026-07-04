@@ -1,5 +1,5 @@
 import { toJsonObject } from "curlconverter";
-import type { BodyType, HttpMethod, KeyValue, RequestConfig } from "../types";
+import type { BodyType, HttpMethod, KeyValue, RequestConfig } from "@/shared/types";
 
 const VALID_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
 

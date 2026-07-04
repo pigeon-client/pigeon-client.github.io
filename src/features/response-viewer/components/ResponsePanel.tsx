@@ -1,7 +1,7 @@
 import hljs from "highlight.js";
 import { Download, FileCode, Terminal } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { generateCurl } from "@/lib/curl";
+import { generateCurl } from "@/features/import-export";
 import { Button } from "@/shared/ui/button";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { Tab } from "@/shared/ui/tabs-shim";

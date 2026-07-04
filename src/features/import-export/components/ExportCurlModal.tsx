@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
-import { generateCurl } from "../lib/curl";
-import { useTabStore } from "../store/tabStore";
+import { useTabStore } from "@/store/tabStore";
+import { generateCurl } from "../lib/generateCurl";
 
 interface ExportCurlModalProps {
   onClose: () => void;

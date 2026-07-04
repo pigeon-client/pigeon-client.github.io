@@ -103,7 +103,9 @@
       "Bash(sed -i '' 's|import { EnvModal } from \"./components/EnvModal\";|import { EnvModal } from \"@/features/environments\";|' src/App.tsx)",
       "Bash(sed -i '' 's|import { useEnvStore } from \"../store/envStore\";|import { useEnvStore } from \"@/features/environments\";|' src/hooks/useApiRequest.ts)",
       "Bash(sed -i '' 's|import { useApiRequest } from \"../hooks/useApiRequest\";|import { useApiRequest } from \"@/features/execution\";|' src/components/UrlBar.tsx)",
-      "Bash(sed -i '' 's|import type { ApiResponse, RequestConfig } from \"../types\";|import type { RequestConfig } from \"@/shared/types\";\\\\nimport type { ApiResponse } from \"@/features/execution\";|' src/store/tabStore.ts)"
+      "Bash(sed -i '' 's|import type { ApiResponse, RequestConfig } from \"../types\";|import type { RequestConfig } from \"@/shared/types\";\\\\nimport type { ApiResponse } from \"@/features/execution\";|' src/store/tabStore.ts)",
+      "Bash(sed -i '' 's|from \"../types\"|from \"@/shared/types\"|' src/features/import-export/services/curlService.ts)",
+      "Bash(sed -i '' 's|import type { RequestConfig } from \"../types\";|import type { RequestConfig } from \"@/shared/types\";|' src/features/import-export/lib/generateCurl.ts)"
     ]
   }
 }
