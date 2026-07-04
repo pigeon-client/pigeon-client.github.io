@@ -1,60 +1,18 @@
-// Request types
-export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
+// TRANSITIONAL barrel — core types now live in @/shared/types.
+// Feature-specific types get relocated to their features during migration.
+// Existing `../types` imports keep resolving through here until then.
 
-export type BodyType =
-  | "none"
-  | "application/json"
-  | "application/x-www-form-urlencoded"
-  | "multipart/form-data"
-  | "text/plain"
-  | "text/xml"
-  | "application/octet-stream";
+export type {
+  AuthConfig,
+  BodyType,
+  FileData,
+  Header,
+  HttpMethod,
+  KeyValue,
+  RequestConfig,
+} from "../shared/types";
 
-export interface Header {
-  key: string;
-  value: string;
-  enabled: boolean;
-}
-
-export interface KeyValue {
-  key: string;
-  value: string;
-  enabled: boolean;
-  isFile?: boolean;
-  file?: File | null;
-  fileName?: string;
-}
-
-export interface FileData {
-  name: string;
-  data: number[];
-  type: string;
-}
-
-export interface RequestConfig {
-  id?: number;
-  name: string;
-  method: HttpMethod;
-  url: string;
-  params: KeyValue[];
-  headers: Header[];
-  bodyType: BodyType;
-  body: string;
-  formData: KeyValue[];
-  multipart: KeyValue[];
-  file: File | null;
-  auth: AuthConfig;
-}
-
-export interface AuthConfig {
-  type: "none" | "basic" | "bearer" | "api-key";
-  username: string;
-  password: string;
-  token: string;
-  apiKey: string;
-  apiValue: string;
-  apiAddTo: "header" | "query";
-}
+// ── Feature types (relocated per-feature later) ──
 
 export interface ApiResponse {
   status: number;
@@ -73,6 +31,8 @@ export interface Environment {
   name: string;
   variables: Record<string, string>;
 }
+
+import type { HttpMethod, RequestConfig } from "../shared/types";
 
 export interface HistoryItem {
   id?: number;

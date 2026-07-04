@@ -110,74 +110,31 @@ export function HeadersEditor({ headers, onHeadersChange }: HeadersEditorProps) 
       />
 
       {/* Auto-generated section */}
-      <div
-        style={{
-          fontSize: 10.5,
-          fontWeight: 600,
-          color: "var(--text-placeholder)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          margin: "16px 0 4px",
-        }}
-      >
+      <div className="mb-1 mt-4 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
         Auto-generated
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "28px 1fr 1.4fr 28px",
-          alignItems: "center",
-          height: 34,
-          opacity: 0.62,
-        }}
-      >
-        <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span
-            style={{
-              width: 16,
-              height: 16,
-              borderRadius: 4,
-              background: "var(--border)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+      <div className="grid h-8.5 grid-cols-[28px_1fr_1.4fr_28px] items-center opacity-60">
+        <span className="flex items-center justify-center">
+          <span className="flex h-4 w-4 items-center justify-center rounded bg-muted">
             <svg
               width="9"
               height="9"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="var(--text-secondary)"
+              stroke="currentColor"
               strokeWidth="3.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
+              className="text-muted-foreground"
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </span>
         </span>
-        <span
-          style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-secondary)" }}
-        >
-          Content-Type
-        </span>
-        <span
-          style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-secondary)" }}
-        >
-          application/json
-        </span>
-        <span
-          style={{
-            fontSize: 9,
-            color: "var(--text-placeholder)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
-          auto
-        </span>
+        <span className="font-mono text-[13px] text-muted-foreground">Content-Type</span>
+        <span className="font-mono text-[13px] text-muted-foreground">application/json</span>
+        <span className="text-[9px] uppercase tracking-wide text-muted-foreground">auto</span>
       </div>
     </div>
   );

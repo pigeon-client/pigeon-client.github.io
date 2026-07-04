@@ -1,4 +1,4 @@
-import { Modal, ModalHeader } from "./ImportModal";
+import { Modal, ModalHeader } from "@/shared/ui/Modal";
 
 interface KeyboardShortcutsModalProps {
   onClose: () => void;
@@ -26,7 +26,7 @@ const SECTIONS: { label: string; shortcuts: { keys: string[]; action: string }[]
   {
     label: "Other",
     shortcuts: [
-      { keys: ["?"], action: "Show keyboard shortcuts" },
+      { keys: ["⇧", "?"], action: "Show keyboard shortcuts" },
       { keys: ["⌘", ","], action: "Open settings" },
       { keys: ["⌘", "⇧", "E"], action: "Open environment manager" },
     ],
@@ -35,27 +35,9 @@ const SECTIONS: { label: string; shortcuts: { keys: string[]; action: string }[]
 
 function Key({ children }: { children: React.ReactNode }) {
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minWidth: 26,
-        height: 24,
-        padding: "0 6px",
-        background: "var(--bg-input)",
-        border: "1px solid var(--border)",
-        borderRadius: 5,
-        fontFamily: "var(--font-mono)",
-        fontSize: 11.5,
-        color: "var(--text-primary)",
-        fontWeight: 600,
-        userSelect: "none",
-        boxShadow: "0 1px 0 var(--border)",
-      }}
-    >
+    <kbd className="inline-flex h-6 min-w-[26px] select-none items-center justify-center rounded border border-border bg-muted px-1.5 font-mono text-[11.5px] font-semibold text-foreground">
       {children}
-    </span>
+    </kbd>
   );
 }
 
@@ -64,54 +46,33 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
     <Modal onClose={onClose} width={480}>
       <ModalHeader title="Keyboard Shortcuts" onClose={onClose} />
 
-      <div style={{ padding: "20px 24px", overflowY: "auto", maxHeight: "calc(80vh - 64px)" }}>
+      <div className="max-h-[calc(80vh-64px)] space-y-6 overflow-y-auto p-5">
         {SECTIONS.map((section) => (
-          <div key={section.label} style={{ marginBottom: 24 }}>
-            <div
-              style={{
-                fontSize: 10.5,
-                fontWeight: 700,
-                color: "var(--text-secondary)",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                marginBottom: 12,
-              }}
-            >
+          <div key={section.label}>
+            <div className="mb-3 text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">
               {section.label}
             </div>
-            {section.shortcuts.map(({ keys, action }) => (
-              <div
-                key={action}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 0",
-                  borderBottom: "1px solid var(--border)",
-                }}
-              >
-                <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{action}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  {keys.map((key, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: Keys within a shortcut are unique list items
-                    <span key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      {i > 0 && (
-                        <span
-                          style={{
-                            color: "var(--text-placeholder)",
-                            fontSize: 11,
-                            fontWeight: 600,
-                          }}
-                        >
-                          +
-                        </span>
-                      )}
-                      <Key>{key}</Key>
-                    </span>
-                  ))}
+            <div className="space-y-0">
+              {section.shortcuts.map(({ keys, action }) => (
+                <div
+                  key={action}
+                  className="flex items-center justify-between border-b border-border py-2.5"
+                >
+                  <span className="text-[13px] text-muted-foreground">{action}</span>
+                  <div className="flex items-center gap-1">
+                    {keys.map((key, i) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: keys array is a fixed ordered tuple per shortcut entry
+                      <span key={`${action}-${key}-${i}`} className="flex items-center gap-1">
+                        {i > 0 && (
+                          <span className="text-[11px] font-semibold text-muted-foreground">+</span>
+                        )}
+                        <Key>{key}</Key>
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ))}
       </div>

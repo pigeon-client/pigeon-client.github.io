@@ -1,13 +1,13 @@
-import { ChevronRight, Search, Upload, X } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
-import { extractPathSegments, parseUrl } from "../lib/url";
+import { ChevronRight, Plus, Upload } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { extractPathSegments, parseUrl } from "@/shared/lib/url";
+import { METHOD_COLORS, MethodBadge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Tab } from "@/shared/ui/tabs-shim";
 import { useCollectionStore } from "../store/collectionStore";
 import { useHistoryStore } from "../store/historyStore";
 import { useTabStore } from "../store/tabStore";
 import type { CollectionNode, HistoryItem, RequestConfig } from "../types";
-import { METHOD_COLORS, MethodBadge } from "./ui/Badge";
-import { Button } from "./ui/Button";
-import { Tab } from "./ui/Tab";
 
 type SidebarTab = "history" | "draft" | "collections";
 
@@ -115,7 +115,7 @@ function TreeRow({
         display: "flex",
         alignItems: "center",
         height: 28,
-        borderRadius: 6,
+        borderRadius: "var(--radius)",
         cursor: "pointer",
         paddingLeft: 4 + depth * 14,
         paddingRight: 10,
@@ -182,7 +182,7 @@ function TreeRow({
                 color: "var(--text-secondary)",
                 background: "var(--bg-elevated)",
                 border: "1px solid var(--border)",
-                borderRadius: 20,
+                borderRadius: "var(--radius)",
                 padding: "0 7px",
                 marginLeft: 8,
                 flexShrink: 0,
@@ -267,7 +267,7 @@ function TreeRow({
                 justifyContent: "center",
                 width: 16,
                 height: 16,
-                borderRadius: 3,
+                borderRadius: "var(--radius)",
                 color: "var(--text-secondary)",
                 marginLeft: 4,
                 background: "none",
@@ -314,7 +314,7 @@ function CollectionTreeNode({
   onDelete?: (id: string) => void;
   collectionId?: string;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const removeNode = useCollectionStore((s) => s.removeNode);
 
   if (node.type === "request") {
@@ -456,7 +456,7 @@ function AutoTree({
   onSelect: (req: RequestConfig) => void;
   onDelete?: (node: CollectionNode) => void;
 }) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
   return (
     <>
@@ -475,7 +475,7 @@ function AutoTree({
             />
           );
         }
-        const expanded = !collapsed[n.id];
+        const expanded = !!expandedNodes[n.id];
         return (
           <div key={n.id}>
             <TreeRow
@@ -486,7 +486,7 @@ function AutoTree({
               iconColor={depth === 0 ? "var(--accent)" : "var(--text-secondary)"}
               showCount={depth === 0}
               count={(n as InternalNode)._count}
-              onClick={() => setCollapsed((c) => ({ ...c, [n.id]: !c[n.id] }))}
+              onClick={() => setExpandedNodes((e) => ({ ...e, [n.id]: !e[n.id] }))}
             />
             {expanded && (
               <AutoTree
@@ -534,7 +534,7 @@ function HistoryRow({
         display: "flex",
         alignItems: "center",
         height: 30,
-        borderRadius: 6,
+        borderRadius: "var(--radius)",
         cursor: "pointer",
         paddingLeft: 8,
         paddingRight: 10,
@@ -596,7 +596,7 @@ function HistoryRow({
             justifyContent: "center",
             width: 16,
             height: 16,
-            borderRadius: 3,
+            borderRadius: "var(--radius)",
             color: "var(--text-secondary)",
             marginLeft: 4,
             background: "none",
@@ -630,9 +630,10 @@ function HistoryRow({
 /* ── Main Sidebar ── */
 interface SidebarProps {
   onImportClick: () => void;
+  search: string;
 }
 
-export function Sidebar({ onImportClick }: SidebarProps) {
+export function Sidebar({ onImportClick, search }: SidebarProps) {
   const addTab = useTabStore((s) => s.addTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
@@ -646,13 +647,10 @@ export function Sidebar({ onImportClick }: SidebarProps) {
   const collections = useCollectionStore((s) => s.collections);
   const addCollection = useCollectionStore((s) => s.addCollection);
   const deleteCollection = useCollectionStore((s) => s.deleteCollection);
-  const [activeTab, setActiveTabState] = useState<SidebarTab>("history");
-  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTabState] = useState<SidebarTab>("draft");
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [newCollInput, setNewCollInput] = useState("");
   const [showNewColl, setShowNewColl] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
 
   const loadRequest = (req: RequestConfig) => {
     if (tabs.length === 1 && !tabs[0].request.url) {
@@ -675,6 +673,33 @@ export function Sidebar({ onImportClick }: SidebarProps) {
     [search],
   );
 
+  /* Recursive collection tree filter — keeps ancestors of matching nodes */
+  const filterTree = useCallback(
+    (nodes: CollectionNode[]): CollectionNode[] => {
+      if (!search) return nodes;
+      const out: CollectionNode[] = [];
+      for (const n of nodes) {
+        const selfMatch = filter(n.name) || (n.url ? filter(n.url) : false);
+        const children = n.children ? filterTree(n.children) : [];
+        if (selfMatch || children.length > 0) {
+          out.push({ ...n, children: children.length > 0 ? children : n.children });
+        }
+      }
+      return out;
+    },
+    [filter, search],
+  );
+
+  /* Collections filtered by search */
+  const filteredCollections = useMemo(
+    () =>
+      collections
+        .filter((c) => c.id)
+        .filter((c) => !search || filter(c.name) || filterTree(c.root).length > 0)
+        .map((c) => ({ ...c, root: search ? filterTree(c.root) : c.root })),
+    [collections, search, filter, filterTree],
+  );
+
   /* Draft tree */
   const draftTree = useMemo(() => {
     const reqs = drafts
@@ -693,7 +718,7 @@ export function Sidebar({ onImportClick }: SidebarProps) {
     const buckets: Record<string, HistoryItem[]> = {};
     const order = ["Today", "Yesterday", "This Week", "Last Week", "Older"];
     for (const item of history) {
-      if (!filter(item.url)) continue;
+      if (!filter(item.name || item.url)) continue;
       const b = getDateBucket(item.timestamp);
       if (!buckets[b]) buckets[b] = [];
       buckets[b].push(item);
@@ -713,56 +738,25 @@ export function Sidebar({ onImportClick }: SidebarProps) {
   }, [drafts]);
 
   return (
-    <div
-      style={{
-        flexShrink: 0,
-        width: 270,
-        display: "flex",
-        flexDirection: "column",
-        background: "var(--bg-surface)",
-        borderRight: "1px solid var(--border)",
-        minHeight: 0,
-      }}
-    >
+    <aside className="flex w-full min-w-0 flex-col border-r border-border bg-sidebar text-sidebar-foreground min-h-0">
       {/* New Request + Import */}
-      <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "12px 10px 6px" }}>
+      <div className="flex flex-shrink-0 gap-2 px-2.5 pt-3 pb-1.5">
         <Button
-          variant="elevated"
+          variant="default"
           size="sm"
           onClick={handleNewRequest}
-          style={{ flex: 1, justifyContent: "center", fontSize: 12.5, fontWeight: 600 }}
+          className="flex-1 justify-center font-semibold"
         >
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--accent)"
-            strokeWidth="2.3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <Plus className="h-3.5 w-3.5" />
           New Request
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onImportClick}
-          title="Import cURL"
-          style={{ paddingLeft: 10, paddingRight: 10, fontSize: 12.5 }}
-        >
-          <Upload size={14} />
-          Import
+        <Button variant="outline" size="sm" onClick={onImportClick} title="Import cURL">
+          <Upload className="h-3.5 w-3.5" />
         </Button>
       </div>
 
-      {/* Sidebar tabs */}
-      <div style={{ flexShrink: 0, display: "flex", padding: "8px 8px 0", gap: 2 }}>
+      {/* Sidebar tabs — 3 equal columns */}
+      <div className="grid grid-cols-3 gap-1 px-2 pt-1">
         {(["history", "draft", "collections"] as SidebarTab[]).map((t) => (
           <Tab
             key={t}
@@ -775,95 +769,8 @@ export function Sidebar({ onImportClick }: SidebarProps) {
         ))}
       </div>
 
-      {/* Search */}
-      <div style={{ flexShrink: 0, padding: "8px 10px" }}>
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            alignItems: "center",
-            height: 34,
-            background: "var(--bg-input)",
-            border: `1px solid ${searchFocused ? "var(--border-focus)" : "var(--border)"}`,
-            borderRadius: 6,
-            transition: "border-color 0.1s",
-          }}
-        >
-          <Search
-            size={13}
-            style={{ color: "var(--text-secondary)", flexShrink: 0, marginLeft: 10 }}
-          />
-          <input
-            ref={searchRef}
-            data-sidebar-search
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            placeholder="Search…"
-            style={{
-              flex: 1,
-              height: "100%",
-              background: "transparent",
-              border: "none",
-              outline: "none",
-              color: "var(--text-primary)",
-              fontFamily: "inherit",
-              fontSize: 12.5,
-              padding: "0 8px",
-              /* leave room for kbd or clear btn on the right */
-              paddingRight: 34,
-            }}
-          />
-          {/* Clear button — shown when typing */}
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              style={{
-                position: "absolute",
-                right: 8,
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--text-secondary)",
-                cursor: "pointer",
-                display: "flex",
-                background: "none",
-                border: "none",
-                padding: 2,
-              }}
-            >
-              <X size={12} />
-            </button>
-          )}
-          {/* ⌘F hint — shown only when idle */}
-          {!(searchFocused || search) && (
-            <kbd
-              style={{
-                position: "absolute",
-                right: 8,
-                top: "50%",
-                transform: "translateY(-50%)",
-                fontFamily: "var(--font-mono)",
-                fontSize: 10,
-                color: "var(--text-placeholder)",
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                borderRadius: 4,
-                padding: "1px 5px",
-                pointerEvents: "none",
-                lineHeight: 1.6,
-              }}
-            >
-              ⌘F
-            </kbd>
-          )}
-        </div>
-      </div>
-
       {/* Tab content */}
-      <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", padding: "2px 0 14px" }}>
+      <div className="flex-1 overflow-auto px-0 py-0.5 pb-3.5">
         {/* ── HISTORY ── */}
         {activeTab === "history" &&
           (groupedHistory.order.length === 0 ? (
@@ -919,155 +826,157 @@ export function Sidebar({ onImportClick }: SidebarProps) {
               label="No collections yet"
               action={{ label: "+ Create Collection", onClick: () => setShowNewColl(true) }}
             />
+          ) : filteredCollections.length === 0 ? (
+            <EmptyState icon="🔍" label="No matches" sub="Try a different search term" />
           ) : (
             <>
-              {collections
-                .filter((c) => c.id)
-                .map((collection) => {
-                  const id = collection.id as string;
-                  const isExpanded = expandedCollections.has(id);
-                  return (
-                    <div key={id}>
-                      {/* Collection header */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedCollections((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(id)) next.delete(id);
-                            else next.add(id);
-                            return next;
-                          })
-                        }
+              {filteredCollections.map((collection) => {
+                const id = collection.id as string;
+                const isExpanded = expandedCollections.has(id);
+                return (
+                  <div key={id}>
+                    {/* Collection header */}
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      aria-label={`${isExpanded ? "Collapse" : "Expand"} ${collection.name}`}
+                      onClick={() =>
+                        setExpandedCollections((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(id)) next.delete(id);
+                          else next.add(id);
+                          return next;
+                        })
+                      }
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        height: 28,
+                        borderRadius: "var(--radius)",
+                        cursor: "pointer",
+                        padding: "0 10px 0 8px",
+                        margin: "0 4px",
+                        transition: "background 0.1s",
+                        width: "100%",
+                        border: "none",
+                        background: "none",
+                        fontFamily: "inherit",
+                        textAlign: "left",
+                      }}
+                      className="hover:bg-[var(--bg-elevated)]"
+                    >
+                      <span
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          height: 28,
-                          borderRadius: 6,
-                          cursor: "pointer",
-                          padding: "0 10px 0 8px",
-                          margin: "0 4px",
-                          transition: "background 0.1s",
-                          width: "100%",
-                          border: "none",
-                          background: "none",
-                          fontFamily: "inherit",
-                          textAlign: "left",
+                          flexShrink: 0,
+                          width: 16,
+                          color: "var(--text-secondary)",
+                          transform: isExpanded ? "rotate(90deg)" : "none",
+                          transition: "transform 120ms ease",
                         }}
-                        className="hover:bg-[var(--bg-elevated)]"
                       >
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            flexShrink: 0,
-                            width: 16,
-                            color: "var(--text-secondary)",
-                            transform: isExpanded ? "rotate(90deg)" : "none",
-                            transition: "transform 120ms ease",
-                          }}
-                        >
-                          <ChevronRight size={12} strokeWidth={2.6} />
-                        </span>
+                        <ChevronRight size={12} strokeWidth={2.6} />
+                      </span>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--accent)"
+                        strokeWidth="1.9"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ flexShrink: 0, marginRight: 7 }}
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                      </svg>
+                      <span
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {collection.name}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: "var(--text-secondary)",
+                          background: "var(--bg-elevated)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius)",
+                          padding: "0 7px",
+                          marginLeft: 8,
+                        }}
+                      >
+                        {collection.root.length}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Delete collection"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteCollection(id);
+                        }}
+                        style={{
+                          flexShrink: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 16,
+                          height: 16,
+                          borderRadius: "var(--radius)",
+                          color: "var(--text-secondary)",
+                          marginLeft: 6,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                        className="hover:text-[#F87171]"
+                      >
                         <svg
-                          width="14"
-                          height="14"
+                          width="11"
+                          height="11"
                           viewBox="0 0 24 24"
                           fill="none"
-                          stroke="var(--accent)"
-                          strokeWidth="1.9"
+                          stroke="currentColor"
+                          strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          style={{ flexShrink: 0, marginRight: 7 }}
                           aria-hidden="true"
                           focusable="false"
                         >
-                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                         </svg>
-                        <span
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            fontFamily: "var(--font-mono)",
-                            fontSize: 12.5,
-                            fontWeight: 600,
-                            color: "var(--text-primary)",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {collection.name}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 600,
-                            color: "var(--text-secondary)",
-                            background: "var(--bg-elevated)",
-                            border: "1px solid var(--border)",
-                            borderRadius: 20,
-                            padding: "0 7px",
-                            marginLeft: 8,
-                          }}
-                        >
-                          {collection.root.length}
-                        </span>
-                        <button
-                          type="button"
-                          aria-label="Delete collection"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteCollection(id);
-                          }}
-                          style={{
-                            flexShrink: 0,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: 16,
-                            height: 16,
-                            borderRadius: 3,
-                            color: "var(--text-secondary)",
-                            marginLeft: 6,
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: 0,
-                          }}
-                          className="hover:text-[#F87171]"
-                        >
-                          <svg
-                            width="11"
-                            height="11"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                            focusable="false"
-                          >
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                        </button>
                       </button>
+                    </button>
 
-                      {isExpanded &&
-                        collection.root.map((node) => (
-                          <CollectionTreeNode
-                            key={node.id}
-                            node={node}
-                            depth={1}
-                            onSelect={loadRequest}
-                            collectionId={collection.id}
-                          />
-                        ))}
-                    </div>
-                  );
-                })}
+                    {isExpanded &&
+                      collection.root.map((node) => (
+                        <CollectionTreeNode
+                          key={node.id}
+                          node={node}
+                          depth={1}
+                          onSelect={loadRequest}
+                          collectionId={collection.id}
+                        />
+                      ))}
+                  </div>
+                );
+              })}
 
               {/* New collection input */}
               {showNewColl ? (
@@ -1087,7 +996,7 @@ export function Sidebar({ onImportClick }: SidebarProps) {
                       padding: "0 10px",
                       background: "var(--bg-input)",
                       border: "1px solid var(--border)",
-                      borderRadius: 7,
+                      borderRadius: "var(--radius)",
                     }}
                   >
                     <svg
@@ -1147,7 +1056,7 @@ export function Sidebar({ onImportClick }: SidebarProps) {
                         fontSize: 10,
                         color: "var(--text-secondary)",
                         border: "1px solid var(--border)",
-                        borderRadius: 4,
+                        borderRadius: "var(--radius)",
                         padding: "0 5px",
                       }}
                     >
@@ -1199,34 +1108,15 @@ export function Sidebar({ onImportClick }: SidebarProps) {
       </div>
 
       {/* Status bar */}
-      <div
-        style={{
-          flexShrink: 0,
-          height: 24,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 12px",
-          borderTop: "1px solid var(--border)",
-        }}
-      >
-        <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
+      <div className="flex h-6 flex-shrink-0 items-center justify-between border-t border-border px-3">
+        <span className="text-[10px] text-muted-foreground">
           {history.length} requests · {drafts.length} drafts
         </span>
-        <kbd
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            color: "var(--text-placeholder)",
-            border: "1px solid var(--border)",
-            borderRadius: 4,
-            padding: "0 5px",
-          }}
-        >
+        <kbd className="rounded border border-border px-1 font-mono text-[10px] text-muted-foreground">
           ?
         </kbd>
       </div>
-    </div>
+    </aside>
   );
 }
 

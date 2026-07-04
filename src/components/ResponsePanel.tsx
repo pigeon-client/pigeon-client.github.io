@@ -1,11 +1,11 @@
 import hljs from "highlight.js";
 import { Download, FileCode, Terminal } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { Button } from "@/shared/ui/button";
+import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
+import { Tab } from "@/shared/ui/tabs-shim";
 import { generateCurl } from "../lib/curl";
 import { useTabStore } from "../store/tabStore";
-import { Button } from "./ui/Button";
-import { HighlightedHtml } from "./ui/HighlightedHtml";
-import { Tab } from "./ui/Tab";
 
 function formatBody(body: number[]): string {
   return new TextDecoder().decode(new Uint8Array(body));
@@ -71,7 +71,13 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
 
   return (
     <div
-      style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: 13, lineHeight: "21px" }}
+      style={{
+        display: "flex",
+        fontFamily: "var(--font-mono)",
+        fontSize: 13,
+        lineHeight: "21px",
+        minWidth: "max-content",
+      }}
     >
       {/* Line numbers */}
       <div
@@ -83,6 +89,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
           color: "var(--text-placeholder)",
           userSelect: "none",
           fontSize: 12.5,
+          lineHeight: "21px",
         }}
       >
         {lineNums.map((num) => (
@@ -98,6 +105,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
           margin: 0,
           padding: "0 18px 6px 0",
           overflow: "visible",
+          whiteSpace: "pre",
           background: "transparent",
         }}
       >
@@ -181,7 +189,7 @@ function EmptyResponse() {
           padding: "0 12px",
           background: "transparent",
           border: "1px solid var(--border)",
-          borderRadius: 6,
+          borderRadius: "var(--radius)",
           color: "var(--text-secondary)",
           fontFamily: "inherit",
           fontSize: 12,
@@ -281,44 +289,23 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
   const statusColor = getStatusColor(response.status);
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      {/* Status bar */}
-      <div
-        style={{
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          height: 46,
-          padding: "0 18px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div
+      className="flex min-h-0 flex-1 flex-col border-t border-border"
+      style={{ overflow: "hidden" }}
+    >
+      {/* Combined status + tabs + actions row */}
+      <div className="flex h-11 flex-shrink-0 items-center gap-3 border-b border-border px-4">
+        <div className="flex items-center gap-2">
           <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: statusColor,
-              boxShadow: `0 0 8px ${statusColor}99`,
-              flexShrink: 0,
-            }}
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ background: statusColor, boxShadow: `0 0 8px ${statusColor}99` }}
           />
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 13.5,
-              fontWeight: 600,
-              color: statusColor,
-            }}
-          >
+          <span className="font-mono text-[13px] font-semibold" style={{ color: statusColor }}>
             {response.status} {response.statusText}
           </span>
         </div>
-        <span style={{ width: 1, height: 16, background: "var(--border)", margin: "0 16px" }} />
-        <div
-          style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--text-secondary)" }}
-        >
+        <div className="h-4 w-px bg-border" />
+        <div className="flex items-center gap-1.5 text-muted-foreground">
           <svg
             width="13"
             height="13"
@@ -333,9 +320,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>
-            {response.responseTime} ms
-          </span>
+          <span className="font-mono text-[13px]">{response.responseTime} ms</span>
         </div>
         <span style={{ width: 1, height: 16, background: "var(--border)", margin: "0 16px" }} />
         <div
@@ -359,16 +344,21 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
           </span>
         </div>
         <div style={{ flex: 1 }} />
+        {/* Body / Headers tabs */}
+        <Tab active={activeTab === "body"} onClick={() => setActiveTab("body")}>
+          Body
+        </Tab>
+        <Tab active={activeTab === "headers"} onClick={() => setActiveTab("headers")}>
+          Headers
+          {Object.keys(response.headers).length > 0 && (
+            <span className="ml-0.5 text-[10px] font-semibold text-muted-foreground">
+              {Object.keys(response.headers).length}
+            </span>
+          )}
+        </Tab>
+        <div className="mx-2 h-4 w-px bg-border" />
         {/* Pretty / Raw toggle — neutral, NOT accent */}
-        <div
-          style={{
-            display: "flex",
-            background: "var(--bg-input)",
-            border: "1px solid var(--border)",
-            borderRadius: 7,
-            padding: 2,
-          }}
-        >
+        <div className="flex rounded border border-border bg-card p-0.5">
           {[
             { val: true, label: "Pretty" },
             { val: false, label: "Raw" },
@@ -377,66 +367,24 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
               type="button"
               key={label}
               onClick={() => setPretty(val)}
-              style={{
-                height: 24,
-                padding: "0 13px",
-                background: pretty === val ? "var(--border)" : "transparent",
-                border: "none",
-                borderRadius: 5,
-                color: pretty === val ? "var(--text-primary)" : "var(--text-secondary)",
-                fontFamily: "inherit",
-                fontSize: 12,
-                fontWeight: pretty === val ? 600 : 500,
-                cursor: "pointer",
-                transition: "all 0.1s",
-              }}
+              className={`h-6 cursor-pointer rounded px-3 text-xs transition-all ${
+                pretty === val
+                  ? "bg-accent font-semibold text-foreground"
+                  : "font-medium text-muted-foreground hover:text-foreground"
+              }`}
             >
               {label}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Response tabs + actions */}
-      <div
-        style={{
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          padding: "0 18px",
-          height: 38,
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <Tab active={activeTab === "body"} onClick={() => setActiveTab("body")}>
-          Body
-        </Tab>
-        <Tab active={activeTab === "headers"} onClick={() => setActiveTab("headers")}>
-          Headers
-          {Object.keys(response.headers).length > 0 && (
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                color: "var(--text-secondary)",
-                marginLeft: 1,
-              }}
-            >
-              {Object.keys(response.headers).length}
-            </span>
-          )}
-        </Tab>
-        <div style={{ flex: 1 }} />
         {/* Action buttons */}
         <Button
           variant="ghost"
-          size="xs"
+          size="icon"
           onClick={() => {
             navigator.clipboard.writeText(request ? generateCurl(request) : "");
             showToast();
           }}
-          style={{ gap: 6 }}
           title="Copy as cURL"
         >
           <svg
@@ -453,13 +401,11 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
           </svg>
-          Copy
         </Button>
         <Button
           variant="ghost"
-          size="xs"
+          size="icon"
           onClick={() => downloadBlob(`response-${Date.now()}`)}
-          style={{ gap: 6 }}
           title="Download response"
         >
           <svg
@@ -477,12 +423,29 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-          Download
         </Button>
       </div>
 
       {/* Body / Headers content */}
-      <div style={{ flex: 1, overflowY: "auto", background: "var(--bg-base)", minHeight: 0 }}>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: scroll container captures Cmd/Ctrl+A to scope select-all to the response body */}
+      <div
+        className="flex-1 min-h-0 overflow-auto bg-background"
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === "a") {
+            e.preventDefault();
+            const sel = window.getSelection();
+            const pre = e.currentTarget.querySelector("pre");
+            const target = pre ?? e.currentTarget;
+            if (sel) {
+              const range = document.createRange();
+              range.selectNodeContents(target);
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
+          }
+        }}
+        tabIndex={-1}
+      >
         {activeTab === "headers" && (
           <div style={{ padding: "8px 18px" }}>
             {Object.entries(response.headers).map(([key, value]) => (
@@ -549,7 +512,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
                         maxWidth: "100%",
                         maxHeight: "100%",
                         objectFit: "contain",
-                        borderRadius: 6,
+                        borderRadius: "var(--radius)",
                       }}
                       onLoad={() => setTimeout(() => URL.revokeObjectURL(url), 1000)}
                     />
@@ -584,7 +547,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             )}
 
             {!(isImage || isBinary) && bodyBytes.length > 0 && (
-              <div style={{ padding: "12px 0" }}>
+              <div style={{ padding: "12px 0 12px 16px" }}>
                 {pretty ? (
                   <CodeBlock code={getFormattedCode()} language={codeLanguage} />
                 ) : (
@@ -599,7 +562,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
                       padding: "0 18px",
                     }}
                   >
-                    {bodyStr.replace(/\s+/g, " ").trim()}
+                    {bodyStr}
                   </div>
                 )}
               </div>
@@ -637,7 +600,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             background: "var(--bg-elevated)",
             border: "1px solid var(--border)",
             borderLeft: "3px solid #4ADE80",
-            borderRadius: 9,
+            borderRadius: "var(--radius)",
             boxShadow: "0 14px 40px rgba(0,0,0,0.5)",
             zIndex: 80,
             animation: "pgToast 150ms ease-out",

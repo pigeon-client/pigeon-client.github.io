@@ -1,10 +1,11 @@
 import hljs from "highlight.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { cn } from "@/shared/lib/utils";
+import { Button } from "@/shared/ui/button";
+import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { useAutoClose } from "../hooks/useAutoClose";
 import type { BodyType, KeyValue } from "../types";
 import { KeyValueEditor } from "./KeyValueEditor";
-import { Button } from "./ui/Button";
-import { HighlightedHtml } from "./ui/HighlightedHtml";
 
 interface BodyEditorProps {
   bodyType: BodyType;
@@ -55,7 +56,6 @@ function hljsHighlight(code: string, language: string): string {
   }
 }
 
-/* ── Syntax-highlighted code layer ── */
 function HighlightLayer({
   code,
   language,
@@ -71,27 +71,9 @@ function HighlightLayer({
     <div
       ref={scrollRef}
       aria-hidden
-      style={{
-        position: "absolute",
-        inset: 0,
-        overflow: "hidden",
-        pointerEvents: "none",
-        padding: "0 18px 6px 0",
-      }}
+      className="pointer-events-none absolute inset-0 overflow-auto px-4 pb-1.5"
     >
-      <pre
-        style={{
-          margin: 0,
-          padding: 0,
-          background: "transparent",
-          fontFamily: "var(--font-mono)",
-          fontSize: 13,
-          lineHeight: "21px",
-          whiteSpace: "pre",
-          wordBreak: "normal",
-          overflow: "visible",
-        }}
-      >
+      <pre className="m-0 whitespace-pre-wrap break-words bg-transparent font-mono text-[13px] leading-[21px]">
         <HighlightedHtml
           html={highlighted}
           className={language ? `language-${language} hljs` : "hljs"}
@@ -107,7 +89,6 @@ function HighlightLayer({
   );
 }
 
-/* ── Line numbers ── */
 function LineNumbers({
   count,
   scrollRef,
@@ -119,18 +100,7 @@ function LineNumbers({
   return (
     <div
       ref={scrollRef}
-      style={{
-        flexShrink: 0,
-        width: 46,
-        textAlign: "right",
-        paddingRight: 18,
-        color: "var(--text-placeholder)",
-        userSelect: "none",
-        fontFamily: "var(--font-mono)",
-        fontSize: 12.5,
-        lineHeight: "21px",
-        overflow: "hidden",
-      }}
+      className="w-[46px] shrink-0 select-none overflow-hidden pr-4 text-right font-mono text-[12.5px] leading-[21px] text-muted-foreground"
     >
       {lines.map((lineNum) => (
         <div key={lineNum} style={{ height: 21 }}>
@@ -189,7 +159,6 @@ export function BodyEditor({
   const isCodeEditor = activeRadio === "json" || activeRadio === "raw";
   const lineCount = body ? body.split("\n").length : 1;
 
-  /* Sync scroll: textarea → line numbers + highlight layer */
   const handleScroll = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -208,64 +177,30 @@ export function BodyEditor({
         : "";
 
   return (
-    <div>
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Type selector row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "9px 18px",
-          borderBottom: "1px solid var(--border)",
-          flexWrap: "wrap",
-        }}
-      >
-        {BODY_TYPES.map((t) => {
-          const active = activeRadio === t.id;
-          return (
-            <button
-              type="button"
-              key={t.id}
-              onClick={() => handleRadioSelect(t.id)}
-              style={{
-                height: 26,
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "0 11px",
-                borderRadius: 6,
-                fontSize: 12,
-                fontWeight: active ? 600 : 500,
-                cursor: "pointer",
-                background: active
-                  ? "color-mix(in srgb, var(--accent) 16%, transparent)"
-                  : "transparent",
-                color: active ? "var(--accent)" : "var(--text-secondary)",
-                border: active
-                  ? "1px solid color-mix(in srgb, var(--accent) 40%, transparent)"
-                  : "1px solid transparent",
-                transition: "all 0.1s",
-                fontFamily: "inherit",
-              }}
-            >
-              {t.label}
-              {active && t.id === "json" && (
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: "#4ADE80",
-                    display: "inline-block",
-                    marginLeft: 4,
-                  }}
-                />
-              )}
-            </button>
-          );
-        })}
-        <div style={{ flex: 1 }} />
+      <div className="flex flex-shrink-0 flex-wrap items-center gap-1.5 border-b border-border px-4 py-2">
+        {BODY_TYPES.map((t) => (
+          <button
+            type="button"
+            key={t.id}
+            onClick={() => handleRadioSelect(t.id)}
+            className={cn(
+              "inline-flex h-6.5 cursor-pointer items-center rounded border px-2.5 text-xs transition-colors",
+              activeRadio === t.id
+                ? "border-primary/40 bg-primary/15 font-semibold text-primary"
+                : "border-transparent font-medium text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.label}
+            {activeRadio === t.id && t.id === "json" && (
+              <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-status-2xx" />
+            )}
+          </button>
+        ))}
+        <div className="flex-1" />
         {isCodeEditor && (
-          <Button variant="ghost" size="xs" onClick={formatJson} style={{ gap: 6 }}>
+          <Button variant="ghost" size="xs" onClick={formatJson} className="gap-1.5">
             <svg
               width="12"
               height="12"
@@ -290,18 +225,7 @@ export function BodyEditor({
               setRawFormat(fmt);
               onBodyTypeChange(fmt);
             }}
-            style={{
-              appearance: "none",
-              height: 26,
-              padding: "0 10px",
-              fontSize: 11.5,
-              background: "var(--bg-elevated)",
-              color: "var(--text-primary)",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
+            className="h-6.5 cursor-pointer appearance-none rounded border border-border bg-card px-2.5 font-[inherit] text-[11.5px] text-foreground outline-none"
           >
             {RAW_FORMATS.map((f) => (
               <option key={f.value} value={f.value}>
@@ -313,31 +237,18 @@ export function BodyEditor({
       </div>
 
       {/* Content */}
-      <div style={{ padding: "8px 0" }}>
+      <div className="flex min-h-0 flex-1 flex-col py-2">
         {activeRadio === "none" && (
-          <div
-            style={{
-              padding: "24px",
-              textAlign: "center",
-              fontSize: 12,
-              color: "var(--text-secondary)",
-            }}
-          >
+          <div className="px-6 py-6 text-center text-xs text-muted-foreground">
             This request does not have a body
           </div>
         )}
 
         {isCodeEditor && (
-          <div style={{ display: "flex", minHeight: 120 }}>
-            {/* Line numbers */}
+          <div className="flex min-h-0 flex-1">
             <LineNumbers count={lineCount} scrollRef={lineNumRef} />
-
-            {/* Editor + highlight layer */}
-            <div style={{ flex: 1, position: "relative" }}>
-              {/* Syntax-highlighted background */}
+            <div className="relative min-h-0 flex-1 overflow-hidden">
               <HighlightLayer code={body} language={language} scrollRef={highlightRef} />
-
-              {/* Transparent textarea on top */}
               <textarea
                 ref={textareaRef}
                 value={body}
@@ -361,33 +272,15 @@ export function BodyEditor({
                   activeRadio === "json" ? '{\n  "key": "value"\n}' : "Enter request body..."
                 }
                 spellCheck={false}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  resize: "none",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 13,
-                  lineHeight: "21px",
-                  /* text is transparent — only the caret is visible */
-                  color: "transparent",
-                  caretColor: "var(--text-primary)",
-                  padding: "0 18px 6px 0",
-                  tabSize: 2,
-                  overflow: "auto",
-                  zIndex: 1,
-                }}
+                className="absolute inset-0 z-[1] resize-none overflow-auto whitespace-pre-wrap break-words bg-transparent px-4 pb-1.5 font-mono text-[13px] leading-[21px] text-transparent caret-foreground outline-none"
+                style={{ tabSize: 2 }}
               />
             </div>
           </div>
         )}
 
         {activeRadio === "x-www-form-urlencoded" && (
-          <div style={{ padding: "0 18px" }}>
+          <div className="px-4">
             <KeyValueEditor
               items={formData}
               onChange={onFormDataChange}
@@ -398,7 +291,7 @@ export function BodyEditor({
         )}
 
         {activeRadio === "form-data" && (
-          <div style={{ padding: "0 18px" }}>
+          <div className="px-4">
             <KeyValueEditor
               items={multipart}
               onChange={onMultipartChange}
@@ -410,26 +303,9 @@ export function BodyEditor({
         )}
 
         {activeRadio === "binary" && (
-          <div style={{ padding: "0 18px", display: "flex", alignItems: "center", gap: 12 }}>
-            <label style={{ cursor: "pointer", display: "inline-flex" }}>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 7,
-                  height: 34,
-                  padding: "0 14px",
-                  borderRadius: 7,
-                  fontSize: 12.5,
-                  fontWeight: 500,
-                  background: "transparent",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-secondary)",
-                  cursor: "pointer",
-                  transition: "all 0.1s",
-                  fontFamily: "inherit",
-                }}
-              >
+          <div className="flex items-center gap-3 px-4">
+            <label className="inline-flex cursor-pointer">
+              <div className="inline-flex h-8 items-center gap-1.5 rounded border border-border px-3.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-foreground">
                 <svg
                   width="13"
                   height="13"
@@ -449,7 +325,7 @@ export function BodyEditor({
               </div>
               <input
                 type="file"
-                style={{ display: "none" }}
+                className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) onFileChange(f);
@@ -458,20 +334,13 @@ export function BodyEditor({
             </label>
             {file && (
               <>
-                <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                <span className="text-[11px] text-muted-foreground">
                   {(file.size / 1024).toFixed(1)} KB
                 </span>
                 <button
                   type="button"
                   onClick={() => onFileChange(null)}
-                  style={{
-                    fontSize: 12,
-                    color: "#F87171",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
+                  className="bg-transparent font-[inherit] text-xs text-destructive"
                 >
                   Remove
                 </button>

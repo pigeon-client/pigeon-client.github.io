@@ -5,36 +5,11 @@ interface AuthEditorProps {
   onAuthChange: (auth: AuthConfig) => void;
 }
 
-const inputStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  height: 34,
-  padding: "0 12px",
-  background: "var(--bg-input)",
-  border: "1px solid var(--border)",
-  borderRadius: 6,
-  fontFamily: "var(--font-mono)",
-  fontSize: 12.5,
-  color: "var(--text-primary)",
-  width: "100%",
-  outline: "none",
-};
-
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-      <span
-        style={{
-          fontSize: 12,
-          color: "var(--text-secondary)",
-          width: 64,
-          paddingTop: 9,
-          flexShrink: 0,
-        }}
-      >
-        {label}
-      </span>
-      <div style={{ flex: 1 }}>{children}</div>
+    <div className="flex items-start gap-3.5">
+      <span className="w-16 shrink-0 pt-2 text-xs text-muted-foreground">{label}</span>
+      <div className="flex-1">{children}</div>
     </div>
   );
 }
@@ -53,44 +28,14 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
     });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 560 }}>
+    <div className="flex max-w-[560px] flex-col gap-3.5">
       {/* Type selector */}
       <Field label="Type">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: 220,
-            height: 34,
-            padding: "0 12px",
-            background: "var(--bg-input)",
-            border: "1px solid var(--border)",
-            borderRadius: 6,
-            fontSize: 13,
-            color: "var(--text-primary)",
-            cursor: "pointer",
-            position: "relative",
-          }}
-        >
+        <div className="relative flex h-8 w-[220px] items-center justify-between rounded border border-border bg-card px-3 text-[13px] text-foreground">
           <select
             value={auth.type}
             onChange={(e) => reset(e.target.value as AuthConfig["type"])}
-            style={{
-              appearance: "none",
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              padding: "0 12px",
-              background: "transparent",
-              border: "none",
-              outline: "none",
-              color: "var(--text-primary)",
-              fontFamily: "inherit",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
+            className="absolute inset-0 cursor-pointer appearance-none bg-transparent px-3 font-[inherit] text-[13px] text-foreground outline-none"
           >
             <option value="none">No Auth</option>
             <option value="bearer">Bearer Token</option>
@@ -102,11 +47,11 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
             height="14"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="var(--text-secondary)"
+            stroke="currentColor"
             strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ pointerEvents: "none", marginLeft: "auto" }}
+            className="pointer-events-none ml-auto text-muted-foreground"
             aria-hidden="true"
           >
             <polyline points="6 9 12 15 18 9" />
@@ -116,7 +61,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
 
       {/* None */}
       {auth.type === "none" && (
-        <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>
+        <p className="m-0 text-xs text-muted-foreground">
           This request does not use any authorization.
         </p>
       )}
@@ -130,14 +75,10 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               value={auth.token}
               onChange={(e) => onAuthChange({ ...auth, token: e.target.value })}
               placeholder="eyJhbGciOiJIUzI1NiIs..."
-              style={{ ...inputStyle, color: "#4ADE80" }}
+              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-xs text-method-post outline-none"
             />
-            <div style={{ fontSize: 11.5, color: "var(--text-secondary)", marginTop: 7 }}>
-              Prefix{" "}
-              <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>
-                Bearer
-              </span>{" "}
-              added automatically
+            <div className="mt-1.5 text-[11.5px] text-muted-foreground">
+              Prefix <span className="font-mono">Bearer</span> added automatically
             </div>
           </div>
         </Field>
@@ -152,7 +93,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               value={auth.username}
               onChange={(e) => onAuthChange({ ...auth, username: e.target.value })}
               placeholder="username"
-              style={inputStyle}
+              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-[12.5px] text-foreground outline-none"
             />
           </Field>
           <Field label="Password">
@@ -161,7 +102,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               value={auth.password}
               onChange={(e) => onAuthChange({ ...auth, password: e.target.value })}
               placeholder="password"
-              style={inputStyle}
+              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-[12.5px] text-foreground outline-none"
             />
           </Field>
         </>
@@ -176,7 +117,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               value={auth.apiKey}
               onChange={(e) => onAuthChange({ ...auth, apiKey: e.target.value })}
               placeholder="X-API-Key"
-              style={inputStyle}
+              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-[12.5px] text-foreground outline-none"
             />
           </Field>
           <Field label="Value">
@@ -185,7 +126,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               value={auth.apiValue}
               onChange={(e) => onAuthChange({ ...auth, apiValue: e.target.value })}
               placeholder="api_key_value"
-              style={inputStyle}
+              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-[12.5px] text-foreground outline-none"
             />
           </Field>
           <Field label="Add to">
@@ -194,7 +135,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               onChange={(e) =>
                 onAuthChange({ ...auth, apiAddTo: e.target.value as "header" | "query" })
               }
-              style={{ ...inputStyle, width: 180, cursor: "pointer", appearance: "none" }}
+              className="h-8 w-[180px] cursor-pointer appearance-none rounded border border-border bg-card px-3 font-[inherit] text-[12.5px] text-foreground outline-none"
             >
               <option value="header">Header</option>
               <option value="query">Query Params</option>

@@ -1,5 +1,6 @@
 import { Paperclip } from "lucide-react";
 import { useEffect, useMemo } from "react";
+import { cn } from "@/shared/lib/utils";
 import type { KeyValue } from "../types";
 
 interface KeyValueEditorProps {
@@ -20,24 +21,17 @@ interface KeyValueEditorProps {
 
 function Checkbox({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
+    // biome-ignore lint/a11y/useSemanticElements: custom checkbox indicator inside a KV editor row; Radix Checkbox would break row alignment
     <button
       type="button"
+      role="checkbox"
+      aria-checked={on}
       aria-label={on ? "Disable row" : "Enable row"}
       onClick={onClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 16,
-        height: 16,
-        borderRadius: 4,
-        background: on ? "var(--accent)" : "transparent",
-        border: on ? "none" : "1.5px solid var(--border)",
-        cursor: "pointer",
-        flexShrink: 0,
-        transition: "all 0.1s",
-        padding: 0,
-      }}
+      className={cn(
+        "flex h-4 w-4 shrink-0 items-center justify-center rounded p-0 transition-colors",
+        on ? "bg-primary" : "border-[1.5px] border-border bg-transparent",
+      )}
     >
       {on && (
         <svg
@@ -45,11 +39,12 @@ function Checkbox({ on, onClick }: { on: boolean; onClick: () => void }) {
           height="10"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#fff"
+          stroke="currentColor"
           strokeWidth="3.5"
           strokeLinecap="round"
           strokeLinejoin="round"
           aria-hidden="true"
+          className="text-primary-foreground"
         >
           <polyline points="20 6 9 17 4 12" />
         </svg>
@@ -78,7 +73,7 @@ export function KeyValueEditor({
   }, [onChange, items.length]);
 
   const itemsWithKeys = useMemo(
-    () => items.map((item, i) => ({ ...item, _rowKey: `row-${i}-${item.key}` })),
+    () => items.map((item, i) => ({ ...item, _rowKey: `row-${i}` })),
     [items],
   );
 
@@ -122,20 +117,7 @@ export function KeyValueEditor({
   return (
     <div>
       {/* Column headers */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "28px 1fr 1.4fr 28px",
-          gap: 0,
-          fontSize: 10.5,
-          fontWeight: 600,
-          color: "var(--text-placeholder)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          padding: "0 0 8px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+      <div className="grid grid-cols-[28px_1fr_1.4fr_28px] gap-0 border-b border-border pb-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
         <span />
         <span>Key</span>
         <span>Value</span>
@@ -145,19 +127,13 @@ export function KeyValueEditor({
       {itemsWithKeys.map((item, index) => (
         <div
           key={item._rowKey}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "28px 1fr 1.4fr 28px",
-            alignItems: "center",
-            height: 36,
-            borderBottom: "1px solid var(--border)",
-          }}
+          className="grid h-9 grid-cols-[28px_1fr_1.4fr_28px] items-center border-b border-border"
         >
-          <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span className="flex items-center justify-center">
             <Checkbox on={item.enabled} onClick={() => update(index, "enabled", !item.enabled)} />
           </span>
 
-          <div style={{ position: "relative" }}>
+          <div className="relative">
             <input
               ref={(el) => {
                 if (inputRefs) inputRefs.current[index] = el;
@@ -172,32 +148,13 @@ export function KeyValueEditor({
               }
               onKeyDown={(e) => onKeyDown?.(e, index)}
               onFocus={() => onKeyFocus?.(index)}
-              style={{
-                width: "100%",
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                fontFamily: "var(--font-mono)",
-                fontSize: 13,
-                color: "#4A9EFA",
-                opacity: item.enabled ? 1 : 0.5,
-              }}
+              className={cn(
+                "w-full bg-transparent font-mono text-[13px] text-method-get outline-none",
+                !item.enabled && "opacity-50",
+              )}
             />
             {showForIndex === index && suggestions && suggestions.length > 0 && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  top: "100%",
-                  zIndex: 50,
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-                }}
-              >
+              <div className="absolute left-0 right-0 top-full z-50 overflow-hidden rounded border border-border bg-popover shadow-lg">
                 {suggestions.map((s, i) => (
                   <button
                     type="button"
@@ -206,17 +163,10 @@ export function KeyValueEditor({
                       e.preventDefault();
                       onSelectSuggestion?.(index, s);
                     }}
-                    style={{
-                      width: "100%",
-                      padding: "6px 12px",
-                      textAlign: "left",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 12,
-                      background: i === activeIndex ? "rgba(124,110,250,0.15)" : "transparent",
-                      color: i === activeIndex ? "var(--accent)" : "var(--text-primary)",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
+                    className={cn(
+                      "w-full cursor-pointer px-3 py-1.5 text-left font-mono text-xs",
+                      i === activeIndex ? "bg-primary/15 text-primary" : "text-foreground",
+                    )}
                   >
                     {s}
                   </button>
@@ -229,31 +179,11 @@ export function KeyValueEditor({
             {showFilePicker && item.isFile && item.file ? (
               <button
                 type="button"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  fontSize: 12,
-                  cursor: "pointer",
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  fontFamily: "inherit",
-                  color: "inherit",
-                }}
+                className="flex cursor-pointer items-center gap-1 bg-transparent p-0 font-[inherit] text-xs text-inherit"
                 onClick={() => pickFile(index)}
               >
-                <Paperclip size={12} style={{ color: "var(--accent)" }} />
-                <span
-                  style={{
-                    color: "var(--text-secondary)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {item.fileName}
-                </span>
+                <Paperclip className="h-3 w-3 text-primary" />
+                <span className="truncate text-muted-foreground">{item.fileName}</span>
               </button>
             ) : (
               <input
@@ -261,19 +191,10 @@ export function KeyValueEditor({
                 placeholder={valuePlaceholder}
                 value={item.value}
                 onChange={(e) => update(index, "value", e.target.value)}
-                style={{
-                  width: "100%",
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 13,
-                  color: "var(--text-primary)",
-                  opacity: item.enabled ? 1 : 0.5,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
+                className={cn(
+                  "w-full truncate bg-transparent font-mono text-[13px] text-foreground outline-none",
+                  !item.enabled && "opacity-50",
+                )}
               />
             )}
           </div>
@@ -282,15 +203,7 @@ export function KeyValueEditor({
             type="button"
             aria-label="Remove row"
             onClick={() => remove(index)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--text-placeholder)",
-              cursor: "pointer",
-              transition: "color 0.1s",
-            }}
-            className="hover:text-[#F87171]"
+            className="flex items-center justify-center text-muted-foreground transition-colors hover:text-destructive"
           >
             <svg
               width="13"
@@ -314,21 +227,7 @@ export function KeyValueEditor({
       <button
         type="button"
         onClick={() => onChange([...items, { key: "", value: "", enabled: true }])}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          marginTop: 10,
-          background: "transparent",
-          border: "none",
-          color: "var(--text-secondary)",
-          fontFamily: "inherit",
-          fontSize: 12.5,
-          fontWeight: 500,
-          cursor: "pointer",
-          padding: 0,
-        }}
-        className="hover:text-[var(--accent)]"
+        className="mt-2.5 flex items-center gap-1.5 bg-transparent p-0 font-[inherit] text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <svg
           width="13"

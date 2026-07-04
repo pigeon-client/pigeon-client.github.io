@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
+import { Button } from "@/shared/ui/button";
+import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
 import { generateCurl } from "../lib/curl";
 import { useTabStore } from "../store/tabStore";
-import { Modal, ModalHeader } from "./ImportModal";
-import { Button } from "./ui/Button";
 
 interface ExportCurlModalProps {
   onClose: () => void;
@@ -20,17 +20,17 @@ export function ExportCurlModal({ onClose }: ExportCurlModalProps) {
   const curlTokens = useMemo(() => {
     const parts = curl.split(" ");
     return parts.map((token, i) => {
-      let style: React.CSSProperties;
+      let className: string;
       if (i === 0) {
-        style = { color: "var(--accent)", fontWeight: 700 };
+        className = "font-bold text-primary";
       } else if (token.startsWith("-")) {
-        style = { color: "var(--hljs-attr)" };
+        className = "text-[color:var(--hljs-attr)]";
       } else if (token.startsWith('"') || token.startsWith("'")) {
-        style = { color: "var(--hljs-string)" };
+        className = "text-[color:var(--hljs-string)]";
       } else {
-        style = { color: "var(--text-primary)" };
+        className = "text-foreground";
       }
-      return { token, style, key: `ct-${i}` };
+      return { token, className, key: `ct-${i}` };
     });
   }, [curl]);
 
@@ -45,89 +45,31 @@ export function ExportCurlModal({ onClose }: ExportCurlModalProps) {
     <Modal onClose={onClose} width={480} position="right">
       <ModalHeader title="Export as cURL" onClose={onClose} />
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          padding: "20px 20px 0",
-          minHeight: 0,
-        }}
-      >
+      <div className="flex min-h-0 flex-1 flex-col px-5 pt-5">
         {/* Label */}
-        <div
-          style={{
-            fontSize: 11.5,
-            fontWeight: 600,
-            color: "var(--text-secondary)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            marginBottom: 10,
-          }}
-        >
+        <div className="mb-2.5 text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
           Generated cURL Command
         </div>
 
         {/* Preview box */}
         {curl ? (
-          <pre
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: "auto",
-              background: "var(--bg-base)",
-              border: "1px solid var(--border)",
-              borderRadius: 9,
-              padding: "14px 16px",
-              fontFamily: "var(--font-mono)",
-              fontSize: 12.5,
-              lineHeight: 1.75,
-              color: "var(--text-primary)",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-all",
-              margin: 0,
-            }}
-          >
-            {/* Colorize: keyword "curl", flags, URL */}
-            {curlTokens.map(({ token, style, key }) => (
-              <span key={key} style={style}>
+          <pre className="m-0 min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-all rounded border border-border bg-card p-3.5 font-mono text-xs leading-relaxed text-foreground">
+            {curlTokens.map(({ token, className, key }) => (
+              <span key={key} className={className}>
                 {token}{" "}
               </span>
             ))}
           </pre>
         ) : (
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "var(--bg-base)",
-              border: "1px solid var(--border)",
-              borderRadius: 9,
-              color: "var(--text-secondary)",
-              fontSize: 13,
-            }}
-          >
+          <div className="flex flex-1 items-center justify-center rounded border border-border bg-card text-sm text-muted-foreground">
             No active request
           </div>
         )}
 
-        <div style={{ height: 20 }} />
+        <div className="h-5" />
       </div>
 
-      {/* Footer */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          gap: 10,
-          padding: "14px 20px",
-          borderTop: "1px solid var(--border)",
-          flexShrink: 0,
-        }}
-      >
+      <ModalFooter>
         <Button variant="ghost" size="sm" onClick={onClose}>
           Close
         </Button>
@@ -136,7 +78,7 @@ export function ExportCurlModal({ onClose }: ExportCurlModalProps) {
           size="sm"
           onClick={handleCopy}
           disabled={!curl}
-          style={{ minWidth: 100 }}
+          className="min-w-[100px]"
         >
           {copied ? (
             <>
@@ -175,7 +117,7 @@ export function ExportCurlModal({ onClose }: ExportCurlModalProps) {
             </>
           )}
         </Button>
-      </div>
+      </ModalFooter>
     </Modal>
   );
 }

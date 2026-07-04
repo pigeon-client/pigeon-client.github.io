@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { normalizeUrlForMatch, parseUrl } from "@/shared/lib/url";
 import {
   deleteDraft as dbDeleteDraft,
   saveDraft as dbSaveDraft,
@@ -9,7 +10,6 @@ import {
   getHistory,
   saveHistory,
 } from "../lib/db";
-import { normalizeUrlForMatch, parseUrl } from "../lib/url";
 import type { HistoryItem, RequestConfig } from "../types";
 
 /** Normalize a draft URL to ensure it has a protocol for consistent matching */

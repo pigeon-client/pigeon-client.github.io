@@ -1,14 +1,14 @@
-import { ChevronDown, Send } from "lucide-react";
+import { ChevronDown, Loader2, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { extractEndpoint, parseUrl } from "@/shared/lib/url";
+import { cn } from "@/shared/lib/utils";
+import { Button } from "@/shared/ui/button";
 import { useApiRequest } from "../hooks/useApiRequest";
-import { parseCurl } from "../lib/curlParser";
 import { replaceEnvVariables } from "../lib/env";
-import { extractEndpoint, parseUrl } from "../lib/url";
+import { parseCurl } from "../services/curlService";
 import { useEnvStore } from "../store/envStore";
 import { useTabStore } from "../store/tabStore";
 import type { HttpMethod } from "../types";
-import { METHOD_COLORS } from "./ui/Badge";
-import { Button } from "./ui/Button";
 
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 
@@ -42,7 +42,6 @@ export function UrlBar() {
   if (!activeTab) return null;
 
   const { request } = activeTab;
-  const methodColor = METHOD_COLORS[request.method] ?? "#94A3B8";
 
   const handleSend = async () => {
     if (!request.url) return;
@@ -72,13 +71,27 @@ export function UrlBar() {
     return activeEnv ? replaceEnvVariables(parsed, activeEnv) : parsed;
   })();
 
+  /* ── Method colour swatch for the trigger + the dropdown list ── */
+  const methodTriggerClass =
+    request.method === "GET"
+      ? "text-method-get"
+      : request.method === "POST"
+        ? "text-method-post"
+        : request.method === "PUT"
+          ? "text-method-put"
+          : request.method === "PATCH"
+            ? "text-method-patch"
+            : request.method === "DELETE"
+              ? "text-method-delete"
+              : request.method === "HEAD"
+                ? "text-method-head"
+                : "text-method-options";
+
   /* ── Syntax-tinted URL display ── */
   const renderUrlSegments = (url: string) => {
     if (!url) {
       return (
-        <span style={{ color: "var(--text-placeholder)", fontFamily: "var(--font-mono)" }}>
-          https://api.example.com/endpoint
-        </span>
+        <span className="font-mono text-muted-foreground">https://api.example.com/endpoint</span>
       );
     }
     const schemeMatch = url.match(/^(https?:\/\/)/i);
@@ -92,139 +105,56 @@ export function UrlBar() {
     const path = slashIdx === -1 ? "" : beforeQ.slice(slashIdx);
     return (
       <>
-        <span style={{ color: "var(--text-secondary)" }}>{scheme}</span>
-        <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{host}</span>
-        <span style={{ color: "var(--accent)", fontWeight: 500 }}>{path}</span>
-        <span style={{ color: "var(--text-secondary)" }}>{query}</span>
+        <span className="text-muted-foreground">{scheme}</span>
+        <span className="font-medium text-foreground">{host}</span>
+        <span className="font-medium text-primary">{path}</span>
+        <span className="text-muted-foreground">{query}</span>
       </>
     );
   };
 
   return (
-    <div style={{ padding: "14px 18px 12px", borderBottom: "1px solid var(--border)" }}>
-      <div className="flex items-center gap-[10px]">
+    <div className="flex flex-col border-b border-border bg-background px-4 py-2.5">
+      <div className="flex items-center gap-2">
         {/* Method selector */}
         <div className="relative shrink-0" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setMethodOpen((o) => !o)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 8,
-              width: 104,
-              height: 40,
-              padding: "0 13px",
-              background: "var(--bg-input)",
-              border: `1px solid ${methodOpen ? "var(--border-focus)" : "var(--border)"}`,
-              borderRadius: 8,
-              color: methodColor,
-              fontFamily: "var(--font-mono)",
-              fontSize: 13.5,
-              fontWeight: 700,
-              cursor: "pointer",
-              transition: "border-color 0.1s",
-            }}
+            className={cn(
+              "flex h-9 w-[104px] cursor-pointer items-center justify-between gap-2 rounded border bg-card px-3 font-mono text-[13px] font-bold transition-colors",
+              methodOpen ? "border-primary" : "border-border",
+              methodTriggerClass,
+            )}
           >
             <span>{request.method}</span>
-            <ChevronDown size={14} style={{ color: "var(--text-secondary)" }} />
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
 
           {methodOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: 44,
-                left: 0,
-                width: 150,
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                borderRadius: 8,
-                padding: 5,
-                boxShadow: "0 14px 36px rgba(0,0,0,0.55)",
-                zIndex: 40,
-              }}
-            >
-              {METHODS.map((m) => {
-                const mc = METHOD_COLORS[m] ?? "#94A3B8";
-                return (
-                  <div
-                    key={m}
-                    role="option"
-                    aria-selected={m === request.method}
-                    tabIndex={0}
-                    onClick={() => {
-                      updateTabRequest(activeTab.id, { method: m });
-                      setMethodOpen(false);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        updateTabRequest(activeTab.id, { method: m });
-                        setMethodOpen(false);
-                      }
-                    }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 9,
-                      height: 30,
-                      padding: "0 10px",
-                      borderRadius: 6,
-                      cursor: "pointer",
-                      background: m === request.method ? "var(--border)" : "transparent",
-                    }}
-                    className="hover:bg-[var(--border)]"
-                  >
-                    <span
-                      style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: "50%",
-                        background: mc,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        color: mc,
-                      }}
-                    >
-                      {m}
-                    </span>
-                  </div>
-                );
-              })}
+            <div className="absolute left-0 top-10 z-40 w-[150px] rounded border border-border bg-popover p-1 shadow-lg">
+              {METHODS.map((m) => (
+                <MethodOption
+                  key={m}
+                  method={m}
+                  active={m === request.method}
+                  onSelect={() => {
+                    updateTabRequest(activeTab.id, { method: m });
+                    setMethodOpen(false);
+                  }}
+                />
+              ))}
             </div>
           )}
         </div>
 
         {/* URL input */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            height: 40,
-            padding: "0 14px",
-            background: "var(--bg-input)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            overflow: "hidden",
-            position: "relative",
-          }}
-        >
-          {/* Invisible real input on top */}
+        <div className="relative flex h-9 flex-1 items-center overflow-hidden rounded border border-border bg-card px-3">
           <input
             type="text"
             value={request.url}
             onChange={(e) => {
               const raw = e.target.value;
-
               if (raw.trimStart().toLowerCase().startsWith("curl ")) {
                 const parsed = parseCurl(raw);
                 if (parsed?.url) {
@@ -238,7 +168,6 @@ export function UrlBar() {
                   return;
                 }
               }
-
               updateTabRequest(activeTab.id, { url: raw });
               if (!activeTab.nameLocked && raw) {
                 setTabName(activeTab.id, extractEndpoint(raw));
@@ -251,61 +180,28 @@ export function UrlBar() {
               }
             }}
             placeholder="https://api.example.com/endpoint"
-            style={{
-              position: "absolute",
-              inset: 0,
-              padding: "0 14px",
-              background: "transparent",
-              border: "none",
-              outline: "none",
-              color: "transparent",
-              caretColor: "var(--text-primary)",
-              fontFamily: "var(--font-mono)",
-              fontSize: 13.5,
-              zIndex: 2,
-            }}
+            className="absolute inset-0 z-[2] bg-transparent px-3 font-mono text-[13px] text-transparent caret-foreground outline-none"
           />
-          {/* Syntax-tinted display layer */}
-          <div
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 13.5,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              pointerEvents: "none",
-              userSelect: "none",
-              zIndex: 1,
-            }}
-          >
+          <div className="pointer-events-none z-[1] select-none truncate font-mono text-[13px]">
             {renderUrlSegments(request.url)}
           </div>
         </div>
 
-        {/* Send — the ONLY primary accent button */}
+        {/* Send */}
         <Button
           variant="primary"
-          size="md"
+          size="sm"
           onClick={handleSend}
           disabled={!request.url || activeTab.isLoading}
           data-send-btn
-          style={{ gap: 8 }}
+          className="gap-1.5 w-[80px] shrink-0"
         >
           {activeTab.isLoading ? (
-            <div
-              style={{
-                width: 15,
-                height: 15,
-                border: "2px solid rgba(255,255,255,0.3)",
-                borderTopColor: "#fff",
-                borderRadius: "50%",
-                animation: "spin 0.7s linear infinite",
-              }}
-            />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <>
               Send
-              <Send size={15} />
+              <Send className="h-3.5 w-3.5" />
             </>
           )}
         </Button>
@@ -314,32 +210,24 @@ export function UrlBar() {
       {/* cURL import toast */}
       {curlToast && (
         <div
-          style={{
-            marginTop: 8,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "7px 12px",
-            background: "color-mix(in srgb, #4ADE80 10%, transparent)",
-            border: "1px solid color-mix(in srgb, #4ADE80 30%, transparent)",
-            borderRadius: 7,
-            animation: "pgToast 150ms ease-out",
-          }}
+          style={{ animation: "pgToast 150ms ease-out" }}
+          className="mt-1.5 flex items-center gap-2 rounded border border-status-2xx/30 bg-status-2xx/10 px-3 py-1"
         >
           <svg
             width="13"
             height="13"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#4ADE80"
+            stroke="currentColor"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
+            className="text-status-2xx"
           >
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          <span style={{ fontSize: 12.5, color: "#4ADE80", fontWeight: 500 }}>
+          <span className="text-xs font-medium text-status-2xx">
             cURL imported — method, headers and body applied
           </span>
         </div>
@@ -347,20 +235,49 @@ export function UrlBar() {
 
       {/* Resolved URL preview */}
       {!curlToast && request.url && previewUrl !== request.url && (
-        <div
-          style={{
-            marginTop: 6,
-            marginLeft: 2,
-            fontSize: 11,
-            color: "var(--text-secondary)",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {previewUrl}
-        </div>
+        <div className="ml-0.5 mt-1 truncate text-[11px] text-muted-foreground">{previewUrl}</div>
       )}
     </div>
+  );
+}
+
+function MethodOption({
+  method,
+  active,
+  onSelect,
+}: {
+  method: HttpMethod;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const cls =
+    method === "GET"
+      ? "text-method-get"
+      : method === "POST"
+        ? "text-method-post"
+        : method === "PUT"
+          ? "text-method-put"
+          : method === "PATCH"
+            ? "text-method-patch"
+            : method === "DELETE"
+              ? "text-method-delete"
+              : method === "HEAD"
+                ? "text-method-head"
+                : "text-method-options";
+  const dotCls = cls.replace("text-", "bg-");
+  return (
+    <button
+      type="button"
+      role="option"
+      aria-selected={active}
+      onClick={onSelect}
+      className={cn(
+        "flex h-7 w-full cursor-pointer items-center gap-2 rounded px-2 text-left font-mono text-xs font-semibold transition-colors",
+        active ? "bg-accent text-foreground" : "text-foreground hover:bg-accent",
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dotCls)} />
+      <span className={cls}>{method}</span>
+    </button>
   );
 }
