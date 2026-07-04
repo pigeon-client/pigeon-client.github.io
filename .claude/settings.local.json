@@ -108,7 +108,8 @@
       "Bash(sed -i '' 's|import type { RequestConfig } from \"../types\";|import type { RequestConfig } from \"@/shared/types\";|' src/features/import-export/lib/generateCurl.ts)",
       "Bash(sed -i '' 's|import pigeonLogo from \"../assets/pigeon-logo-32.png\";|import pigeonLogo from \"@/assets/pigeon-logo-32.png\";|' src/app/layout/Header.tsx)",
       "Bash(sed -i '' 's|import type { CollectionNode, HistoryItem, RequestConfig } from \"../types\";|import type { CollectionNode } from \"@/features/collections\";\\\\nimport type { HistoryItem } from \"@/features/history\";\\\\nimport type { RequestConfig } from \"@/shared/types\";|' src/app/layout/Sidebar.tsx)",
-      "Bash(sed -i '' 's|import App from \"./App\";|import App from \"./app/App\";|' src/main.tsx)"
+      "Bash(sed -i '' 's|import App from \"./App\";|import App from \"./app/App\";|' src/main.tsx)",
+      "Bash(pnpm ci:check)"
     ]
   }
 }
