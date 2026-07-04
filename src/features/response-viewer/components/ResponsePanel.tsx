@@ -606,7 +606,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             borderLeft: "3px solid var(--status-2xx)",
             borderRadius: "var(--radius)",
             boxShadow: "var(--shadow-toast)",
-            zIndex: 80,
+            zIndex: "var(--z-toast)",
             animation: "pgToast 150ms ease-out",
           }}
         >

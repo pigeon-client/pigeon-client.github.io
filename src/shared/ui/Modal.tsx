@@ -26,7 +26,7 @@ export function Modal({
             onClose();
           }
         }}
-        className="fixed inset-0 z-[100] bg-black/45 backdrop-blur-[4px]"
+        className="fixed inset-0 z-[var(--z-modal)] bg-black/45 backdrop-blur-[4px]"
       >
         <div
           role="dialog"
@@ -66,7 +66,7 @@ export function Modal({
         }
       }}
       style={{ animation: "pgFade 120ms ease-out" }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-[8px]"
+      className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/60 backdrop-blur-[8px]"
     >
       <div
         role="dialog"

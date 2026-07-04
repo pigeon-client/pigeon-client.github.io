@@ -112,7 +112,7 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
         }
       }}
       style={{ animation: "pgFade 120ms ease" }}
-      className="fixed inset-0 z-[90] cursor-default border-none bg-black/40 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[var(--z-overlay)] cursor-default border-none bg-black/40 backdrop-blur-[2px]"
     >
       <div
         role="none"

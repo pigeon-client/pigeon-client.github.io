@@ -134,7 +134,7 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
         style={{
           position: "fixed",
           inset: 0,
-          zIndex: 999,
+          zIndex: "var(--z-modal)",
           background: "none",
           border: "none",
           cursor: "default",
@@ -146,7 +146,7 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
           position: "fixed",
           left: menu.x,
           top: menu.y,
-          zIndex: 1000,
+          zIndex: "var(--z-modal)",
           background: "var(--bg-elevated)",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius)",

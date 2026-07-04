@@ -154,7 +154,7 @@ export function KeyValueEditor({
               )}
             />
             {showForIndex === index && suggestions && suggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-50 overflow-hidden rounded border border-border bg-popover shadow-lg">
+              <div className="absolute left-0 right-0 top-full z-[var(--z-popover)] overflow-hidden rounded border border-border bg-popover shadow-lg">
                 {suggestions.map((s, i) => (
                   <button
                     type="button"

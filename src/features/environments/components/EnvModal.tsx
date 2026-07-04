@@ -347,7 +347,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                     {importMenuOpen && (
                       <div
                         role="menu"
-                        className="absolute left-0 top-[calc(100%+4px)] z-10 min-w-[170px] rounded border border-border bg-popover p-1 shadow-lg"
+                        className="absolute left-0 top-[calc(100%+4px)] z-[var(--z-dropdown)] min-w-[170px] rounded border border-border bg-popover p-1 shadow-lg"
                       >
                         <button
                           type="button"

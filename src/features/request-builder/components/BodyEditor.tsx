@@ -272,7 +272,7 @@ export function BodyEditor({
                   activeRadio === "json" ? '{\n  "key": "value"\n}' : "Enter request body..."
                 }
                 spellCheck={false}
-                className="absolute inset-0 z-[1] resize-none overflow-auto whitespace-pre-wrap break-words bg-transparent px-4 pb-1.5 font-mono text-code leading-[21px] text-transparent caret-foreground outline-none"
+                className="absolute inset-0 z-[var(--z-raised)] resize-none overflow-auto whitespace-pre-wrap break-words bg-transparent px-4 pb-1.5 font-mono text-code leading-[21px] text-transparent caret-foreground outline-none"
                 style={{ tabSize: 2 }}
               />
             </div>

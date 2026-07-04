@@ -131,7 +131,7 @@ export function UrlBar() {
           </button>
 
           {methodOpen && (
-            <div className="absolute left-0 top-10 z-40 w-[150px] rounded border border-border bg-popover p-1 shadow-lg">
+            <div className="absolute left-0 top-10 z-[var(--z-dropdown)] w-[150px] rounded border border-border bg-popover p-1 shadow-lg">
               {METHODS.map((m) => (
                 <MethodOption
                   key={m}
@@ -179,9 +179,9 @@ export function UrlBar() {
               }
             }}
             placeholder="https://api.example.com/endpoint"
-            className="absolute inset-0 z-[2] bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
+            className="absolute inset-0 z-[var(--z-raised)] bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
           />
-          <div className="pointer-events-none z-[1] select-none truncate font-mono text-code">
+          <div className="pointer-events-none z-[var(--z-raised)] select-none truncate font-mono text-code">
             {renderUrlSegments(request.url)}
           </div>
         </div>
