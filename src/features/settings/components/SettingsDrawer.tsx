@@ -121,7 +121,7 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
           if (e.key === "Escape") onClose();
         }}
         style={{ animation: "pgSlide 200ms ease-out" }}
-        className="absolute right-0 top-0 bottom-0 flex w-[360px] flex-col border-l border-border bg-card shadow-[-20px_0_60px_rgba(0,0,0,0.5)]"
+        className="absolute right-0 top-0 bottom-0 flex w-[360px] flex-col border-l border-border bg-card shadow-drawer"
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <span className="text-[15px] font-semibold text-foreground">Settings</span>

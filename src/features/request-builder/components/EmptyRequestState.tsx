@@ -78,7 +78,7 @@ export function EmptyRequestState() {
           background: "var(--accent)",
           border: "none",
           borderRadius: "var(--radius)",
-          color: "#fff",
+          color: "var(--primary-foreground)",
           fontFamily: "inherit",
           fontSize: 13.5,
           fontWeight: 600,

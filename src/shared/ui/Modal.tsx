@@ -44,7 +44,7 @@ export function Modal({
             maxWidth: "90vw",
             animation: "pgSlideRight 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
           }}
-          className="flex flex-col overflow-hidden border-l border-border bg-card shadow-[-8px_0_40px_rgba(0,0,0,0.5)]"
+          className="flex flex-col overflow-hidden border-l border-border bg-card shadow-drawer"
         >
           {children}
         </div>
@@ -80,7 +80,7 @@ export function Modal({
           maxWidth: "calc(100vw - 48px)",
           animation: "pgSlide 150ms ease-out",
         }}
-        className="flex flex-col overflow-hidden rounded border border-border bg-card shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
+        className="flex flex-col overflow-hidden rounded border border-border bg-card shadow-modal"
       >
         {children}
       </div>

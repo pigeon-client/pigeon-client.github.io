@@ -79,7 +79,7 @@ function TreeRow({
   onDelete,
 }: TreeRowProps) {
   const [hovered, setHovered] = useState(false);
-  const mc = method ? (METHOD_COLORS[method] ?? "#94A3B8") : undefined;
+  const mc = method ? (METHOD_COLORS[method] ?? METHOD_COLORS.GET) : undefined;
 
   const depthGuides = useMemo(() => {
     const guides: React.ReactNode[] = [];
@@ -277,7 +277,7 @@ function TreeRow({
                 cursor: "pointer",
                 padding: 0,
               }}
-              className="hover:text-[#F87171]"
+              className="hover:text-status-5xx"
             >
               <svg
                 width="11"
@@ -519,11 +519,11 @@ function HistoryRow({
   const sc = item.statusCode;
   const statusColor =
     sc >= 200 && sc < 300
-      ? "#4ADE80"
+      ? "var(--status-2xx)"
       : sc >= 400
-        ? "#F87171"
+        ? "var(--status-5xx)"
         : sc >= 300
-          ? "#60A5FA"
+          ? "var(--status-3xx)"
           : "var(--text-secondary)";
 
   return (
@@ -606,7 +606,7 @@ function HistoryRow({
             cursor: "pointer",
             padding: 0,
           }}
-          className="hover:text-[#F87171]"
+          className="hover:text-status-5xx"
         >
           <svg
             width="11"
@@ -946,7 +946,7 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
                           cursor: "pointer",
                           padding: 0,
                         }}
-                        className="hover:text-[#F87171]"
+                        className="hover:text-status-5xx"
                       >
                         <svg
                           width="11"

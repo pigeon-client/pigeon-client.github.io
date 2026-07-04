@@ -150,7 +150,7 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
           background: "var(--bg-elevated)",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.55)",
+          boxShadow: "var(--shadow-modal)",
           padding: "4px",
           minWidth: 190,
           animation: "pgSlide 120ms ease-out",
@@ -182,7 +182,7 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
               color: item.disabled
                 ? "var(--text-placeholder)"
                 : item.danger
-                  ? "#F87171"
+                  ? "var(--status-5xx)"
                   : "var(--text-primary)",
               textAlign: "left",
               opacity: item.disabled ? 0.5 : 1,
@@ -247,7 +247,7 @@ export function TabStrip() {
     >
       {tabs.map((tab) => {
         const active = tab.id === activeTabId;
-        const mc = METHOD_COLORS[tab.request.method] ?? "#94A3B8";
+        const mc = METHOD_COLORS[tab.request.method] ?? METHOD_COLORS.GET;
         const isEditing = editingId === tab.id;
         return (
           <div
@@ -284,7 +284,7 @@ export function TabStrip() {
               boxShadow: active ? "inset 0 2px 0 var(--accent)" : "none",
               transition: "background 0.1s",
             }}
-            className={!active ? "hover:bg-[#1b1b22]" : ""}
+            className={!active ? "hover:bg-accent" : ""}
           >
             <span
               style={{
@@ -419,7 +419,7 @@ export function TabStrip() {
           cursor: "pointer",
           fontFamily: "inherit",
         }}
-        className="hover:text-[var(--text-primary)] hover:bg-[#1b1b22]"
+        className="hover:text-[var(--text-primary)] hover:bg-accent"
       >
         <svg
           width="16"

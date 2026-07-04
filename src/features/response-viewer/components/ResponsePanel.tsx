@@ -46,10 +46,10 @@ function isBinaryBody(body: number[]): boolean {
 }
 
 function getStatusColor(status: number): string {
-  if (status >= 200 && status < 300) return "#4ADE80";
-  if (status >= 300 && status < 400) return "#60A5FA";
-  if (status >= 400 && status < 500) return "#FB923C";
-  if (status >= 500) return "#F87171";
+  if (status >= 200 && status < 300) return "var(--status-2xx)";
+  if (status >= 300 && status < 400) return "var(--status-3xx)";
+  if (status >= 400 && status < 500) return "var(--status-4xx)";
+  if (status >= 500) return "var(--status-5xx)";
   return "var(--text-secondary)";
 }
 
@@ -467,7 +467,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
                     width: 200,
                     fontFamily: "var(--font-mono)",
                     fontSize: 12.5,
-                    color: "#4A9EFA",
+                    color: "var(--method-get)",
                   }}
                 >
                   {key}
@@ -599,9 +599,9 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             padding: "12px 16px",
             background: "var(--bg-elevated)",
             border: "1px solid var(--border)",
-            borderLeft: "3px solid #4ADE80",
+            borderLeft: "3px solid var(--status-2xx)",
             borderRadius: "var(--radius)",
-            boxShadow: "0 14px 40px rgba(0,0,0,0.5)",
+            boxShadow: "var(--shadow-toast)",
             zIndex: 80,
             animation: "pgToast 150ms ease-out",
           }}
@@ -622,7 +622,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
               height="12"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#4ADE80"
+              stroke="var(--status-2xx)"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
