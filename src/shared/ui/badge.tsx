@@ -1,33 +1,4 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import * as React from "react";
 import { cn } from "@/shared/lib/utils";
-
-const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide transition-colors",
-  {
-    variants: {
-      variant: {
-        default: "bg-muted text-muted-foreground border border-border",
-        success: "bg-status-2xx/15 text-status-2xx border border-status-2xx/30",
-        warning: "bg-status-4xx/15 text-status-4xx border border-status-4xx/30",
-        error: "bg-status-5xx/15 text-status-5xx border border-status-5xx/30",
-        info: "bg-status-3xx/15 text-status-3xx border border-status-3xx/30",
-      },
-    },
-    defaultVariants: { variant: "default" },
-  },
-);
-
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof badgeVariants> {}
-
-export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ className, variant, ...props }, ref) => (
-    <span ref={ref} className={cn(badgeVariants({ variant }), className)} {...props} />
-  ),
-);
-Badge.displayName = "Badge";
 
 export const METHOD_COLORS: Record<string, string> = {
   GET: "bg-method-get/15 text-method-get border border-method-get/30",

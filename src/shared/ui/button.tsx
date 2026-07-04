@@ -9,18 +9,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border",
         outline:
           "border border-border bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground",
         ghost: "bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground",
         "ghost-icon":
           "bg-transparent border border-border text-muted-foreground hover:text-foreground hover:bg-accent",
-        elevated: "bg-card border border-border text-foreground hover:bg-accent",
-        link: "text-primary underline-offset-4 hover:underline",
         primary:
           "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_2px_12px_color-mix(in_oklch,var(--primary)_40%,transparent)]",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         "danger-ghost":
           "bg-transparent border border-border text-muted-foreground hover:border-destructive hover:text-destructive",
         "danger-filled":
@@ -30,8 +25,6 @@ const buttonVariants = cva(
         icon: "h-7 w-7 p-0 rounded text-xs",
         xs: "h-7 px-2.5 rounded text-2xs",
         sm: "h-8 px-3 rounded text-xs",
-        md: "h-10 px-5 rounded text-sm font-semibold",
-        lg: "h-10 px-5 rounded text-sm font-semibold",
       },
     },
     defaultVariants: { variant: "default", size: "sm" },
@@ -53,5 +46,3 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 Button.displayName = "Button";
-
-export { buttonVariants };

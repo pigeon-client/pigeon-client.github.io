@@ -135,7 +135,10 @@
       "Bash(pkill -f vite)",
       "Bash(grep -rn \"#[0-9A-Fa-f]\\\\{6\\\\}\\\\|#fff\\\\b\\\\|rgba\\(0,0,0\" src --include=\"*.tsx\")",
       "Bash(grep -rn \"#[0-9A-Fa-f]\\\\{6\\\\}\\\\|rgba\\(0,0,0\" src --include=\"*.tsx\")",
-      "Bash(pnpm check:write)"
+      "Bash(pnpm check:write)",
+      "Bash(curl -s -o /dev/null -w \"app: %{http_code}\\\\n\" http://localhost:1420/)",
+      "Bash(curl -s -o /dev/null -w \"AppContent transform: %{http_code}\\\\n\" \"http://localhost:1420/src/app/AppContent.tsx\")",
+      "Bash(pnpm remove *)"
     ]
   }
 }

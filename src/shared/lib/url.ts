@@ -21,18 +21,6 @@ export function parseUrl(input: string): string {
 }
 
 /**
- * Extract domain from URL for grouping
- */
-export function extractDomain(url: string): string {
-  try {
-    const parsed = new URL(url);
-    return parsed.hostname;
-  } catch {
-    return "unknown";
-  }
-}
-
-/**
  * Extract main domain (e.g., api.example.com -> example.com)
  */
 export function extractMainDomain(hostname: string): string {
