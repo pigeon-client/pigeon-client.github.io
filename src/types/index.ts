@@ -14,19 +14,8 @@ export type {
 
 // ── Feature types (relocated per-feature later) ──
 
-export interface ApiResponse {
-  status: number;
-  statusText: string;
-  headers: Record<string, string>;
-  body: number[];
-  contentType: string;
-  responseTime: number;
-  size: number;
-  resolvedUrl?: string;
-  sentHeaders?: Record<string, string>;
-}
-
 export type { Collection, CollectionNode } from "../features/collections/types";
 export { MAX_NESTING_DEPTH } from "../features/collections/types";
 export type { Environment } from "../features/environments/types";
+export type { ApiResponse } from "../features/execution/types";
 export type { DraftNode, HistoryItem } from "../features/history/types";

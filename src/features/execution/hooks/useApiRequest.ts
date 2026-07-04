@@ -1,8 +1,10 @@
 import { useEnvStore } from "@/features/environments";
+import type { HistoryItem } from "@/features/history";
 import { useHistoryStore } from "@/features/history";
 import { extractEndpoint } from "@/shared/lib/url";
+import type { RequestConfig } from "@/shared/types";
 import { sendRequest } from "../services/requestService";
-import type { ApiResponse, HistoryItem, RequestConfig } from "../types";
+import type { ApiResponse } from "../types";
 
 export function useApiRequest() {
   const activeEnv = useEnvStore((state) => state.activeEnv);

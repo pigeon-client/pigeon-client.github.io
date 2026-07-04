@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { ApiResponse, RequestConfig } from "../types";
+import type { ApiResponse } from "@/features/execution";
+import type { RequestConfig } from "@/shared/types";
 
 function pathFromUrl(url: string): string {
   if (!url) return "Untitled Request";

@@ -1,7 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
 import { type Environment, replaceEnvVariables } from "@/features/environments";
 import { parseUrl } from "@/shared/lib/url";
-import type { ApiResponse, RequestConfig } from "../types";
+import type { RequestConfig } from "@/shared/types";
+import type { ApiResponse } from "../types";
+import { tauriHttpClient } from "./TauriHttpClient";
 
 export interface SendOptions {
   followRedirects?: boolean;
@@ -90,7 +91,7 @@ export async function sendRequest(
   const startTime = performance.now();
 
   try {
-    const response = await invoke<ApiResponse>("send_api_request", {
+    const response = await tauriHttpClient.send({
       method: config.method,
       url,
       headers,
