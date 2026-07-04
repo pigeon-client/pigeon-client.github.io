@@ -1,12 +1,12 @@
 import { Check, ChevronDown, Globe, Play, Plus, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { KeyValueEditor } from "@/components/KeyValueEditor";
+import { parseEnvString } from "@/shared/lib/template";
 import { cn } from "@/shared/lib/utils";
+import type { KeyValue } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
 import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
-import { parseEnvString } from "../lib/env";
-import { useEnvStore } from "../store/envStore";
-import type { KeyValue } from "../types";
-import { KeyValueEditor } from "./KeyValueEditor";
+import { useEnvStore } from "../store";
 
 interface EnvModalProps {
   onClose: () => void;

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useCollectionStore } from "@/features/collections";
+import { EnvModal } from "@/features/environments";
 import { useHistoryStore } from "@/features/history";
 import { cn } from "@/shared/lib/utils";
 import { METHOD_COLORS } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Switch } from "@/shared/ui/switch";
 import pigeonLogo from "./assets/pigeon-logo-64.png";
-import { EnvModal } from "./components/EnvModal";
 import { ExportCurlModal } from "./components/ExportCurlModal";
 import { Header } from "./components/Header";
 import { ImportModal } from "./components/ImportModal";

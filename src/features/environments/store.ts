@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Environment } from "../types";
+import type { Environment } from "./types";
 
 interface EnvState {
   environments: Environment[];

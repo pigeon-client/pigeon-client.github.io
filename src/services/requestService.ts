@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
+import { type Environment, replaceEnvVariables } from "@/features/environments";
 import { parseUrl } from "@/shared/lib/url";
-import { replaceEnvVariables } from "../lib/env";
-import type { ApiResponse, Environment, RequestConfig } from "../types";
+import type { ApiResponse, RequestConfig } from "../types";
 
 export interface SendOptions {
   followRedirects?: boolean;

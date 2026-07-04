@@ -1,7 +1,7 @@
+import { useEnvStore } from "@/features/environments";
 import { useHistoryStore } from "@/features/history";
 import { extractEndpoint } from "@/shared/lib/url";
 import { sendRequest } from "../services/requestService";
-import { useEnvStore } from "../store/envStore";
 import type { ApiResponse, HistoryItem, RequestConfig } from "../types";
 
 export function useApiRequest() {

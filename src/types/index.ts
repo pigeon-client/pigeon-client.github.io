@@ -26,13 +26,7 @@ export interface ApiResponse {
   sentHeaders?: Record<string, string>;
 }
 
-export interface Environment {
-  id?: number;
-  name: string;
-  variables: Record<string, string>;
-}
-
 export type { Collection, CollectionNode } from "../features/collections/types";
 export { MAX_NESTING_DEPTH } from "../features/collections/types";
-
+export type { Environment } from "../features/environments/types";
 export type { DraftNode, HistoryItem } from "../features/history/types";
