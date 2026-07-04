@@ -1,8 +1,8 @@
 import { Download, Search, Settings, X } from "lucide-react";
 import type { RefObject } from "react";
+import pigeonLogo from "@/assets/pigeon-logo-32.png";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
-import pigeonLogo from "../assets/pigeon-logo-32.png";
 
 interface HeaderProps {
   onOpenSettings: () => void;
