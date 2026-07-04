@@ -1,11 +1,11 @@
 import hljs from "highlight.js";
 import { Download, FileCode, Terminal } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { generateCurl } from "@/lib/curl";
 import { Button } from "@/shared/ui/button";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { Tab } from "@/shared/ui/tabs-shim";
-import { generateCurl } from "../lib/curl";
-import { useTabStore } from "../store/tabStore";
+import { useTabStore } from "@/store/tabStore";
 
 function formatBody(body: number[]): string {
   return new TextDecoder().decode(new Uint8Array(body));
