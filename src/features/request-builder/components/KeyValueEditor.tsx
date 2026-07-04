@@ -30,7 +30,7 @@ function Checkbox({ on, onClick }: { on: boolean; onClick: () => void }) {
       onClick={onClick}
       className={cn(
         "flex h-4 w-4 shrink-0 items-center justify-center rounded p-0 transition-colors",
-        on ? "bg-primary" : "border-[1.5px] border-border bg-transparent",
+        on ? "bg-primary" : "border-2 border-border bg-transparent",
       )}
     >
       {on && (

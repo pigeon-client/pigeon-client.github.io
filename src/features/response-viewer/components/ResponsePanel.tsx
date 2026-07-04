@@ -324,7 +324,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
         </div>
         <span style={{ width: 1, height: 16, background: "var(--border)", margin: "0 16px" }} />
         <div
-          style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--text-secondary)" }}
+          style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)" }}
         >
           <svg
             width="13"
@@ -599,7 +599,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             right: 22,
             display: "flex",
             alignItems: "center",
-            gap: 11,
+            gap: 12,
             padding: "12px 16px",
             background: "var(--bg-elevated)",
             border: "1px solid var(--border)",

@@ -33,7 +33,7 @@ function formatTime(timestamp: number): string {
 /* ── Section header in file tree ── */
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "12px 8px 5px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 8px 5px" }}>
       <span
         style={{
           fontSize: "var(--text-2xs)",
@@ -1079,7 +1079,7 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 7,
+                    gap: 8,
                     margin: "10px 12px 0",
                     background: "transparent",
                     border: "none",
