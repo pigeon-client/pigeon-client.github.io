@@ -1,7 +1,7 @@
 import { Paperclip } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { cn } from "@/shared/lib/utils";
-import type { KeyValue } from "../types";
+import type { KeyValue } from "@/shared/types";
 
 interface KeyValueEditorProps {
   items: KeyValue[];

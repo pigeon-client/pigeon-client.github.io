@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { useTabStore } from "@/features/request-builder";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
-import { useTabStore } from "@/store/tabStore";
 import { parseCurl } from "../services/curlService";
 
 interface ImportModalProps {

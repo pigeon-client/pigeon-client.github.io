@@ -3,6 +3,7 @@ import { useCollectionStore } from "@/features/collections";
 import { EnvModal } from "@/features/environments";
 import { useHistoryStore } from "@/features/history";
 import { ExportCurlModal, ImportModal } from "@/features/import-export";
+import { RequestEditor, UrlBar, useTabStore } from "@/features/request-builder";
 import { ResponsePanel } from "@/features/response-viewer";
 import { cn } from "@/shared/lib/utils";
 import { METHOD_COLORS } from "@/shared/ui/badge";
@@ -11,11 +12,8 @@ import { Switch } from "@/shared/ui/switch";
 import pigeonLogo from "./assets/pigeon-logo-64.png";
 import { Header } from "./components/Header";
 import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
-import { RequestEditor } from "./components/RequestEditor";
 import { Sidebar } from "./components/Sidebar";
-import { UrlBar } from "./components/UrlBar";
 import { checkForUpdates } from "./lib/updater";
-import { useTabStore } from "./store/tabStore";
 
 /* ── Empty state when no URL has been typed yet ── */
 function EmptyRequestState() {

@@ -1,10 +1,10 @@
 import hljs from "highlight.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/shared/lib/utils";
+import type { BodyType, KeyValue } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { useAutoClose } from "../hooks/useAutoClose";
-import type { BodyType, KeyValue } from "../types";
 import { KeyValueEditor } from "./KeyValueEditor";
 
 interface BodyEditorProps {

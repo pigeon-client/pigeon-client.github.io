@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
+import { useTabStore } from "@/features/request-builder";
 import { Button } from "@/shared/ui/button";
 import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
-import { useTabStore } from "@/store/tabStore";
 import { generateCurl } from "../lib/generateCurl";
 
 interface ExportCurlModalProps {

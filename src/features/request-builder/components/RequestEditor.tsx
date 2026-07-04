@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
+import type { AuthConfig, BodyType, Header, KeyValue } from "@/shared/types";
 import { CountBadge } from "@/shared/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { useTabStore } from "../store/tabStore";
-import type { AuthConfig, BodyType, Header, KeyValue } from "../types";
+import { useTabStore } from "../store";
 import { AuthEditor } from "./AuthEditor";
 import { BodyEditor } from "./BodyEditor";
 import { HeadersEditor } from "./HeadersEditor";

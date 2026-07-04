@@ -5,9 +5,9 @@ import { useApiRequest } from "@/features/execution";
 import { parseCurl } from "@/features/import-export";
 import { extractEndpoint, parseUrl } from "@/shared/lib/url";
 import { cn } from "@/shared/lib/utils";
+import type { HttpMethod } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
-import { useTabStore } from "../store/tabStore";
-import type { HttpMethod } from "../types";
+import { useTabStore } from "../store";
 
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 

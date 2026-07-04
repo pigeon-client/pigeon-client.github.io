@@ -1,4 +1,4 @@
-import type { AuthConfig } from "../types";
+import type { AuthConfig } from "@/shared/types";
 
 interface AuthEditorProps {
   auth: AuthConfig;

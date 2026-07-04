@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Header } from "../types";
+import type { Header } from "@/shared/types";
 import { KeyValueEditor } from "./KeyValueEditor";
 
 interface HeadersEditorProps {

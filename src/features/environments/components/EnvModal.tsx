@@ -1,6 +1,6 @@
 import { Check, ChevronDown, Globe, Play, Plus, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { KeyValueEditor } from "@/components/KeyValueEditor";
+import { KeyValueEditor } from "@/features/request-builder";
 import { parseEnvString } from "@/shared/lib/template";
 import { cn } from "@/shared/lib/utils";
 import type { KeyValue } from "@/shared/types";
