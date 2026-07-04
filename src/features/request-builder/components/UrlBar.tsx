@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { replaceEnvVariables, useEnvStore } from "@/features/environments";
 import { useApiRequest } from "@/features/execution";
 import { parseCurl } from "@/features/import-export";
-import { extractEndpoint, parseUrl } from "@/shared/lib/url";
+import { extractEndpoint, parseUrl, splitUrlQuery } from "@/shared/lib/url";
 import { cn } from "@/shared/lib/utils";
 import type { HttpMethod } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
@@ -152,6 +152,43 @@ export function UrlBar() {
           <input
             type="text"
             value={request.url}
+            onPaste={(e) => {
+              const text = e.clipboardData.getData("text");
+              if (!text) return;
+              const trimmed = text.trim();
+
+              // cURL command → parse method/headers/body/params
+              if (trimmed.toLowerCase().startsWith("curl ")) {
+                const parsed = parseCurl(text);
+                if (parsed?.url) {
+                  e.preventDefault();
+                  updateTabRequest(activeTab.id, parsed);
+                  if (!activeTab.nameLocked) {
+                    setTabName(activeTab.id, extractEndpoint(parsed.url));
+                  }
+                  if (toastTimer.current) clearTimeout(toastTimer.current);
+                  setCurlToast(true);
+                  toastTimer.current = setTimeout(() => setCurlToast(false), 2500);
+                }
+                return;
+              }
+
+              // Plain URL carrying a query string → lift into the Params editor.
+              // Guard: URLs have no internal whitespace, so a spaced paste is left alone.
+              if (trimmed.includes("?") && !/\s/.test(trimmed)) {
+                e.preventDefault();
+                const { base, params } = splitUrlQuery(trimmed);
+                const existing = request.params.filter((p) => p.key.trim() || p.value.trim());
+                const merged = new Map(existing.map((p) => [p.key, p]));
+                for (const np of params) {
+                  merged.set(np.key, { key: np.key, value: np.value, enabled: true });
+                }
+                updateTabRequest(activeTab.id, { url: base, params: [...merged.values()] });
+                if (!activeTab.nameLocked) {
+                  setTabName(activeTab.id, extractEndpoint(base));
+                }
+              }
+            }}
             onChange={(e) => {
               const raw = e.target.value;
               if (raw.trimStart().toLowerCase().startsWith("curl ")) {

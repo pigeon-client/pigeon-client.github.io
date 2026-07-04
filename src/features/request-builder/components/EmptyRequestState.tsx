@@ -75,7 +75,7 @@ export function EmptyRequestState() {
           gap: 8,
           height: 38,
           padding: "0 20px",
-          background: "var(--accent)",
+          background: "var(--primary)",
           border: "none",
           borderRadius: "var(--radius)",
           color: "var(--primary-foreground)",

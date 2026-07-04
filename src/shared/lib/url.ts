@@ -1,4 +1,36 @@
 /**
+ * Split a URL into its base (no query) and the decoded query pairs.
+ * Used to lift a pasted URL's query string into the Params editor.
+ */
+export function splitUrlQuery(url: string): {
+  base: string;
+  params: { key: string; value: string }[];
+} {
+  const qIdx = url.indexOf("?");
+  if (qIdx === -1) return { base: url, params: [] };
+  const base = url.slice(0, qIdx);
+  const hashIdx = url.indexOf("#", qIdx);
+  const qs = url.slice(qIdx + 1, hashIdx === -1 ? undefined : hashIdx);
+  const dec = (s: string) => {
+    try {
+      return decodeURIComponent(s.replace(/\+/g, " "));
+    } catch {
+      return s;
+    }
+  };
+  const params = qs
+    .split("&")
+    .filter(Boolean)
+    .map((pair) => {
+      const eq = pair.indexOf("=");
+      return eq === -1
+        ? { key: dec(pair), value: "" }
+        : { key: dec(pair.slice(0, eq)), value: dec(pair.slice(eq + 1)) };
+    });
+  return { base, params };
+}
+
+/**
  * Parse user input URL
  * :3000 -> http://localhost:3000
  * Respects existing protocols

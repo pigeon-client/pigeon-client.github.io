@@ -61,7 +61,9 @@ export function parseCurl(input: string): Partial<RequestConfig> | null {
 
     return {
       method: toMethod(parsed.method ?? "GET"),
-      url: parsed.raw_url ?? parsed.url,
+      // base url only — the query string is carried in `params` (queries) to avoid
+      // double-appending when the request is sent.
+      url: parsed.url ?? parsed.raw_url,
       headers,
       params: queries,
       body,
