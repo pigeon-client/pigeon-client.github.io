@@ -45,26 +45,6 @@ export interface HistoryItem {
   request: RequestConfig;
 }
 
-// Max nesting depth for collection folders (configurable)
-export const MAX_NESTING_DEPTH = 10;
-
-export interface CollectionNode {
-  id: string;
-  type: "folder" | "request";
-  name: string;
-  children?: CollectionNode[]; // folders only
-  request?: RequestConfig; // requests only
-  method?: HttpMethod;
-  url?: string;
-}
-
-export interface Collection {
-  id?: string;
-  name: string;
-  root: CollectionNode[]; // tree of folders & requests
-  createdAt: number;
-}
-
 /** Draft auto-folder hierarchy: domain → subdomain → path folders */
 export interface DraftNode {
   id: string;
@@ -77,3 +57,6 @@ export interface DraftNode {
   /** Key used to match existing drafts (method + normalized URL) */
   matchKey?: string;
 }
+
+export type { Collection, CollectionNode } from "../features/collections/types";
+export { MAX_NESTING_DEPTH } from "../features/collections/types";

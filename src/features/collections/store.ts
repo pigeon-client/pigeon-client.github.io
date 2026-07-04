@@ -1,16 +1,12 @@
 import { create } from "zustand";
+import type { RequestConfig } from "@/shared/types";
 import {
   deleteCollection as dbDeleteCollection,
   getCollections as dbGetCollections,
   saveCollection as dbSaveCollection,
   updateCollection as dbUpdateCollection,
-} from "../lib/db";
-import {
-  type Collection,
-  type CollectionNode,
-  MAX_NESTING_DEPTH,
-  type RequestConfig,
-} from "../types";
+} from "./services/db";
+import { type Collection, type CollectionNode, MAX_NESTING_DEPTH } from "./types";
 
 interface CollectionState {
   collections: Collection[];
