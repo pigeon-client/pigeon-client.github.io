@@ -55,7 +55,7 @@ function ThemeSwatch({
             <div className="h-1 rounded bg-foreground/50" />
           </div>
         </div>
-        <div className="mt-1 text-center text-[10px] font-medium text-foreground/80">{label}</div>
+        <div className="mt-1 text-center text-2xs font-medium text-foreground/80">{label}</div>
       </div>
     </button>
   );
@@ -124,7 +124,7 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
         className="absolute right-0 top-0 bottom-0 flex w-[360px] flex-col border-l border-border bg-card shadow-drawer"
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <span className="text-[15px] font-semibold text-foreground">Settings</span>
+          <span className="text-base font-semibold text-foreground">Settings</span>
           <Button variant="ghost-icon" size="icon" onClick={onClose} aria-label="Close settings">
             <svg
               width="17"
@@ -145,7 +145,7 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
 
         <div className="flex-1 overflow-y-auto p-5">
           {/* Theme picker */}
-          <div className="mb-3 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="mb-3 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
             Theme
           </div>
           <div className="mb-6 flex gap-2.5">
@@ -160,19 +160,19 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
             ))}
           </div>
 
-          <div className="mb-3 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="mb-3 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
             Requests
           </div>
           <div className="flex items-center justify-between py-2">
-            <span className="text-[13.5px] text-foreground">Follow Redirects</span>
+            <span className="text-code text-foreground">Follow Redirects</span>
             <Switch checked={followRedirects} onCheckedChange={toggleFollowRedirects} />
           </div>
           <div className="flex items-center justify-between py-2">
-            <span className="text-[13.5px] text-foreground">SSL Verification</span>
+            <span className="text-code text-foreground">SSL Verification</span>
             <Switch checked={sslVerify} onCheckedChange={toggleSslVerify} />
           </div>
           <div className="flex items-center justify-between py-2">
-            <span className="text-[13.5px] text-foreground">Proxy URL</span>
+            <span className="text-code text-foreground">Proxy URL</span>
             <input
               value={proxyUrl}
               onChange={(e) => {
@@ -184,7 +184,7 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
             />
           </div>
 
-          <div className="mb-3 mt-6 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="mb-3 mt-6 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
             Data
           </div>
           <div className="mb-3.5 overflow-hidden rounded border border-border bg-card">
@@ -200,8 +200,8 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
                   i > 0 && "border-t border-border",
                 )}
               >
-                <span className="text-[13px] text-muted-foreground">{label}</span>
-                <span className="font-mono text-[13px] text-foreground">{val}</span>
+                <span className="text-code text-muted-foreground">{label}</span>
+                <span className="font-mono text-code text-foreground">{val}</span>
               </div>
             ))}
           </div>
@@ -224,12 +224,12 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
             </Button>
           </div>
 
-          <div className="mb-3 mt-6 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="mb-3 mt-6 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
             About
           </div>
           <div className="flex justify-between py-1">
-            <span className="text-[13px] text-muted-foreground">Version</span>
-            <span className="font-mono text-[13px] text-foreground">1.0.0</span>
+            <span className="text-code text-muted-foreground">Version</span>
+            <span className="font-mono text-code text-foreground">1.0.0</span>
           </div>
         </div>
       </div>

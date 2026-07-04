@@ -110,7 +110,7 @@ export function HeadersEditor({ headers, onHeadersChange }: HeadersEditorProps) 
       />
 
       {/* Auto-generated section */}
-      <div className="mb-1 mt-4 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="mb-1 mt-4 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
         Auto-generated
       </div>
       <div className="grid h-8.5 grid-cols-[28px_1fr_1.4fr_28px] items-center opacity-60">
@@ -132,9 +132,9 @@ export function HeadersEditor({ headers, onHeadersChange }: HeadersEditorProps) 
             </svg>
           </span>
         </span>
-        <span className="font-mono text-[13px] text-muted-foreground">Content-Type</span>
-        <span className="font-mono text-[13px] text-muted-foreground">application/json</span>
-        <span className="text-[9px] uppercase tracking-wide text-muted-foreground">auto</span>
+        <span className="font-mono text-code text-muted-foreground">Content-Type</span>
+        <span className="font-mono text-code text-muted-foreground">application/json</span>
+        <span className="text-2xs uppercase tracking-wide text-muted-foreground">auto</span>
       </div>
     </div>
   );

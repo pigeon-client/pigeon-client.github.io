@@ -117,7 +117,7 @@ export function KeyValueEditor({
   return (
     <div>
       {/* Column headers */}
-      <div className="grid grid-cols-[28px_1fr_1.4fr_28px] gap-0 border-b border-border pb-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="grid grid-cols-[28px_1fr_1.4fr_28px] gap-0 border-b border-border pb-2 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
         <span />
         <span>Key</span>
         <span>Value</span>
@@ -149,7 +149,7 @@ export function KeyValueEditor({
               onKeyDown={(e) => onKeyDown?.(e, index)}
               onFocus={() => onKeyFocus?.(index)}
               className={cn(
-                "w-full bg-transparent font-mono text-[13px] text-method-get outline-none",
+                "w-full bg-transparent font-mono text-code text-method-get outline-none",
                 !item.enabled && "opacity-50",
               )}
             />
@@ -192,7 +192,7 @@ export function KeyValueEditor({
                 value={item.value}
                 onChange={(e) => update(index, "value", e.target.value)}
                 className={cn(
-                  "w-full truncate bg-transparent font-mono text-[13px] text-foreground outline-none",
+                  "w-full truncate bg-transparent font-mono text-code text-foreground outline-none",
                   !item.enabled && "opacity-50",
                 )}
               />

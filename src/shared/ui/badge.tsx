@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/shared/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors",
+  "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide transition-colors",
   {
     variants: {
       variant: {
@@ -45,7 +45,7 @@ export function MethodBadge({ method }: { method: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-5 min-w-[44px] items-center justify-center rounded px-1.5 font-mono text-[10px] font-semibold tracking-wide",
+        "inline-flex h-5 min-w-[44px] items-center justify-center rounded px-1.5 font-mono text-2xs font-semibold tracking-wide",
         cls,
       )}
     >
@@ -58,7 +58,7 @@ export function CountBadge({ count, active }: { count: number; active?: boolean 
   return (
     <span
       className={cn(
-        "ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold",
+        "ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-2xs font-semibold",
         active ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground",
       )}
     >

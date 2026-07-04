@@ -134,7 +134,8 @@
       "Bash(curl -s -o /dev/null -w \"tree-sitter.wasm: %{http_code} %{content_type}\\\\n\" http://localhost:1420/tree-sitter.wasm)",
       "Bash(pkill -f vite)",
       "Bash(grep -rn \"#[0-9A-Fa-f]\\\\{6\\\\}\\\\|#fff\\\\b\\\\|rgba\\(0,0,0\" src --include=\"*.tsx\")",
-      "Bash(grep -rn \"#[0-9A-Fa-f]\\\\{6\\\\}\\\\|rgba\\(0,0,0\" src --include=\"*.tsx\")"
+      "Bash(grep -rn \"#[0-9A-Fa-f]\\\\{6\\\\}\\\\|rgba\\(0,0,0\" src --include=\"*.tsx\")",
+      "Bash(pnpm check:write)"
     ]
   }
 }

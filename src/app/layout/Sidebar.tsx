@@ -36,7 +36,7 @@ function SectionHeader({ label }: { label: string }) {
     <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "12px 8px 5px" }}>
       <span
         style={{
-          fontSize: 10.5,
+          fontSize: "var(--text-2xs)",
           fontWeight: 600,
           color: "var(--text-secondary)",
           textTransform: "uppercase",
@@ -166,7 +166,7 @@ function TreeRow({
               flex: 1,
               minWidth: 0,
               fontFamily: "var(--font-mono)",
-              fontSize: 12.5,
+              fontSize: "var(--text-xs)",
               fontWeight: depth === 0 ? 600 : 500,
               color: depth === 0 ? "var(--text-primary)" : "var(--text-secondary)",
               whiteSpace: "nowrap",
@@ -179,7 +179,7 @@ function TreeRow({
           {showCount && (
             <span
               style={{
-                fontSize: 10,
+                fontSize: "var(--text-2xs)",
                 fontWeight: 600,
                 color: "var(--text-secondary)",
                 background: "var(--bg-elevated)",
@@ -202,7 +202,7 @@ function TreeRow({
               <span
                 style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: 12,
+                  fontSize: "var(--text-xs)",
                   fontWeight: 600,
                   color: mc,
                   flexShrink: 0,
@@ -215,7 +215,7 @@ function TreeRow({
                 style={{
                   flex: 1,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 12.5,
+                  fontSize: "var(--text-xs)",
                   color: "var(--text-primary)",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
@@ -232,7 +232,7 @@ function TreeRow({
                 style={{
                   flex: 1,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 12.5,
+                  fontSize: "var(--text-xs)",
                   color: "var(--text-primary)",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
@@ -246,7 +246,7 @@ function TreeRow({
           <span
             style={{
               flexShrink: 0,
-              fontSize: 10.5,
+              fontSize: "var(--text-2xs)",
               color: "var(--text-secondary)",
               paddingLeft: 8,
               whiteSpace: "nowrap",
@@ -553,7 +553,7 @@ function HistoryRow({
       <span
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 12.5,
+          fontSize: "var(--text-xs)",
           fontWeight: 500,
           color: "var(--text-primary)",
           marginLeft: 9,
@@ -569,7 +569,7 @@ function HistoryRow({
         <span
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 10.5,
+            fontSize: "var(--text-2xs)",
             color: statusColor,
             marginLeft: 6,
             flexShrink: 0,
@@ -579,7 +579,12 @@ function HistoryRow({
         </span>
       )}
       <span
-        style={{ fontSize: 10.5, color: "var(--text-secondary)", flexShrink: 0, marginLeft: 4 }}
+        style={{
+          fontSize: "var(--text-2xs)",
+          color: "var(--text-secondary)",
+          flexShrink: 0,
+          marginLeft: 4,
+        }}
       >
         {formatTime(item.timestamp)}
       </span>
@@ -900,7 +905,7 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
                           flex: 1,
                           minWidth: 0,
                           fontFamily: "var(--font-mono)",
-                          fontSize: 12.5,
+                          fontSize: "var(--text-xs)",
                           fontWeight: 600,
                           color: "var(--text-primary)",
                           whiteSpace: "nowrap",
@@ -912,7 +917,7 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
                       </span>
                       <span
                         style={{
-                          fontSize: 10,
+                          fontSize: "var(--text-2xs)",
                           fontWeight: 600,
                           color: "var(--text-secondary)",
                           background: "var(--bg-elevated)",
@@ -1039,13 +1044,13 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
                         outline: "none",
                         color: "var(--text-primary)",
                         fontFamily: "inherit",
-                        fontSize: 13,
+                        fontSize: "var(--text-code)",
                       }}
                     />
                   </div>
                   <div
                     style={{
-                      fontSize: 11,
+                      fontSize: "var(--text-2xs)",
                       color: "var(--text-secondary)",
                       padding: "7px 4px 0",
                       lineHeight: 1.5,
@@ -1055,7 +1060,7 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
                     <kbd
                       style={{
                         fontFamily: "var(--font-mono)",
-                        fontSize: 10,
+                        fontSize: "var(--text-2xs)",
                         color: "var(--text-secondary)",
                         border: "1px solid var(--border)",
                         borderRadius: "var(--radius)",
@@ -1080,7 +1085,7 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
                     border: "none",
                     color: "var(--text-secondary)",
                     fontFamily: "inherit",
-                    fontSize: 12.5,
+                    fontSize: "var(--text-xs)",
                     fontWeight: 500,
                     cursor: "pointer",
                     padding: 0,
@@ -1111,10 +1116,10 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
 
       {/* Status bar */}
       <div className="flex h-6 flex-shrink-0 items-center justify-between border-t border-border px-3">
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-2xs text-muted-foreground">
           {history.length} requests · {drafts.length} drafts
         </span>
-        <kbd className="rounded border border-border px-1 font-mono text-[10px] text-muted-foreground">
+        <kbd className="rounded border border-border px-1 font-mono text-2xs text-muted-foreground">
           ?
         </kbd>
       </div>
@@ -1145,12 +1150,14 @@ function EmptyState({
         gap: 6,
       }}
     >
-      <span style={{ fontSize: 24 }}>{icon}</span>
-      <span style={{ fontSize: 12.5, color: "var(--text-secondary)", fontWeight: 500 }}>
+      <span style={{ fontSize: "var(--text-2xl)" }}>{icon}</span>
+      <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", fontWeight: 500 }}>
         {label}
       </span>
       {sub && (
-        <span style={{ fontSize: 11.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+        <span
+          style={{ fontSize: "var(--text-2xs)", color: "var(--text-secondary)", lineHeight: 1.5 }}
+        >
           {sub}
         </span>
       )}
@@ -1163,7 +1170,7 @@ function EmptyState({
             background: "transparent",
             border: "none",
             color: "var(--accent)",
-            fontSize: 12,
+            fontSize: "var(--text-xs)",
             cursor: "pointer",
             fontFamily: "inherit",
             fontWeight: 500,

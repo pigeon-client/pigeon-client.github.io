@@ -121,7 +121,7 @@ export function UrlBar() {
             type="button"
             onClick={() => setMethodOpen((o) => !o)}
             className={cn(
-              "flex h-9 w-[104px] cursor-pointer items-center justify-between gap-2 rounded border bg-card px-3 font-mono text-[13px] font-bold transition-colors",
+              "flex h-9 w-[104px] cursor-pointer items-center justify-between gap-2 rounded border bg-card px-3 font-mono text-code font-bold transition-colors",
               methodOpen ? "border-primary" : "border-border",
               methodTriggerClass,
             )}
@@ -179,9 +179,9 @@ export function UrlBar() {
               }
             }}
             placeholder="https://api.example.com/endpoint"
-            className="absolute inset-0 z-[2] bg-transparent px-3 font-mono text-[13px] text-transparent caret-foreground outline-none"
+            className="absolute inset-0 z-[2] bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
           />
-          <div className="pointer-events-none z-[1] select-none truncate font-mono text-[13px]">
+          <div className="pointer-events-none z-[1] select-none truncate font-mono text-code">
             {renderUrlSegments(request.url)}
           </div>
         </div>
@@ -234,7 +234,7 @@ export function UrlBar() {
 
       {/* Resolved URL preview */}
       {!curlToast && request.url && previewUrl !== request.url && (
-        <div className="ml-0.5 mt-1 truncate text-[11px] text-muted-foreground">{previewUrl}</div>
+        <div className="ml-0.5 mt-1 truncate text-2xs text-muted-foreground">{previewUrl}</div>
       )}
     </div>
   );

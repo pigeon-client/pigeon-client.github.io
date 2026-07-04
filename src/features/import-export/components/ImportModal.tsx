@@ -60,7 +60,7 @@ export function ImportModal({ onClose }: ImportModalProps) {
       <ModalHeader title="Import from cURL" onClose={onClose} />
 
       <div className="px-5 pt-5">
-        <div className="mb-2.5 text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="mb-2.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
           cURL Command
         </div>
         <textarea
@@ -116,7 +116,7 @@ export function ImportModal({ onClose }: ImportModalProps) {
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <span className={cn("shrink-0 font-mono text-[11.5px] font-semibold", methodClass)}>
+            <span className={cn("shrink-0 font-mono text-2xs font-semibold", methodClass)}>
               {preview.method}
             </span>
             <span className="truncate font-mono text-xs text-muted-foreground">{preview.url}</span>

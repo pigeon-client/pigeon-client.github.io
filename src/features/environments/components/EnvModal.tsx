@@ -227,7 +227,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
               <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center text-muted-foreground">
                 <Globe className="h-6 w-6 opacity-40" />
                 <div className="text-xs font-medium">No environments</div>
-                <div className="text-[11px] text-muted-foreground/70">Create one above</div>
+                <div className="text-2xs text-muted-foreground/70">Create one above</div>
               </div>
             )}
 
@@ -273,7 +273,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                             setRenamingId(null);
                           }
                         }}
-                        className="h-5 w-full rounded border border-primary bg-card px-1.5 font-[inherit] text-[13px] font-medium text-foreground outline-none"
+                        className="h-5 w-full rounded border border-primary bg-card px-1.5 font-[inherit] text-code font-medium text-foreground outline-none"
                       />
                     ) : (
                       // biome-ignore lint/a11y/useSemanticElements: rename trigger kept as <span> so it stays inline with the env name; uses role+tabIndex+keyDown for keyboard access
@@ -290,17 +290,17 @@ export function EnvModal({ onClose }: EnvModalProps) {
                             handleRename(env.id);
                           }
                         }}
-                        className="block truncate text-[13px] font-medium text-foreground"
+                        className="block truncate text-code font-medium text-foreground"
                       >
                         {env.name}
                       </span>
                     )}
                   </div>
 
-                  <span className="shrink-0 text-[10px] text-muted-foreground">{varCount}</span>
+                  <span className="shrink-0 text-2xs text-muted-foreground">{varCount}</span>
 
                   {isActive && (
-                    <span className="shrink-0 rounded bg-primary/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-primary">
+                    <span className="shrink-0 rounded bg-primary/15 px-1.5 py-px text-2xs font-bold uppercase tracking-wide text-primary">
                       Active
                     </span>
                   )}
@@ -322,7 +322,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                     {selectedEnv.name}
                   </span>
                   {activeEnv?.id === selectedEnv.id && (
-                    <span className="rounded bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                    <span className="rounded bg-primary/15 px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-primary">
                       Active
                     </span>
                   )}
@@ -358,10 +358,8 @@ export function EnvModal({ onClose }: EnvModalProps) {
                           }}
                           className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left font-[inherit] text-xs text-foreground hover:bg-accent"
                         >
-                          <span className="font-mono text-[11px]">.json</span>
-                          <span className="text-[11px] text-muted-foreground">
-                            Environment file
-                          </span>
+                          <span className="font-mono text-2xs">.json</span>
+                          <span className="text-2xs text-muted-foreground">Environment file</span>
                         </button>
                         <button
                           type="button"
@@ -372,8 +370,8 @@ export function EnvModal({ onClose }: EnvModalProps) {
                           }}
                           className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left font-[inherit] text-xs text-foreground hover:bg-accent"
                         >
-                          <span className="font-mono text-[11px]">.env</span>
-                          <span className="text-[11px] text-muted-foreground">Dotenv file</span>
+                          <span className="font-mono text-2xs">.env</span>
+                          <span className="text-2xs text-muted-foreground">Dotenv file</span>
                         </button>
                       </div>
                     )}
@@ -384,7 +382,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                       variant="ghost"
                       size="xs"
                       onClick={handleImportJson}
-                      className="h-6.5 gap-1 text-[11px]"
+                      className="h-6.5 gap-1 text-2xs"
                     >
                       .json
                     </Button>
@@ -392,7 +390,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                       variant="ghost"
                       size="xs"
                       onClick={handleImportEnvFile}
-                      className="h-6.5 gap-1 text-[11px]"
+                      className="h-6.5 gap-1 text-2xs"
                     >
                       .env
                     </Button>
@@ -402,7 +400,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                     variant="ghost"
                     size="xs"
                     onClick={handleExportJson}
-                    className="h-6.5 gap-1 text-[11px]"
+                    className="h-6.5 gap-1 text-2xs"
                   >
                     <DownloadIcon /> JSON
                   </Button>
@@ -410,7 +408,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                     variant="ghost"
                     size="xs"
                     onClick={handleExportEnv}
-                    className="h-6.5 gap-1 text-[11px]"
+                    className="h-6.5 gap-1 text-2xs"
                   >
                     <DownloadIcon /> .env
                   </Button>
@@ -419,14 +417,14 @@ export function EnvModal({ onClose }: EnvModalProps) {
 
                   {deletingId === selectedEnv.id && selectedEnv.id != null ? (
                     <div className="flex items-center gap-1">
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-2xs text-muted-foreground">
                         Delete {selectedEnv.name}?
                       </span>
                       <Button
                         variant="danger-filled"
                         size="xs"
                         onClick={() => selectedEnv.id != null && handleDelete(selectedEnv.id)}
-                        className="h-6 text-[10.5px]"
+                        className="h-6 text-2xs"
                       >
                         Yes, Delete
                       </Button>
@@ -434,7 +432,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                         variant="ghost"
                         size="xs"
                         onClick={() => setDeletingId(null)}
-                        className="h-6 text-[10.5px]"
+                        className="h-6 text-2xs"
                       >
                         Cancel
                       </Button>
@@ -477,14 +475,14 @@ export function EnvModal({ onClose }: EnvModalProps) {
                   <Button variant="ghost" size="xs" onClick={handleSaveVariables} className="gap-1">
                     <Check className="h-3 w-3" /> Save Variables
                   </Button>
-                  <span className="ml-2.5 text-[11px] text-muted-foreground">
+                  <span className="ml-2.5 text-2xs text-muted-foreground">
                     Use <span className="font-mono">{"{{VARIABLE_NAME}}"}</span> in URLs, headers,
                     and body
                   </span>
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-[11.5px] text-muted-foreground">
+                  <span className="text-2xs text-muted-foreground">
                     Preview how variables resolve in request URLs.
                   </span>
                   <Button variant="ghost" size="xs" onClick={handleTestVariables} className="gap-1">

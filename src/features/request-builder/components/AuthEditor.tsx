@@ -31,11 +31,11 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
     <div className="flex max-w-[560px] flex-col gap-3.5">
       {/* Type selector */}
       <Field label="Type">
-        <div className="relative flex h-8 w-[220px] items-center justify-between rounded border border-border bg-card px-3 text-[13px] text-foreground">
+        <div className="relative flex h-8 w-[220px] items-center justify-between rounded border border-border bg-card px-3 text-code text-foreground">
           <select
             value={auth.type}
             onChange={(e) => reset(e.target.value as AuthConfig["type"])}
-            className="absolute inset-0 cursor-pointer appearance-none bg-transparent px-3 font-[inherit] text-[13px] text-foreground outline-none"
+            className="absolute inset-0 cursor-pointer appearance-none bg-transparent px-3 font-[inherit] text-code text-foreground outline-none"
           >
             <option value="none">No Auth</option>
             <option value="bearer">Bearer Token</option>
@@ -77,7 +77,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               placeholder="eyJhbGciOiJIUzI1NiIs..."
               className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-xs text-method-post outline-none"
             />
-            <div className="mt-1.5 text-[11.5px] text-muted-foreground">
+            <div className="mt-1.5 text-2xs text-muted-foreground">
               Prefix <span className="font-mono">Bearer</span> added automatically
             </div>
           </div>
@@ -93,7 +93,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               value={auth.username}
               onChange={(e) => onAuthChange({ ...auth, username: e.target.value })}
               placeholder="username"
-              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-[12.5px] text-foreground outline-none"
+              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none"
             />
           </Field>
           <Field label="Password">
@@ -102,7 +102,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               value={auth.password}
               onChange={(e) => onAuthChange({ ...auth, password: e.target.value })}
               placeholder="password"
-              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-[12.5px] text-foreground outline-none"
+              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none"
             />
           </Field>
         </>
@@ -117,7 +117,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               value={auth.apiKey}
               onChange={(e) => onAuthChange({ ...auth, apiKey: e.target.value })}
               placeholder="X-API-Key"
-              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-[12.5px] text-foreground outline-none"
+              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none"
             />
           </Field>
           <Field label="Value">
@@ -126,7 +126,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               value={auth.apiValue}
               onChange={(e) => onAuthChange({ ...auth, apiValue: e.target.value })}
               placeholder="api_key_value"
-              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-[12.5px] text-foreground outline-none"
+              className="h-8 w-full rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none"
             />
           </Field>
           <Field label="Add to">
@@ -135,7 +135,7 @@ export function AuthEditor({ auth, onAuthChange }: AuthEditorProps) {
               onChange={(e) =>
                 onAuthChange({ ...auth, apiAddTo: e.target.value as "header" | "query" })
               }
-              className="h-8 w-[180px] cursor-pointer appearance-none rounded border border-border bg-card px-3 font-[inherit] text-[12.5px] text-foreground outline-none"
+              className="h-8 w-[180px] cursor-pointer appearance-none rounded border border-border bg-card px-3 font-[inherit] text-xs text-foreground outline-none"
             >
               <option value="header">Header</option>
               <option value="query">Query Params</option>

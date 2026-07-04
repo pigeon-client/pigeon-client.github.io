@@ -73,13 +73,13 @@ function HighlightLayer({
       aria-hidden
       className="pointer-events-none absolute inset-0 overflow-auto px-4 pb-1.5"
     >
-      <pre className="m-0 whitespace-pre-wrap break-words bg-transparent font-mono text-[13px] leading-[21px]">
+      <pre className="m-0 whitespace-pre-wrap break-words bg-transparent font-mono text-code leading-[21px]">
         <HighlightedHtml
           html={highlighted}
           className={language ? `language-${language} hljs` : "hljs"}
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 13,
+            fontSize: "var(--text-code)",
             lineHeight: "21px",
             background: "transparent",
           }}
@@ -100,7 +100,7 @@ function LineNumbers({
   return (
     <div
       ref={scrollRef}
-      className="w-[46px] shrink-0 select-none overflow-hidden pr-4 text-right font-mono text-[12.5px] leading-[21px] text-muted-foreground"
+      className="w-[46px] shrink-0 select-none overflow-hidden pr-4 text-right font-mono text-xs leading-[21px] text-muted-foreground"
     >
       {lines.map((lineNum) => (
         <div key={lineNum} style={{ height: 21 }}>
@@ -225,7 +225,7 @@ export function BodyEditor({
               setRawFormat(fmt);
               onBodyTypeChange(fmt);
             }}
-            className="h-6.5 cursor-pointer appearance-none rounded border border-border bg-card px-2.5 font-[inherit] text-[11.5px] text-foreground outline-none"
+            className="h-6.5 cursor-pointer appearance-none rounded border border-border bg-card px-2.5 font-[inherit] text-2xs text-foreground outline-none"
           >
             {RAW_FORMATS.map((f) => (
               <option key={f.value} value={f.value}>
@@ -272,7 +272,7 @@ export function BodyEditor({
                   activeRadio === "json" ? '{\n  "key": "value"\n}' : "Enter request body..."
                 }
                 spellCheck={false}
-                className="absolute inset-0 z-[1] resize-none overflow-auto whitespace-pre-wrap break-words bg-transparent px-4 pb-1.5 font-mono text-[13px] leading-[21px] text-transparent caret-foreground outline-none"
+                className="absolute inset-0 z-[1] resize-none overflow-auto whitespace-pre-wrap break-words bg-transparent px-4 pb-1.5 font-mono text-code leading-[21px] text-transparent caret-foreground outline-none"
                 style={{ tabSize: 2 }}
               />
             </div>
@@ -334,7 +334,7 @@ export function BodyEditor({
             </label>
             {file && (
               <>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-2xs text-muted-foreground">
                   {(file.size / 1024).toFixed(1)} KB
                 </span>
                 <button

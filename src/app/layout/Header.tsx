@@ -65,7 +65,7 @@ export function Header({
           </button>
         )}
         {!(searchFocused || search) && (
-          <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1 font-mono text-[10px] leading-[1.6] text-muted-foreground">
+          <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1 font-mono text-2xs leading-[1.6] text-muted-foreground">
             ⌘F
           </kbd>
         )}

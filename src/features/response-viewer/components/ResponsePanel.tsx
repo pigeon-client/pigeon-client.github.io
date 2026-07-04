@@ -74,7 +74,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
       style={{
         display: "flex",
         fontFamily: "var(--font-mono)",
-        fontSize: 13,
+        fontSize: "var(--text-code)",
         lineHeight: "21px",
         minWidth: "max-content",
       }}
@@ -88,7 +88,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
           paddingRight: 18,
           color: "var(--text-placeholder)",
           userSelect: "none",
-          fontSize: 12.5,
+          fontSize: "var(--text-xs)",
           lineHeight: "21px",
         }}
       >
@@ -113,7 +113,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
           html={highlighted}
           className={language ? `language-${language} hljs` : "hljs"}
           style={{
-            fontSize: 13,
+            fontSize: "var(--text-code)",
             lineHeight: "21px",
             fontFamily: "var(--font-mono)",
             background: "transparent",
@@ -158,7 +158,7 @@ function EmptyResponse() {
       <div style={{ textAlign: "center" }}>
         <p
           style={{
-            fontSize: 14,
+            fontSize: "var(--text-sm)",
             fontWeight: 500,
             color: "var(--text-secondary)",
             margin: "0 0 4px",
@@ -166,7 +166,7 @@ function EmptyResponse() {
         >
           Ready to send a request
         </p>
-        <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>
+        <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", margin: 0 }}>
           Enter a URL above and click Send
         </p>
       </div>
@@ -192,7 +192,7 @@ function EmptyResponse() {
           borderRadius: "var(--radius)",
           color: "var(--text-secondary)",
           fontFamily: "inherit",
-          fontSize: 12,
+          fontSize: "var(--text-xs)",
           cursor: "pointer",
           transition: "all 0.1s",
         }}
@@ -300,7 +300,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ background: statusColor, boxShadow: `0 0 8px ${statusColor}99` }}
           />
-          <span className="font-mono text-[13px] font-semibold" style={{ color: statusColor }}>
+          <span className="font-mono text-code font-semibold" style={{ color: statusColor }}>
             {response.status} {response.statusText}
           </span>
         </div>
@@ -320,7 +320,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
-          <span className="font-mono text-[13px]">{response.responseTime} ms</span>
+          <span className="font-mono text-code">{response.responseTime} ms</span>
         </div>
         <span style={{ width: 1, height: 16, background: "var(--border)", margin: "0 16px" }} />
         <div
@@ -339,7 +339,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
           >
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
           </svg>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-code)" }}>
             {responseSize < 1024 ? `${responseSize} B` : `${(responseSize / 1024).toFixed(1)} KB`}
           </span>
         </div>
@@ -351,7 +351,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
         <Tab active={activeTab === "headers"} onClick={() => setActiveTab("headers")}>
           Headers
           {Object.keys(response.headers).length > 0 && (
-            <span className="ml-0.5 text-[10px] font-semibold text-muted-foreground">
+            <span className="ml-0.5 text-2xs font-semibold text-muted-foreground">
               {Object.keys(response.headers).length}
             </span>
           )}
@@ -466,7 +466,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
                     flexShrink: 0,
                     width: 200,
                     fontFamily: "var(--font-mono)",
-                    fontSize: 12.5,
+                    fontSize: "var(--text-xs)",
                     color: "var(--method-get)",
                   }}
                 >
@@ -476,7 +476,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
                   style={{
                     flex: 1,
                     fontFamily: "var(--font-mono)",
-                    fontSize: 12.5,
+                    fontSize: "var(--text-xs)",
                     color: "var(--text-primary)",
                     wordBreak: "break-all",
                   }}
@@ -533,8 +533,12 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
                 }}
               >
                 <FileCode size={32} />
-                <p style={{ fontSize: 13, margin: 0 }}>Binary Response ({response.contentType})</p>
-                <p style={{ fontSize: 12, margin: 0 }}>{(responseSize / 1024).toFixed(1)} KB</p>
+                <p style={{ fontSize: "var(--text-code)", margin: 0 }}>
+                  Binary Response ({response.contentType})
+                </p>
+                <p style={{ fontSize: "var(--text-xs)", margin: 0 }}>
+                  {(responseSize / 1024).toFixed(1)} KB
+                </p>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -554,7 +558,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
                   <div
                     style={{
                       fontFamily: "var(--font-mono)",
-                      fontSize: 12.5,
+                      fontSize: "var(--text-xs)",
                       lineHeight: 1.7,
                       color: "var(--text-secondary)",
                       whiteSpace: "pre-wrap",
@@ -576,7 +580,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
                   justifyContent: "center",
                   padding: "48px 24px",
                   color: "var(--text-secondary)",
-                  fontSize: 13,
+                  fontSize: "var(--text-code)",
                 }}
               >
                 Empty response body
@@ -631,7 +635,9 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </span>
-          <span style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
+          <span
+            style={{ fontSize: "var(--text-code)", color: "var(--text-primary)", fontWeight: 500 }}
+          >
             Copied cURL to clipboard
           </span>
           <button

@@ -40,7 +40,7 @@ export function EmptyRequestState() {
 
       <div
         style={{
-          fontSize: 18,
+          fontSize: "var(--text-lg)",
           fontWeight: 700,
           color: "var(--text-primary)",
           marginBottom: 8,
@@ -51,7 +51,7 @@ export function EmptyRequestState() {
       </div>
       <div
         style={{
-          fontSize: 13.5,
+          fontSize: "var(--text-code)",
           color: "var(--text-secondary)",
           marginBottom: 32,
           textAlign: "center",
@@ -80,7 +80,7 @@ export function EmptyRequestState() {
           borderRadius: "var(--radius)",
           color: "var(--primary-foreground)",
           fontFamily: "inherit",
-          fontSize: 13.5,
+          fontSize: "var(--text-code)",
           fontWeight: 600,
           cursor: "pointer",
           marginBottom: 40,
@@ -133,7 +133,9 @@ export function EmptyRequestState() {
               gap: 24,
             }}
           >
-            <span style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>{label}</span>
+            <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+              {label}
+            </span>
             <div style={{ display: "flex", gap: 4 }}>
               {keys.map((k) => (
                 <span
@@ -149,7 +151,7 @@ export function EmptyRequestState() {
                     border: "1px solid var(--border)",
                     borderRadius: "var(--radius)",
                     fontFamily: "var(--font-mono)",
-                    fontSize: 11,
+                    fontSize: "var(--text-2xs)",
                     fontWeight: 600,
                     color: "var(--text-primary)",
                   }}

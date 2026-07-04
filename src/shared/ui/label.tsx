@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/shared/lib/utils";
 
 const labelVariants = cva(
-  "text-[10.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+  "text-2xs font-semibold uppercase tracking-[0.05em] text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
 );
 
 export interface LabelProps

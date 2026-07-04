@@ -178,7 +178,7 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
               borderRadius: "var(--radius)",
               cursor: item.disabled ? "default" : "pointer",
               fontFamily: "inherit",
-              fontSize: 13,
+              fontSize: "var(--text-code)",
               color: item.disabled
                 ? "var(--text-placeholder)"
                 : item.danger
@@ -290,7 +290,7 @@ export function TabStrip() {
               style={{
                 flexShrink: 0,
                 fontFamily: "var(--font-mono)",
-                fontSize: 10,
+                fontSize: "var(--text-2xs)",
                 fontWeight: 700,
                 letterSpacing: "0.03em",
                 color: mc,
@@ -320,7 +320,7 @@ export function TabStrip() {
                   flex: 1,
                   minWidth: 0,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 12.5,
+                  fontSize: "var(--text-xs)",
                   fontWeight: 600,
                   color: "var(--text-primary)",
                   background: "var(--bg-input)",
@@ -342,7 +342,7 @@ export function TabStrip() {
                   flex: 1,
                   minWidth: 0,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 12.5,
+                  fontSize: "var(--text-xs)",
                   fontWeight: active ? 600 : 500,
                   color: active ? "var(--text-primary)" : "var(--text-secondary)",
                   whiteSpace: "nowrap",
