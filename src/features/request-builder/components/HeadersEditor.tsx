@@ -108,34 +108,6 @@ export function HeadersEditor({ headers, onHeadersChange }: HeadersEditorProps) 
         activeIndex={activeIndex}
         onSelectSuggestion={selectSuggestion}
       />
-
-      {/* Auto-generated section */}
-      <div className="mb-1 mt-4 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Auto-generated
-      </div>
-      <div className="grid h-8 grid-cols-[28px_1fr_1.4fr_28px] items-center opacity-60">
-        <span className="flex items-center justify-center">
-          <span className="flex h-4 w-4 items-center justify-center rounded bg-muted">
-            <svg
-              width="9"
-              height="9"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="text-muted-foreground"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </span>
-        </span>
-        <span className="font-mono text-code text-muted-foreground">Content-Type</span>
-        <span className="font-mono text-code text-muted-foreground">application/json</span>
-        <span className="text-2xs uppercase tracking-wide text-muted-foreground">auto</span>
-      </div>
     </div>
   );
 }

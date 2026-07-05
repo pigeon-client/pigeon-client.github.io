@@ -1,5 +1,5 @@
 import hljs from "highlight.js";
-import { Download, FileCode, Terminal } from "lucide-react";
+import { Download, FileCode, Send } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { generateCurl } from "@/features/import-export";
 import { useTabStore } from "@/features/request-builder";
@@ -126,8 +126,14 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
 
 /* ── Empty state ── */
 function EmptyResponse() {
+  const hasUrl = useTabStore((s) => {
+    const t = s.tabs.find((tab) => tab.id === s.activeTabId);
+    return Boolean(t?.request.url.trim());
+  });
+
   return (
     <div
+      data-testid="response-empty"
       style={{
         flex: 1,
         display: "flex",
@@ -164,66 +170,96 @@ function EmptyResponse() {
             margin: "0 0 4px",
           }}
         >
-          Ready to send a request
+          {hasUrl ? "Ready to send" : "No response yet"}
         </p>
         <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", margin: 0 }}>
-          Enter a URL above and click Send
+          {hasUrl
+            ? "Run this request to see the response here"
+            : "Enter a URL above to get started"}
         </p>
       </div>
-      <button
-        type="button"
-        onClick={() => {
-          const tabStore = useTabStore.getState();
-          const tid = tabStore.activeTabId;
-          if (tid)
-            tabStore.updateTabRequest(tid, {
-              method: "GET",
-              url: "https://jsonplaceholder.typicode.com/posts/1",
-            });
-        }}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          height: 28,
-          padding: "0 12px",
-          background: "transparent",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-          color: "var(--text-secondary)",
-          fontFamily: "inherit",
-          fontSize: "var(--text-xs)",
-          cursor: "pointer",
-          transition: "all 0.1s",
-        }}
-        className="hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
-      >
-        <Terminal size={12} />
-        Try an example request
-      </button>
+      {hasUrl && (
+        <button
+          type="button"
+          onClick={() => {
+            (document.querySelector("[data-send-btn]") as HTMLButtonElement | null)?.click();
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            height: 28,
+            padding: "0 12px",
+            background: "transparent",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            color: "var(--text-secondary)",
+            fontFamily: "inherit",
+            fontSize: "var(--text-xs)",
+            cursor: "pointer",
+            transition: "all 0.1s",
+          }}
+          className="hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+        >
+          <Send size={12} />
+          Send request
+          <kbd
+            style={{
+              marginLeft: 2,
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-2xs)",
+              color: "var(--text-secondary)",
+              opacity: 0.7,
+            }}
+          >
+            ⌘↵
+          </kbd>
+        </button>
+      )}
     </div>
   );
 }
 
-export function ResponsePanel({ tabId }: { tabId: string }) {
-  const tabs = useTabStore((s) => s.tabs);
-  const tab = tabs.find((t) => t.id === tabId);
-  const response = tab?.response ?? null;
-  const isLoading = tab?.isLoading ?? false;
-  const request = tab?.request;
-
-  const [activeTab, setActiveTab] = useState<"body" | "headers">("body");
-  const [pretty, setPretty] = useState(true);
-  const [toast, setToast] = useState(false);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const bodyBytes = response?.body ?? [];
-  const bodyStr = useMemo(() => formatBody(bodyBytes), [bodyBytes]);
-  const respType = response ? detectType(response.contentType) : "text";
-  const isBinary = bodyBytes.length > 0 && isBinaryBody(bodyBytes);
-  const isImage = respType === "image";
-  const responseSize = bodyBytes.length;
-
+/* ── Response content (status bar + body/headers) ── */
+function ResponseContent({
+  response,
+  statusColor,
+  bodyBytes,
+  bodyStr,
+  respType,
+  isBinary,
+  isImage,
+  responseSize,
+  activeTab,
+  setActiveTab,
+  pretty,
+  setPretty,
+  toast,
+  toastTimer,
+  setToast,
+  downloadBlob,
+  codeLanguage,
+  request,
+}: {
+  response: NonNullable<ReturnType<typeof useTabStore.getState>["tabs"][number]["response"]>;
+  statusColor: string;
+  bodyBytes: number[];
+  bodyStr: string;
+  respType: ResponseType;
+  isBinary: boolean;
+  isImage: boolean;
+  responseSize: number;
+  activeTab: "body" | "headers";
+  setActiveTab: (tab: "body" | "headers") => void;
+  pretty: boolean;
+  setPretty: (v: boolean) => void;
+  toast: boolean;
+  toastTimer: ReturnType<typeof useRef<ReturnType<typeof setTimeout> | null>>;
+  setToast: (v: boolean) => void;
+  downloadBlob: (filename: string) => void;
+  codeLanguage: string;
+  request?: ReturnType<typeof useTabStore.getState>["tabs"][number]["request"];
+}) {
   const showToast = () => {
     setToast(true);
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -239,68 +275,19 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
     return bodyStr;
   };
 
-  const codeLanguage =
-    respType === "json" ? "json" : respType === "html" ? "html" : respType === "xml" ? "xml" : "";
-
-  const downloadBlob = (filename: string) => {
-    const blob = new Blob([new Uint8Array(bodyBytes)], { type: response?.contentType ?? "" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  /* ── Loading ── */
-  if (isLoading) {
-    return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <div
-          style={{
-            height: 46,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
-          <div
-            style={{
-              width: 20,
-              height: 20,
-              border: "2px solid rgba(124,110,250,0.3)",
-              borderTopColor: "var(--accent)",
-              borderRadius: "50%",
-              animation: "spin 0.7s linear infinite",
-            }}
-          />
-        </div>
-        <div style={{ flex: 1 }} />
-      </div>
-    );
-  }
-
-  /* ── Empty ── */
-  if (!response || (response.status === 0 && bodyBytes.length === 0)) {
-    return <EmptyResponse />;
-  }
-
-  const statusColor = getStatusColor(response.status);
-
   return (
-    <div
-      className="flex min-h-0 flex-1 flex-col border-t border-border"
-      style={{ overflow: "hidden" }}
-    >
-      {/* Combined status + tabs + actions row */}
+    <>
       <div className="flex h-11 flex-shrink-0 items-center gap-3 border-b border-border px-4">
         <div className="flex items-center gap-2">
           <span
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ background: statusColor, boxShadow: `0 0 8px ${statusColor}99` }}
           />
-          <span className="font-mono text-code font-semibold" style={{ color: statusColor }}>
+          <span
+            data-testid="response-status"
+            className="font-mono text-code font-semibold"
+            style={{ color: statusColor }}
+          >
             {response.status} {response.statusText}
           </span>
         </div>
@@ -344,7 +331,6 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
           </span>
         </div>
         <div style={{ flex: 1 }} />
-        {/* Body / Headers tabs */}
         <Tab active={activeTab === "body"} onClick={() => setActiveTab("body")}>
           Body
         </Tab>
@@ -357,7 +343,6 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
           )}
         </Tab>
         <div className="mx-2 h-4 w-px bg-border" />
-        {/* Pretty / Raw toggle — neutral, NOT accent */}
         <div className="flex rounded border border-border bg-card p-0.5">
           {[
             { val: true, label: "Pretty" },
@@ -377,7 +362,6 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             </button>
           ))}
         </div>
-        {/* Action buttons */}
         <Button
           variant="ghost"
           size="icon"
@@ -426,7 +410,6 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
         </Button>
       </div>
 
-      {/* Body / Headers content */}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: scroll container captures Cmd/Ctrl+A to scope select-all to the response body */}
       <div
         className="flex-1 min-h-0 overflow-auto bg-background"
@@ -551,7 +534,7 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             )}
 
             {!(isImage || isBinary) && bodyBytes.length > 0 && (
-              <div style={{ padding: "12px 0 12px 16px" }}>
+              <div data-testid="response-body" style={{ padding: "12px 0 12px 16px" }}>
                 {pretty ? (
                   <CodeBlock code={getFormattedCode()} language={codeLanguage} />
                 ) : (
@@ -590,7 +573,6 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
         )}
       </div>
 
-      {/* Toast */}
       {toast && (
         <div
           style={{
@@ -670,6 +652,108 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
             </svg>
           </button>
         </div>
+      )}
+    </>
+  );
+}
+
+/* ── Main ResponsePanel ── */
+export function ResponsePanel({
+  tabId,
+  onResizeStart,
+}: {
+  tabId: string;
+  onResizeStart?: (e: React.MouseEvent) => void;
+}) {
+  const tabs = useTabStore((s) => s.tabs);
+  const tab = tabs.find((t) => t.id === tabId);
+  const response = tab?.response ?? null;
+  const isLoading = tab?.isLoading ?? false;
+  const request = tab?.request;
+
+  const [activeTab, setActiveTab] = useState<"body" | "headers">("body");
+  const [pretty, setPretty] = useState(true);
+  const [toast, setToast] = useState(false);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const bodyBytes = response?.body ?? [];
+  const bodyStr = useMemo(() => formatBody(bodyBytes), [bodyBytes]);
+  const respType = response ? detectType(response.contentType) : "text";
+  const isBinary = bodyBytes.length > 0 && isBinaryBody(bodyBytes);
+  const isImage = respType === "image";
+  const responseSize = bodyBytes.length;
+
+  const hasResponse = response && !(response.status === 0 && bodyBytes.length === 0);
+
+  const downloadBlob = (filename: string) => {
+    const blob = new Blob([new Uint8Array(bodyBytes)], { type: response?.contentType ?? "" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const codeLanguage =
+    respType === "json" ? "json" : respType === "html" ? "html" : respType === "xml" ? "xml" : "";
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col" style={{ overflow: "hidden" }}>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-driven resize handle */}
+      <div
+        className="group flex h-1 flex-shrink-0 cursor-row-resize items-center justify-center border-t border-border bg-transparent transition-colors hover:bg-accent/40 active:bg-accent/60 select-none"
+        onMouseDown={onResizeStart}
+      >
+        <div className="h-0.5 w-8 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100" />
+      </div>
+      {isLoading ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <div
+            style={{
+              height: 46,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderBottom: "1px solid var(--border)",
+            }}
+          >
+            <div
+              style={{
+                width: 20,
+                height: 20,
+                border: "2px solid rgba(124,110,250,0.3)",
+                borderTopColor: "var(--accent)",
+                borderRadius: "50%",
+                animation: "spin 0.7s linear infinite",
+              }}
+            />
+          </div>
+          <div style={{ flex: 1 }} />
+        </div>
+      ) : !hasResponse ? (
+        <EmptyResponse />
+      ) : (
+        <ResponseContent
+          response={response}
+          statusColor={getStatusColor(response.status)}
+          bodyBytes={bodyBytes}
+          bodyStr={bodyStr}
+          respType={respType}
+          isBinary={isBinary}
+          isImage={isImage}
+          responseSize={responseSize}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          pretty={pretty}
+          setPretty={setPretty}
+          toast={toast}
+          toastTimer={toastTimer}
+          setToast={setToast}
+          downloadBlob={downloadBlob}
+          codeLanguage={codeLanguage}
+          request={request}
+        />
       )}
     </div>
   );

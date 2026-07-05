@@ -1,15 +1,17 @@
 import { Button } from "./button";
 
-/* Shared modal shell — used by ImportModal, EnvModal, ExportCurlModal, KeyboardShortcutsModal. */
+/* Shared modal shell — used by ImportModal, EnvModal, KeyboardShortcutsModal. */
 export function Modal({
   onClose,
   width = 600,
   position = "center",
+  animate = true,
   children,
 }: {
   onClose: () => void;
   width?: number;
   position?: "center" | "right";
+  animate?: boolean;
   children: React.ReactNode;
 }) {
   if (position === "right") {
@@ -21,7 +23,10 @@ export function Modal({
         aria-label="Close modal"
         onClick={onClose}
         onKeyDown={(e) => {
-          if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+          if (
+            e.target === e.currentTarget &&
+            (e.key === "Escape" || e.key === "Enter" || e.key === " ")
+          ) {
             e.preventDefault();
             onClose();
           }
@@ -33,7 +38,10 @@ export function Modal({
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
-            if (e.key === "Escape") onClose();
+            if (e.key === "Escape") {
+              e.stopPropagation();
+              onClose();
+            }
           }}
           style={{
             position: "absolute",
@@ -42,7 +50,7 @@ export function Modal({
             bottom: 0,
             width,
             maxWidth: "90vw",
-            animation: "pgSlideRight 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            animation: animate ? "pgSlideRight 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)" : "none",
           }}
           className="flex flex-col overflow-hidden border-l border-border bg-card shadow-drawer"
         >
@@ -60,12 +68,15 @@ export function Modal({
       aria-label="Close modal"
       onClick={onClose}
       onKeyDown={(e) => {
-        if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+        if (
+          e.target === e.currentTarget &&
+          (e.key === "Escape" || e.key === "Enter" || e.key === " ")
+        ) {
           e.preventDefault();
           onClose();
         }
       }}
-      style={{ animation: "pgFade 120ms ease-out" }}
+      style={{ animation: animate ? "pgFade 120ms ease-out" : "none" }}
       className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/60 backdrop-blur-[8px]"
     >
       <div
@@ -73,12 +84,15 @@ export function Modal({
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
+          if (e.key === "Escape") {
+            e.stopPropagation();
+            onClose();
+          }
         }}
         style={{
           width,
           maxWidth: "calc(100vw - 48px)",
-          animation: "pgSlide 150ms ease-out",
+          animation: animate ? "pgPop 150ms ease-out" : "none",
         }}
         className="flex flex-col overflow-hidden rounded border border-border bg-card shadow-modal"
       >

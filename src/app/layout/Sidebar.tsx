@@ -1,17 +1,31 @@
-import { ChevronRight, Plus, Upload } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { ChevronRight, FilePlus, FolderPlus, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CollectionNode } from "@/features/collections";
 import { useCollectionStore } from "@/features/collections";
 import type { HistoryItem } from "@/features/history";
 import { useHistoryStore } from "@/features/history";
 import { useTabStore } from "@/features/request-builder";
-import { extractPathSegments, parseUrl } from "@/shared/lib/url";
+import { parseUrl } from "@/shared/lib/url";
 import type { RequestConfig } from "@/shared/types";
 import { METHOD_COLORS, MethodBadge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
 import { Tab } from "@/shared/ui/tabs-shim";
 
 type SidebarTab = "history" | "draft" | "collections";
+
+/* Draft tree tuning */
+const AUTO_EXPAND_MAX = 3; // folders with <= this many leaves open by default
+const FLAT_VIEW_MAX = 8; // <= this many drafts total → flat list, skip the tree
+
+interface NameModalState {
+  title: string;
+  label: string;
+  placeholder: string;
+  confirmLabel: string;
+  initialValue?: string;
+  onSubmit: (name: string) => void;
+}
 
 /* ── Date grouping ── */
 function getDateBucket(timestamp: number): string {
@@ -63,6 +77,9 @@ interface TreeRowProps {
   count?: number;
   onClick?: () => void;
   onDelete?: () => void;
+  onRename?: () => void;
+  onAddFolder?: () => void;
+  onAddRequest?: () => void;
 }
 
 function TreeRow({
@@ -77,6 +94,9 @@ function TreeRow({
   count,
   onClick,
   onDelete,
+  onRename,
+  onAddFolder,
+  onAddRequest,
 }: TreeRowProps) {
   const [hovered, setHovered] = useState(false);
   const mc = method ? (METHOD_COLORS[method] ?? METHOD_COLORS.GET) : undefined;
@@ -151,7 +171,7 @@ function TreeRow({
             height="14"
             viewBox="0 0 24 24"
             fill="none"
-            stroke={iconColor ?? "var(--accent)"}
+            stroke={iconColor ?? "var(--primary)"}
             strokeWidth="1.9"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -191,6 +211,30 @@ function TreeRow({
               }}
             >
               {count}
+            </span>
+          )}
+          {hovered && (
+            <span style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: 4 }}>
+              {onAddRequest && (
+                <RowIconButton label="Add current request" onClick={onAddRequest}>
+                  <FilePlus size={12} />
+                </RowIconButton>
+              )}
+              {onAddFolder && (
+                <RowIconButton label="Add folder" onClick={onAddFolder}>
+                  <FolderPlus size={12} />
+                </RowIconButton>
+              )}
+              {onRename && (
+                <RowIconButton label="Rename" onClick={onRename}>
+                  <Pencil size={11} />
+                </RowIconButton>
+              )}
+              {onDelete && (
+                <RowIconButton label="Delete" danger onClick={onDelete}>
+                  <Trash2 size={11} />
+                </RowIconButton>
+              )}
             </span>
           )}
         </>
@@ -254,51 +298,110 @@ function TreeRow({
           >
             {meta}
           </span>
+          {onRename && hovered && (
+            <RowIconButton label="Rename" onClick={onRename}>
+              <Pencil size={11} />
+            </RowIconButton>
+          )}
           {onDelete && hovered && (
-            <button
-              type="button"
-              aria-label="Delete"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              style={{
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 16,
-                height: 16,
-                borderRadius: "var(--radius)",
-                color: "var(--text-secondary)",
-                marginLeft: 4,
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-              }}
-              className="hover:text-status-5xx"
-            >
-              <svg
-                width="11"
-                height="11"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-            </button>
+            <RowIconButton label="Delete" danger onClick={onDelete}>
+              <Trash2 size={11} />
+            </RowIconButton>
           )}
         </>
       )}
     </div>
+  );
+}
+
+function RowIconButton({
+  label,
+  danger,
+  onClick,
+  children,
+}: {
+  label: string;
+  danger?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      style={{
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 18,
+        height: 18,
+        borderRadius: "var(--radius)",
+        color: "var(--text-secondary)",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: 0,
+      }}
+      className={danger ? "hover:text-status-5xx" : "hover:text-primary"}
+    >
+      {children}
+    </button>
+  );
+}
+
+function NameModal({ state, onClose }: { state: NameModalState; onClose: () => void }) {
+  const [draft, setDraft] = useState(state.initialValue ?? "");
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+    state.onSubmit(trimmed);
+    onClose();
+  };
+
+  return (
+    <Modal onClose={onClose} width={420} animate={state.title !== "Create Collection"}>
+      <ModalHeader title={state.title} onClose={onClose} />
+      <div className="px-5 py-5">
+        <label
+          htmlFor="collection-name-modal-input"
+          className="mb-2 block text-2xs font-semibold uppercase tracking-wide text-muted-foreground"
+        >
+          {state.label}
+        </label>
+        <input
+          id="collection-name-modal-input"
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") onClose();
+          }}
+          placeholder={state.placeholder}
+          className="h-9 w-full rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
+        />
+      </div>
+      <ModalFooter>
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button variant="primary" size="sm" onClick={commit} disabled={!draft.trim()}>
+          {state.confirmLabel}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }
 
@@ -307,17 +410,28 @@ function CollectionTreeNode({
   node,
   depth,
   onSelect,
-  onDelete,
   collectionId,
+  activeRequest,
+  onRenameNode,
+  onAddFolder,
+  onAddRequest,
 }: {
   node: CollectionNode;
   depth: number;
   onSelect: (req: RequestConfig) => void;
-  onDelete?: (id: string) => void;
   collectionId?: string;
+  activeRequest?: RequestConfig | null;
+  onRenameNode: (collectionId: string, node: CollectionNode) => void;
+  onAddFolder: (collectionId: string, parentId: string | null) => void;
+  onAddRequest: (collectionId: string, parentId: string | null, request: RequestConfig) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  // Small folders open by default so a lone request isn't buried.
+  const [expanded, setExpanded] = useState(
+    () => node.type === "folder" && countRequests(node.children ?? []) <= AUTO_EXPAND_MAX,
+  );
   const removeNode = useCollectionStore((s) => s.removeNode);
+
+  if (!collectionId) return null;
 
   if (node.type === "request") {
     return (
@@ -327,10 +441,24 @@ function CollectionTreeNode({
         label={node.name}
         method={node.method}
         onClick={() => node.request && onSelect(node.request)}
-        onDelete={collectionId ? () => removeNode(collectionId, node.id) : undefined}
+        onRename={() => onRenameNode(collectionId, node)}
+        onDelete={() => {
+          if (confirm(`Delete "${node.name}" from this collection?`))
+            removeNode(collectionId, node.id);
+        }}
       />
     );
   }
+
+  const handleAddFolder = () => {
+    onAddFolder(collectionId, node.id);
+    setExpanded(true);
+  };
+  const handleAddRequest = () => {
+    if (!activeRequest?.url) return;
+    onAddRequest(collectionId, node.id, activeRequest);
+    setExpanded(true);
+  };
 
   return (
     <>
@@ -342,6 +470,14 @@ function CollectionTreeNode({
         showCount={depth === 0}
         count={(node.children ?? []).length}
         onClick={() => setExpanded((e) => !e)}
+        onAddRequest={activeRequest?.url ? handleAddRequest : undefined}
+        onAddFolder={handleAddFolder}
+        onRename={() => onRenameNode(collectionId, node)}
+        onDelete={() => {
+          if (confirm(`Delete folder "${node.name}" and its children?`)) {
+            removeNode(collectionId, node.id);
+          }
+        }}
       />
       {expanded &&
         (node.children ?? []).map((child) => (
@@ -350,8 +486,11 @@ function CollectionTreeNode({
             node={child}
             depth={depth + 1}
             onSelect={onSelect}
-            onDelete={onDelete}
             collectionId={collectionId}
+            activeRequest={activeRequest}
+            onRenameNode={onRenameNode}
+            onAddFolder={onAddFolder}
+            onAddRequest={onAddRequest}
           />
         ))}
     </>
@@ -365,7 +504,17 @@ type InternalNode = CollectionNode & {
   _count?: number;
 };
 
-/* ── Build auto-organized tree from URL list ── */
+/* Recompute leaf counts onto folder `_count`. */
+function countNode(n: CollectionNode & { _count?: number }): number {
+  if (n.type === "request") return 1;
+  let c = 0;
+  for (const ch of n.children ?? []) c += countNode(ch as CollectionNode & { _count?: number });
+  n._count = c;
+  return c;
+}
+
+/* ── Build auto-organized tree from URL list ──
+   One host folder, then path folders, leaf = endpoint (last path segment). */
 function buildUrlTree(
   reqs: Array<{
     method: string;
@@ -389,77 +538,137 @@ function buildUrlTree(
   for (const r of reqs) {
     const normalized =
       r.url.startsWith("http://") || r.url.startsWith("https://") ? r.url : parseUrl(r.url);
-    const segs = extractPathSegments(normalized);
-    const hostMatch = normalized.match(/^https?:\/\/([^/]+)/i);
-    const host = hostMatch ? hostMatch[1] : "";
-    const labels = host.split(".").filter(Boolean);
-    let domain = host;
-    let sub = "";
-    if (labels.length > 2) {
-      domain = labels.slice(-2).join(".");
-      sub = labels.slice(0, -2).join(".");
+
+    let host = "requests";
+    let pathParts: string[] = [];
+    try {
+      const u = new URL(normalized);
+      host = u.hostname || host;
+      pathParts = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+    } catch {
+      const m = normalized.match(/^https?:\/\/([^/]+)/i);
+      if (m) host = m[1];
     }
+
+    // Folders = host + intermediate path segments. Leaf = final segment.
+    const folderSegs = pathParts.slice(0, -1);
+    const endpoint = pathParts.at(-1) ?? "/";
 
     let parentArr = top;
-    let id = domain;
-    const domainNode = ensure(id, domain, parentArr);
-    parentArr = domainNode.children ?? [];
+    let id = host;
+    parentArr = (ensure(id, host, parentArr).children ?? []) as CollectionNode[];
 
-    if (sub) {
-      id += `::${sub}`;
-      const subNode = ensure(id, sub, parentArr);
-      parentArr = subNode.children ?? [];
-    }
-
-    for (const seg of segs) {
+    for (const seg of folderSegs) {
       id += `/${seg}`;
-      const segNode = ensure(id, seg, parentArr);
-      parentArr = segNode.children ?? [];
+      parentArr = (ensure(id, seg, parentArr).children ?? []) as CollectionNode[];
     }
 
-    const leafId = `${id}#${r.method}`;
+    const leafId = `${id}/${endpoint}#${r.method}`;
     if (!nodes[leafId]) {
       const leaf: CollectionNode & { _meta?: string; _recent?: boolean; _count?: number } = {
         id: leafId,
-        name: r.method,
+        name: endpoint,
         type: "request",
         method: r.method as CollectionNode["method"],
         url: r.url,
         request: r.request,
       };
-      leaf._meta = r.meta;
       leaf._recent = r.recent;
       parentArr.push(leaf);
       nodes[leafId] = leaf;
     }
   }
 
-  const countNode = (n: CollectionNode & { _count?: number }): number => {
-    if (n.type === "request") return 1;
-    let c = 0;
-    for (const ch of n.children ?? []) c += countNode(ch as CollectionNode & { _count?: number });
-    n._count = c;
-    return c;
-  };
   for (const t of top) countNode(t);
-
   return top;
 }
 
-/* ── Render flat auto-organized tree ── */
+/* ── Path compression: fold single-folder-child chains into one row ──
+   `v1 › users › {leaves}` becomes `v1 / users`. The top level (host folders)
+   is left alone so a host always reads as just its domain — path segments only
+   compress beneath it. */
+function collapseChains(nodes: CollectionNode[], isTop = false): CollectionNode[] {
+  return nodes.map((n) => {
+    if (n.type !== "folder") return n;
+    if (isTop) {
+      // Host stays its own row; compress only its descendants.
+      return { ...n, children: collapseChains(n.children ?? []) };
+    }
+    let name = n.name;
+    let cur = n;
+    while ((cur.children?.length ?? 0) === 1 && cur.children?.[0].type === "folder") {
+      const only = cur.children[0];
+      name = `${name} / ${only.name}`;
+      cur = only;
+    }
+    return { ...cur, name, children: collapseChains(cur.children ?? []) };
+  });
+}
+
+/* ── Group collection-root requests into their resource folder ──
+   `/todos` (list) + `/todos/1` (item) → one `todos` folder holding both.
+   When a folder and a sibling request share a name, the request moves inside
+   the folder as its root. Runs deepest-first so nested roots group too. */
+function mergeCollectionRoots(nodes: CollectionNode[]): CollectionNode[] {
+  // Recurse into folders first.
+  for (const n of nodes) {
+    if (n.type === "folder") n.children = mergeCollectionRoots(n.children ?? []);
+  }
+  const folderByName = new Map<string, CollectionNode>();
+  for (const n of nodes) if (n.type === "folder") folderByName.set(n.name, n);
+
+  const out: CollectionNode[] = [];
+  for (const n of nodes) {
+    const folder = n.type === "request" ? folderByName.get(n.name) : undefined;
+    if (folder) {
+      folder.children = [{ ...n, name: "/" }, ...(folder.children ?? [])];
+    } else {
+      out.push(n);
+    }
+  }
+  return out;
+}
+
+/* Label request leaves by their path relative to the parent folder: the
+   collection root stays "/", every other leaf becomes "/<segment>". */
+function relabelLeaves(nodes: CollectionNode[]): void {
+  for (const n of nodes) {
+    if (n.type === "request") {
+      if (n.name !== "/") n.name = `/${n.name}`;
+    } else {
+      relabelLeaves(n.children ?? []);
+    }
+  }
+}
+
+function countRequests(nodes: CollectionNode[]): number {
+  let count = 0;
+  for (const node of nodes) {
+    if (node.type === "request") count += 1;
+    else count += countRequests(node.children ?? []);
+  }
+  return count;
+}
+
+/* ── Render auto-organized tree ──
+   Controlled expand map lives in Sidebar so it survives tab switches and
+   feeds expand-all/collapse-all. Small subtrees (<= AUTO_EXPAND_MAX leaves)
+   open by default; the map only stores explicit overrides. */
 function AutoTree({
   nodes,
   depth,
+  expanded,
+  onToggle,
   onSelect,
   onDelete,
 }: {
   nodes: CollectionNode[];
   depth: number;
+  expanded: Record<string, boolean>;
+  onToggle: (id: string, next: boolean) => void;
   onSelect: (req: RequestConfig) => void;
   onDelete?: (node: CollectionNode) => void;
 }) {
-  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
-
   return (
     <>
       {nodes.map((n) => {
@@ -469,36 +678,81 @@ function AutoTree({
               key={n.id}
               depth={depth}
               isFolder={false}
-              label={n.method ?? ""}
+              label={n.name}
               method={n.method}
-              meta={(n as InternalNode)._meta}
               onClick={() => n.request && onSelect(n.request)}
               onDelete={onDelete ? () => onDelete(n) : undefined}
             />
           );
         }
-        const expanded = !!expandedNodes[n.id];
+        const count = (n as InternalNode)._count ?? 0;
+        const isOpen = expanded[n.id] ?? false;
         return (
           <div key={n.id}>
             <TreeRow
               depth={depth}
               isFolder
               label={n.name}
-              expanded={expanded}
-              iconColor={depth === 0 ? "var(--accent)" : "var(--text-secondary)"}
+              expanded={isOpen}
+              iconColor={depth === 0 ? "var(--primary)" : "var(--text-secondary)"}
               showCount={depth === 0}
-              count={(n as InternalNode)._count}
-              onClick={() => setExpandedNodes((e) => ({ ...e, [n.id]: !e[n.id] }))}
+              count={count}
+              onClick={() => onToggle(n.id, !isOpen)}
             />
-            {expanded && (
+            {isOpen && (
               <AutoTree
                 nodes={n.children ?? []}
                 depth={depth + 1}
+                expanded={expanded}
+                onToggle={onToggle}
                 onSelect={onSelect}
                 onDelete={onDelete}
               />
             )}
           </div>
+        );
+      })}
+    </>
+  );
+}
+
+/* ── Flat draft list — used when there are few drafts (tree is overkill) ──
+   Shows method badge + endpoint + muted host/path so context needs no folders. */
+function DraftList({
+  reqs,
+  onSelect,
+  onDelete,
+}: {
+  reqs: Array<{ method: string; url: string; request?: RequestConfig }>;
+  onSelect: (req: RequestConfig) => void;
+  onDelete: (req: { method: string; url: string }) => void;
+}) {
+  return (
+    <>
+      {reqs.map((r) => {
+        let endpoint = "/";
+        let path = r.url;
+        try {
+          const u = new URL(r.url.startsWith("http") ? r.url : parseUrl(r.url));
+          const parts = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+          endpoint = parts.at(-1) ?? "/";
+          path =
+            `${u.hostname}${u.pathname.replace(/\/+$/, "")}`.replace(`/${endpoint}`, "") ||
+            u.hostname;
+        } catch {
+          /* keep raw url */
+        }
+        return (
+          <TreeRow
+            key={`${r.method}:${r.url}`}
+            depth={0}
+            isFolder={false}
+            label={endpoint}
+            method={r.method}
+            meta={path}
+            onClick={() => r.request && onSelect(r.request)}
+            onDelete={() => onDelete(r)}
+          />
         );
       })}
     </>
@@ -644,6 +898,7 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
   const addTab = useTabStore((s) => s.addTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
+  const activeTabId = useTabStore((s) => s.activeTabId);
   const tabs = useTabStore((s) => s.tabs);
 
   const history = useHistoryStore((s) => s.history);
@@ -653,11 +908,25 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
 
   const collections = useCollectionStore((s) => s.collections);
   const addCollection = useCollectionStore((s) => s.addCollection);
+  const renameCollection = useCollectionStore((s) => s.renameCollection);
   const deleteCollection = useCollectionStore((s) => s.deleteCollection);
+  const renameNode = useCollectionStore((s) => s.renameNode);
+  const addFolder = useCollectionStore((s) => s.addFolder);
+  const addRequest = useCollectionStore((s) => s.addRequest);
   const [activeTab, setActiveTabState] = useState<SidebarTab>("draft");
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
-  const [newCollInput, setNewCollInput] = useState("");
-  const [showNewColl, setShowNewColl] = useState(false);
+  const [draftExpanded, setDraftExpanded] = useState<Record<string, boolean>>({});
+  const [nameModal, setNameModal] = useState<NameModalState | null>(null);
+
+  const toggleDraft = useCallback(
+    (id: string, next: boolean) => setDraftExpanded((e) => ({ ...e, [id]: next })),
+    [],
+  );
+
+  const activeRequest = useMemo(() => {
+    const tab = tabs.find((t) => t.id === activeTabId);
+    return tab?.request.url ? tab.request : null;
+  }, [activeTabId, tabs]);
 
   const loadRequest = (req: RequestConfig) => {
     if (tabs.length === 1 && !tabs[0].request.url) {
@@ -673,6 +942,84 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
   const handleNewRequest = () => {
     const id = addTab();
     setActiveTab(id);
+  };
+  const openCreateCollectionModal = () => {
+    setNameModal({
+      title: "Create Collection",
+      label: "Collection Name",
+      placeholder: "My API",
+      confirmLabel: "Create",
+      onSubmit: (name) => {
+        addCollection(name)
+          .then((id) => {
+            if (id) setExpandedCollections((prev) => new Set(prev).add(id));
+          })
+          .catch((err) => alert(`Failed to create collection: ${String(err)}`));
+      },
+    });
+  };
+  const openRenameCollectionModal = (collectionId: string, name: string) => {
+    setNameModal({
+      title: "Rename Collection",
+      label: "Collection Name",
+      placeholder: "Collection name",
+      confirmLabel: "Rename",
+      initialValue: name,
+      onSubmit: (nextName) => {
+        renameCollection(collectionId, nextName).catch((err) =>
+          alert(`Failed to rename collection: ${String(err)}`),
+        );
+      },
+    });
+  };
+  const openAddFolderModal = (collectionId: string, parentId: string | null) => {
+    setNameModal({
+      title: "Create Folder",
+      label: "Folder Name",
+      placeholder: "Auth",
+      confirmLabel: "Create",
+      onSubmit: (name) => {
+        addFolder(collectionId, parentId, name)
+          .then((ok) => {
+            if (ok) setExpandedCollections((prev) => new Set(prev).add(collectionId));
+          })
+          .catch((err) => alert(`Failed to create folder: ${String(err)}`));
+      },
+    });
+  };
+  const openAddRequestModal = (
+    collectionId: string,
+    parentId: string | null,
+    request: RequestConfig,
+  ) => {
+    setNameModal({
+      title: "Save Request",
+      label: "Request Name",
+      placeholder: request.name || request.url || "Untitled Request",
+      confirmLabel: "Save",
+      initialValue: request.name || request.url,
+      onSubmit: (name) => {
+        addRequest(collectionId, parentId, name, request)
+          .then((ok) => {
+            if (ok) setExpandedCollections((prev) => new Set(prev).add(collectionId));
+          })
+          .catch((err) => alert(`Failed to save request: ${String(err)}`));
+      },
+    });
+  };
+  const openRenameNodeModal = (collectionId: string, node: CollectionNode) => {
+    setNameModal({
+      title: node.type === "folder" ? "Rename Folder" : "Rename Request",
+      label: node.type === "folder" ? "Folder Name" : "Request Name",
+      placeholder: node.type === "folder" ? "Folder name" : "Request name",
+      confirmLabel: "Rename",
+      initialValue: node.name,
+      onSubmit: (name) => {
+        renameNode(collectionId, node.id, name).catch((err) =>
+          alert(`Failed to rename item: ${String(err)}`),
+        );
+      },
+    });
   };
 
   const filter = useCallback(
@@ -707,17 +1054,16 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
     [collections, search, filter, filterTree],
   );
 
-  /* Draft tree */
-  const draftTree = useMemo(() => {
+  /* Draft tree — path-compressed, plus a flat list for the small-set view */
+  const draft = useMemo(() => {
     const reqs = drafts
       .filter((d) => filter(d.name || d.url || ""))
-      .map((d, i) => ({
-        method: d.method,
-        url: d.url,
-        meta: String(i),
-        request: d,
-      }));
-    return buildUrlTree(reqs);
+      .map((d) => ({ method: d.method, url: d.url, request: d }));
+    let tree = mergeCollectionRoots(buildUrlTree(reqs));
+    relabelLeaves(tree);
+    tree = collapseChains(tree, true);
+    for (const t of tree) countNode(t);
+    return { reqs, tree, total: reqs.length };
   }, [drafts, filter]);
 
   /* Grouped history */
@@ -751,13 +1097,20 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
         <Button
           variant="default"
           size="sm"
+          data-testid="sidebar-new-request"
           onClick={handleNewRequest}
           className="flex-1 justify-center font-semibold"
         >
           <Plus className="h-3.5 w-3.5" />
           New Request
         </Button>
-        <Button variant="outline" size="sm" onClick={onImportClick} title="Import cURL">
+        <Button
+          variant="outline"
+          size="sm"
+          data-testid="sidebar-import"
+          onClick={onImportClick}
+          title="Import cURL"
+        >
           <Upload className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -768,10 +1121,11 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
           <Tab
             key={t}
             variant="sidebar"
+            testId={`sidebar-tab-${t}`}
             active={activeTab === t}
             onClick={() => setActiveTabState(t)}
           >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            <span className="cursor-pointer">{t.charAt(0).toUpperCase() + t.slice(1)}</span>
           </Tab>
         ))}
       </div>
@@ -804,16 +1158,27 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
 
         {/* ── DRAFT ── */}
         {activeTab === "draft" &&
-          (draftTree.length === 0 ? (
+          (draft.total === 0 ? (
             <EmptyState
               icon="🌱"
               label={search ? "No matching drafts" : "No drafts yet"}
               sub="Drafts appear automatically after you send a request"
             />
+          ) : draft.total <= FLAT_VIEW_MAX ? (
+            <DraftList
+              reqs={draft.reqs}
+              onSelect={loadRequest}
+              onDelete={(r) => {
+                const idx = draftIdxByUrl.get(`${r.method}:${r.url}`);
+                if (idx !== undefined) removeDraft(idx);
+              }}
+            />
           ) : (
             <AutoTree
-              nodes={draftTree}
+              nodes={draft.tree}
               depth={0}
+              expanded={draftExpanded}
+              onToggle={toggleDraft}
               onSelect={loadRequest}
               onDelete={(node) => {
                 if (node.type === "request" && node.request) {
@@ -827,26 +1192,42 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
 
         {/* ── COLLECTIONS ── */}
         {activeTab === "collections" &&
-          (collections.length === 0 && !showNewColl ? (
+          (collections.length === 0 && !search ? (
             <EmptyState
               icon="📁"
               label="No collections yet"
-              action={{ label: "+ Create Collection", onClick: () => setShowNewColl(true) }}
+              action={{ label: "+ Create Collection", onClick: openCreateCollectionModal }}
             />
-          ) : filteredCollections.length === 0 ? (
-            <EmptyState icon="🔍" label="No matches" sub="Try a different search term" />
           ) : (
             <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openCreateCollectionModal}
+                className="mx-2 mb-2 w-[calc(100%-16px)] justify-center gap-2 border-dashed"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                New Collection
+              </Button>
+              {filteredCollections.length === 0 && (
+                <EmptyState
+                  icon="🔍"
+                  label={search ? "No matches" : "No collections yet"}
+                  sub={search ? "Try a different search term" : undefined}
+                />
+              )}
               {filteredCollections.map((collection) => {
                 const id = collection.id as string;
                 const isExpanded = expandedCollections.has(id);
                 return (
                   <div key={id}>
-                    {/* Collection header */}
-                    <button
-                      type="button"
-                      aria-expanded={isExpanded}
-                      aria-label={`${isExpanded ? "Collapse" : "Expand"} ${collection.name}`}
+                    <TreeRow
+                      depth={0}
+                      isFolder
+                      label={collection.name}
+                      expanded={isExpanded}
+                      showCount
+                      count={countRequests(collection.root)}
                       onClick={() =>
                         setExpandedCollections((prev) => {
                           const next = new Set(prev);
@@ -855,121 +1236,19 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
                           return next;
                         })
                       }
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        height: 28,
-                        borderRadius: "var(--radius)",
-                        cursor: "pointer",
-                        padding: "0 10px 0 8px",
-                        margin: "0 4px",
-                        transition: "background 0.1s",
-                        width: "100%",
-                        border: "none",
-                        background: "none",
-                        fontFamily: "inherit",
-                        textAlign: "left",
-                      }}
-                      className="hover:bg-[var(--bg-elevated)]"
-                    >
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          flexShrink: 0,
-                          width: 16,
-                          color: "var(--text-secondary)",
-                          transform: isExpanded ? "rotate(90deg)" : "none",
-                          transition: "transform 120ms ease",
-                        }}
-                      >
-                        <ChevronRight size={12} strokeWidth={2.6} />
-                      </span>
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="var(--accent)"
-                        strokeWidth="1.9"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{ flexShrink: 0, marginRight: 7 }}
-                        aria-hidden="true"
-                        focusable="false"
-                      >
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                      </svg>
-                      <span
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          fontFamily: "var(--font-mono)",
-                          fontSize: "var(--text-xs)",
-                          fontWeight: 600,
-                          color: "var(--text-primary)",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {collection.name}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "var(--text-2xs)",
-                          fontWeight: 600,
-                          color: "var(--text-secondary)",
-                          background: "var(--bg-elevated)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "var(--radius)",
-                          padding: "0 7px",
-                          marginLeft: 8,
-                        }}
-                      >
-                        {collection.root.length}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label="Delete collection"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                      onAddRequest={
+                        activeRequest?.url
+                          ? () => openAddRequestModal(id, null, activeRequest)
+                          : undefined
+                      }
+                      onAddFolder={() => openAddFolderModal(id, null)}
+                      onRename={() => openRenameCollectionModal(id, collection.name)}
+                      onDelete={() => {
+                        if (confirm(`Delete collection "${collection.name}"?`)) {
                           deleteCollection(id);
-                        }}
-                        style={{
-                          flexShrink: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 16,
-                          height: 16,
-                          borderRadius: "var(--radius)",
-                          color: "var(--text-secondary)",
-                          marginLeft: 6,
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: 0,
-                        }}
-                        className="hover:text-status-5xx"
-                      >
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                          focusable="false"
-                        >
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
-                      </button>
-                    </button>
+                        }
+                      }}
+                    />
 
                     {isExpanded &&
                       collection.root.map((node) => (
@@ -979,137 +1258,15 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
                           depth={1}
                           onSelect={loadRequest}
                           collectionId={collection.id}
+                          activeRequest={activeRequest}
+                          onRenameNode={openRenameNodeModal}
+                          onAddFolder={openAddFolderModal}
+                          onAddRequest={openAddRequestModal}
                         />
                       ))}
                   </div>
                 );
               })}
-
-              {/* New collection input */}
-              {showNewColl ? (
-                <div
-                  style={{
-                    marginTop: 10,
-                    padding: "10px 10px 0",
-                    borderTop: "1px solid var(--border)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      height: 34,
-                      padding: "0 10px",
-                      background: "var(--bg-input)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius)",
-                    }}
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="var(--accent)"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                      focusable="false"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    <input
-                      value={newCollInput}
-                      onChange={(e) => setNewCollInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && newCollInput.trim()) {
-                          addCollection(newCollInput.trim()).then(() => {});
-                          setNewCollInput("");
-                          setShowNewColl(false);
-                        }
-                        if (e.key === "Escape") {
-                          setShowNewColl(false);
-                          setNewCollInput("");
-                        }
-                      }}
-                      placeholder="Collection name…"
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        background: "transparent",
-                        border: "none",
-                        outline: "none",
-                        color: "var(--text-primary)",
-                        fontFamily: "inherit",
-                        fontSize: "var(--text-code)",
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "var(--text-2xs)",
-                      color: "var(--text-secondary)",
-                      padding: "7px 4px 0",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    Press{" "}
-                    <kbd
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "var(--text-2xs)",
-                        color: "var(--text-secondary)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "var(--radius)",
-                        padding: "0 5px",
-                      }}
-                    >
-                      Enter
-                    </kbd>{" "}
-                    to create
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowNewColl(true)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    margin: "10px 12px 0",
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--text-secondary)",
-                    fontFamily: "inherit",
-                    fontSize: "var(--text-xs)",
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
-                  className="hover:text-[var(--accent)]"
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  New Collection
-                </button>
-              )}
             </>
           ))}
       </div>
@@ -1123,6 +1280,8 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
           ?
         </kbd>
       </div>
+
+      {nameModal && <NameModal state={nameModal} onClose={() => setNameModal(null)} />}
     </aside>
   );
 }
@@ -1169,7 +1328,7 @@ function EmptyState({
             marginTop: 6,
             background: "transparent",
             border: "none",
-            color: "var(--accent)",
+            color: "var(--primary)",
             fontSize: "var(--text-xs)",
             cursor: "pointer",
             fontFamily: "inherit",

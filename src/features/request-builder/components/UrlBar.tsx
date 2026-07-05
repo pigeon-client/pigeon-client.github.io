@@ -42,6 +42,16 @@ export function UrlBar() {
 
   const { request } = activeTab;
 
+  /* Apply a raw URL, keeping the Params editor in sync with its query string
+     in real time — edit the query and the params update on every keystroke. */
+  const applyUrl = (raw: string) => {
+    const { params } = splitUrlQuery(raw);
+    const kv = params.map((p) => ({ key: p.key, value: p.value, enabled: true }));
+    // updateTabRequest derives the tab name from the path when it isn't locked;
+    // don't call setTabName here (that would lock it on the first keystroke).
+    updateTabRequest(activeTab.id, { url: raw, params: kv });
+  };
+
   const handleSend = async () => {
     if (!request.url) return;
     setTabLoading(activeTab.id, true);
@@ -119,6 +129,7 @@ export function UrlBar() {
         <div className="relative shrink-0" ref={dropdownRef}>
           <button
             type="button"
+            data-testid="method-trigger"
             onClick={() => setMethodOpen((o) => !o)}
             className={cn(
               "flex h-9 w-[104px] cursor-pointer items-center justify-between gap-2 rounded border bg-card px-3 font-mono text-code font-bold transition-colors",
@@ -151,6 +162,7 @@ export function UrlBar() {
         <div className="relative flex h-9 flex-1 items-center overflow-hidden rounded border border-border bg-card px-3">
           <input
             type="text"
+            data-testid="url-input"
             value={request.url}
             onPaste={(e) => {
               const text = e.clipboardData.getData("text");
@@ -173,20 +185,11 @@ export function UrlBar() {
                 return;
               }
 
-              // Plain URL carrying a query string → lift into the Params editor.
-              // Guard: URLs have no internal whitespace, so a spaced paste is left alone.
+              // Plain URL with a query string → sync into Params (default paste
+              // then flows through onChange). Guard: spaced pastes are left alone.
               if (trimmed.includes("?") && !/\s/.test(trimmed)) {
                 e.preventDefault();
-                const { base, params } = splitUrlQuery(trimmed);
-                const existing = request.params.filter((p) => p.key.trim() || p.value.trim());
-                const merged = new Map(existing.map((p) => [p.key, p]));
-                for (const np of params) {
-                  merged.set(np.key, { key: np.key, value: np.value, enabled: true });
-                }
-                updateTabRequest(activeTab.id, { url: base, params: [...merged.values()] });
-                if (!activeTab.nameLocked) {
-                  setTabName(activeTab.id, extractEndpoint(base));
-                }
+                applyUrl(trimmed);
               }
             }}
             onChange={(e) => {
@@ -204,10 +207,7 @@ export function UrlBar() {
                   return;
                 }
               }
-              updateTabRequest(activeTab.id, { url: raw });
-              if (!activeTab.nameLocked && raw) {
-                setTabName(activeTab.id, extractEndpoint(raw));
-              }
+              applyUrl(raw);
             }}
             onKeyDown={(e) => {
               if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -305,6 +305,7 @@ function MethodOption({
     <button
       type="button"
       role="option"
+      data-testid={`method-option-${method}`}
       aria-selected={active}
       onClick={onSelect}
       className={cn(

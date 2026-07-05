@@ -212,6 +212,7 @@ export function TabStrip() {
   const closeTab = useTabStore((s) => s.closeTab);
   const addTab = useTabStore((s) => s.addTab);
   const setTabName = useTabStore((s) => s.setTabName);
+  const updateTabRequest = useTabStore((s) => s.updateTabRequest);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -228,7 +229,14 @@ export function TabStrip() {
 
   const commitRename = (id: string) => {
     const v = editValue.trim();
-    if (v) setTabName(id, v);
+    if (v) {
+      // Named manually → lock; path changes no longer touch it.
+      setTabName(id, v);
+    } else {
+      // Cleared → back to auto; name follows the URL path again.
+      const tab = tabs.find((t) => t.id === id);
+      updateTabRequest(id, { url: tab?.request.url ?? "", nameLocked: false });
+    }
     setEditingId(null);
   };
 
@@ -281,7 +289,6 @@ export function TabStrip() {
               borderRight: "1px solid var(--border)",
               cursor: "pointer",
               background: active ? "var(--bg-base)" : "transparent",
-              boxShadow: active ? "inset 0 2px 0 var(--accent)" : "none",
               transition: "background 0.1s",
             }}
             className={!active ? "hover:bg-accent" : ""}

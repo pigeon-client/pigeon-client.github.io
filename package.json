@@ -12,6 +12,12 @@
     "format:check": "biome format",
     "lint": "biome lint",
     "lint:staged": "biome lint --staged",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report",
     "copy-wasm": "node scripts/copy-wasm.js",
     "predev": "node scripts/copy-wasm.js",
     "prebuild": "node scripts/copy-wasm.js",
@@ -42,15 +48,19 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
     "@evilmartians/lefthook": "^2.1.9",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.0",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "@vitest/coverage-v8": "2",
     "autoprefixer": "^10.5.0",
+    "happy-dom": "^20.10.6",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vitest": "2"
   }
 }

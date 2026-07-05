@@ -41,6 +41,7 @@ interface TabState {
 
 const defaultRequest = (): RequestConfig => ({
   name: "Untitled Request",
+  nameLocked: false,
   method: "GET",
   url: "",
   params: [],
@@ -144,9 +145,13 @@ export const useTabStore = create<TabState>((set) => ({
     set((s) => ({
       tabs: s.tabs.map((t) => {
         if (t.id !== id) return t;
-        const newRequest = { ...t.request, ...req };
-        const name = !t.nameLocked && req.url !== undefined ? pathFromUrl(req.url) : t.name;
-        return { ...t, request: newRequest, name };
+        // Adopt an incoming lock flag (e.g. loading a saved request), else keep current.
+        const nextLocked = req.nameLocked ?? t.nameLocked;
+        let name = req.name ?? t.name;
+        // Auto names track the URL path; manual names never change.
+        if (!nextLocked && req.url !== undefined) name = pathFromUrl(req.url);
+        const newRequest = { ...t.request, ...req, name, nameLocked: nextLocked };
+        return { ...t, request: newRequest, name, nameLocked: nextLocked };
       }),
     })),
 
@@ -163,12 +168,18 @@ export const useTabStore = create<TabState>((set) => ({
   setTabName: (id, name) =>
     set((s) => ({
       tabs: s.tabs.map((t) =>
-        t.id === id ? { ...t, name, nameLocked: true, request: { ...t.request, name } } : t,
+        t.id === id
+          ? { ...t, name, nameLocked: true, request: { ...t.request, name, nameLocked: true } }
+          : t,
       ),
     })),
   setTabNameLocked: (id, locked) =>
     set((s) => ({
-      tabs: s.tabs.map((t) => (t.id === id ? { ...t, nameLocked: locked } : t)),
+      tabs: s.tabs.map((t) =>
+        t.id === id
+          ? { ...t, nameLocked: locked, request: { ...t.request, nameLocked: locked } }
+          : t,
+      ),
     })),
 }));
 

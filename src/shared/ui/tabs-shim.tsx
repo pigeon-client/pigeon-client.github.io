@@ -12,14 +12,22 @@ interface TabProps {
   onClick?: () => void;
   variant?: Variant;
   children?: ReactNode;
+  testId?: string;
 }
 
-export function Tab({ active = false, onClick, variant = "underline", children }: TabProps) {
+export function Tab({
+  active = false,
+  onClick,
+  variant = "underline",
+  children,
+  testId,
+}: TabProps) {
   if (variant === "sidebar") {
     return (
       <button
         type="button"
         onClick={onClick}
+        data-testid={testId}
         data-state={active ? "active" : "inactive"}
         className={
           "inline-flex h-7 w-full items-center justify-center gap-1.5 rounded px-1 text-xs font-medium transition-colors " +
@@ -36,6 +44,7 @@ export function Tab({ active = false, onClick, variant = "underline", children }
     <button
       type="button"
       onClick={onClick}
+      data-testid={testId}
       data-state={active ? "active" : "inactive"}
       className={
         "inline-flex h-8 items-center gap-1.5 border-b-2 px-3 text-xs font-medium transition-colors " +

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useCollectionStore } from "@/features/collections";
+import { SaveToCollectionModal, useCollectionStore } from "@/features/collections";
 import { EnvModal } from "@/features/environments";
 import { useHistoryStore } from "@/features/history";
-import { ExportCurlModal, ImportModal } from "@/features/import-export";
+import { generateCurl, ImportModal } from "@/features/import-export";
 import {
   EmptyRequestState,
   RequestEditor,
@@ -38,7 +38,8 @@ export function AppContent() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [showEnvModal, setShowEnvModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
+  const [curlCopied, setCurlCopied] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -47,6 +48,14 @@ export function AppContent() {
   const addTab = useTabStore((s) => s.addTab);
   const closeTab = useTabStore((s) => s.closeTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
+  const activeRequest = tabs.find((tab) => tab.id === activeTabId)?.request ?? null;
+
+  const handleExportCurl = async () => {
+    if (!activeRequest) return;
+    await navigator.clipboard.writeText(generateCurl(activeRequest));
+    setCurlCopied(true);
+    setTimeout(() => setCurlCopied(false), 2000);
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -58,22 +67,11 @@ export function AppContent() {
         sendBtn?.click();
         return;
       }
-      if (e.shiftKey && (e.key === "?" || e.key === "/")) {
-        if (!meta) {
-          // Don't intercept `?` while typing in an input/textarea/contenteditable
-          const target = e.target as HTMLElement | null;
-          const tag = target?.tagName;
-          const isEditable =
-            tag === "INPUT" ||
-            tag === "TEXTAREA" ||
-            tag === "SELECT" ||
-            target?.isContentEditable === true;
-          if (!isEditable) {
-            e.preventDefault();
-            setShowShortcutsModal(true);
-            return;
-          }
-        }
+      // Cmd/Ctrl + / opens the shortcuts help (leaves plain `?` free to type).
+      if (meta && e.key === "/") {
+        e.preventDefault();
+        setShowShortcutsModal(true);
+        return;
       }
       if (e.key === "Escape") {
         if (showShortcutsModal) {
@@ -88,8 +86,8 @@ export function AppContent() {
           setShowImportModal(false);
           return;
         }
-        if (showExportModal) {
-          setShowExportModal(false);
+        if (showSaveModal) {
+          setShowSaveModal(false);
           return;
         }
         if (showSettings) {
@@ -121,7 +119,9 @@ export function AppContent() {
       }
       if (meta && e.key === "s") {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent("pigeon:save-to-collection"));
+        if (activeRequest?.url.trim()) {
+          setShowSaveModal(true);
+        }
         return;
       }
       if (meta && e.shiftKey && /^[1-9]$/.test(e.key)) {
@@ -152,8 +152,9 @@ export function AppContent() {
     showShortcutsModal,
     showEnvModal,
     showImportModal,
-    showExportModal,
+    showSaveModal,
     showSettings,
+    activeRequest,
   ]);
 
   return (
@@ -161,7 +162,9 @@ export function AppContent() {
       {/* Topbar */}
       <Header
         onOpenSettings={() => setShowSettings(true)}
-        onExportCurl={() => setShowExportModal(true)}
+        onExportCurl={handleExportCurl}
+        curlCopied={curlCopied}
+        exportDisabled={!activeRequest}
         search={search}
         onSearchChange={setSearch}
         searchInputRef={searchInputRef}
@@ -225,10 +228,9 @@ export function AppContent() {
                     >
                       <RequestEditor tabId={tab.id} />
                     </div>
-                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-driven resize handle between request editor and response */}
-                    <div
-                      className="group flex h-1 flex-shrink-0 cursor-row-resize items-center justify-center border-t border-border bg-transparent transition-colors hover:bg-accent/40 active:bg-accent/60 select-none"
-                      onMouseDown={(e) => {
+                    <ResponsePanel
+                      tabId={tab.id}
+                      onResizeStart={(e) => {
                         e.preventDefault();
                         const startY = e.clientY;
                         const startHeight = editorHeight || 200;
@@ -250,10 +252,7 @@ export function AppContent() {
                         document.body.style.cursor = "row-resize";
                         document.body.style.userSelect = "none";
                       }}
-                    >
-                      <div className="h-0.5 w-8 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100" />
-                    </div>
-                    <ResponsePanel tabId={tab.id} />
+                    />
                   </>
                 ) : (
                   <div className="flex-1">
@@ -269,7 +268,9 @@ export function AppContent() {
       {/* Modals */}
       {showEnvModal && <EnvModal onClose={() => setShowEnvModal(false)} />}
       {showImportModal && <ImportModal onClose={() => setShowImportModal(false)} />}
-      {showExportModal && <ExportCurlModal onClose={() => setShowExportModal(false)} />}
+      {showSaveModal && activeRequest && (
+        <SaveToCollectionModal request={activeRequest} onClose={() => setShowSaveModal(false)} />
+      )}
       {showShortcutsModal && (
         <KeyboardShortcutsModal onClose={() => setShowShortcutsModal(false)} />
       )}

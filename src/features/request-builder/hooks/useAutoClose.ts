@@ -12,6 +12,18 @@ const pairs: Record<string, string> = {
 const openChars = new Set(Object.keys(pairs));
 const closeChars = new Set(Object.values(pairs));
 
+/**
+ * Write a new value through React's native setter so the controlled
+ * `onChange` fires. A plain `el.value = …` assignment is swallowed by
+ * React 19's value tracker and never reaches state.
+ */
+const nativeSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+
+function setValue(el: HTMLTextAreaElement, value: string) {
+  nativeSetter?.call(el, value);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 export function useAutoClose(ref: RefObject<HTMLTextAreaElement | null>) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -28,9 +40,8 @@ export function useAutoClose(ref: RefObject<HTMLTextAreaElement | null>) {
         const after = value.slice(selectionEnd);
 
         const newValue = before + char + pair + after;
-        el.value = newValue;
+        setValue(el, newValue);
         el.selectionStart = el.selectionEnd = selectionStart + 1;
-        el.dispatchEvent(new Event("input", { bubbles: true }));
         return;
       }
 
@@ -53,9 +64,8 @@ export function useAutoClose(ref: RefObject<HTMLTextAreaElement | null>) {
           if (openChars.has(prev) && pairs[prev] === next) {
             e.preventDefault();
             const newValue = value.slice(0, selectionStart - 1) + value.slice(selectionStart + 1);
-            el.value = newValue;
+            setValue(el, newValue);
             el.selectionStart = el.selectionEnd = selectionStart - 1;
-            el.dispatchEvent(new Event("input", { bubbles: true }));
             return;
           }
         }

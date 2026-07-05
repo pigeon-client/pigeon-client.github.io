@@ -1,4 +1,5 @@
 import hljs from "highlight.js";
+import { Check, ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/shared/lib/utils";
 import type { BodyType, KeyValue } from "@/shared/types";
@@ -131,6 +132,8 @@ export function BodyEditor({
   const [rawFormat, setRawFormat] = useState<BodyType>(
     ["text/plain", "text/xml"].includes(bodyType) ? bodyType : "text/plain",
   );
+  const [rawFormatOpen, setRawFormatOpen] = useState(false);
+  const rawFormatRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -138,6 +141,17 @@ export function BodyEditor({
     el.addEventListener("keydown", handleKeyDown);
     return () => el.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
+
+  useEffect(() => {
+    if (!rawFormatOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (rawFormatRef.current && !rawFormatRef.current.contains(e.target as Node)) {
+        setRawFormatOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [rawFormatOpen]);
 
   const handleRadioSelect = (id: RadioId) => {
     if (id === "none") onBodyTypeChange("none");
@@ -179,28 +193,67 @@ export function BodyEditor({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Type selector row */}
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-1.5 border-b border-border px-4 py-2">
-        {BODY_TYPES.map((t) => (
-          <button
-            type="button"
-            key={t.id}
-            onClick={() => handleRadioSelect(t.id)}
-            className={cn(
-              "inline-flex h-6.5 cursor-pointer items-center rounded border px-2.5 text-xs transition-colors",
-              activeRadio === t.id
-                ? "border-primary/40 bg-primary/15 font-semibold text-primary"
-                : "border-transparent font-medium text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {t.label}
-            {activeRadio === t.id && t.id === "json" && (
-              <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-status-2xx" />
-            )}
-          </button>
-        ))}
-        <div className="flex-1" />
-        {isCodeEditor && (
-          <Button variant="ghost" size="xs" onClick={formatJson} className="gap-1.5">
+      <div className="flex flex-shrink-0 items-center justify-between gap-1.5 border-b border-border px-4 py-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {BODY_TYPES.map((t) => (
+            <button
+              type="button"
+              key={t.id}
+              onClick={() => handleRadioSelect(t.id)}
+              className={cn(
+                "inline-flex h-6.5 cursor-pointer items-center rounded border px-2.5 text-xs transition-colors",
+                activeRadio === t.id
+                  ? "border-primary/40 bg-primary/15 font-semibold text-primary"
+                  : "border-transparent font-medium text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+          {activeRadio === "raw" && (
+            <div className="relative shrink-0" ref={rawFormatRef}>
+              <button
+                type="button"
+                onClick={() => setRawFormatOpen((o) => !o)}
+                className={cn(
+                  "inline-flex h-6.5 cursor-pointer items-center gap-1.5 rounded border px-2.5 text-xs transition-colors",
+                  rawFormatOpen
+                    ? "border-primary/40 bg-primary/15 font-semibold text-primary"
+                    : "border-transparent font-medium text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {RAW_FORMATS.find((f) => f.value === rawFormat)?.label}
+                <ChevronDown className="h-3 w-3" />
+              </button>
+
+              {rawFormatOpen && (
+                <div className="absolute left-0 top-8 z-[var(--z-dropdown)] w-[110px] rounded border border-border bg-popover p-1 shadow-lg">
+                  {RAW_FORMATS.map((f) => (
+                    <Button
+                      key={f.value}
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => {
+                        setRawFormat(f.value);
+                        onBodyTypeChange(f.value);
+                        setRawFormatOpen(false);
+                      }}
+                      className={cn(
+                        "w-full justify-between",
+                        f.value === rawFormat ? "text-primary" : "text-foreground",
+                      )}
+                    >
+                      {f.label}
+                      {f.value === rawFormat && <Check className="h-3 w-3" />}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {activeRadio === "json" && (
+          <Button variant="ghost" size="xs" onClick={formatJson} className="shrink-0 gap-1.5">
             <svg
               width="12"
               height="12"
@@ -216,23 +269,6 @@ export function BodyEditor({
             </svg>
             Format
           </Button>
-        )}
-        {activeRadio === "raw" && (
-          <select
-            value={rawFormat}
-            onChange={(e) => {
-              const fmt = e.target.value as BodyType;
-              setRawFormat(fmt);
-              onBodyTypeChange(fmt);
-            }}
-            className="h-6.5 cursor-pointer appearance-none rounded border border-border bg-card px-2.5 font-[inherit] text-2xs text-foreground outline-none"
-          >
-            {RAW_FORMATS.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
         )}
       </div>
 

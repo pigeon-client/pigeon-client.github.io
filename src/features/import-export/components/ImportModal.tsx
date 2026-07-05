@@ -56,7 +56,7 @@ export function ImportModal({ onClose }: ImportModalProps) {
   };
 
   return (
-    <Modal onClose={onClose} width={480} position="right">
+    <Modal onClose={onClose} width={520}>
       <ModalHeader title="Import from cURL" onClose={onClose} />
 
       <div className="px-5 pt-5">
@@ -64,6 +64,7 @@ export function ImportModal({ onClose }: ImportModalProps) {
           cURL Command
         </div>
         <textarea
+          data-testid="import-curl-textarea"
           value={raw}
           onChange={(e) => {
             setRaw(e.target.value);
@@ -129,7 +130,13 @@ export function ImportModal({ onClose }: ImportModalProps) {
         <Button variant="ghost" size="sm" onClick={onClose}>
           Cancel
         </Button>
-        <Button variant="primary" size="sm" onClick={handleImport} disabled={!raw.trim()}>
+        <Button
+          variant="primary"
+          size="sm"
+          data-testid="import-curl-submit"
+          onClick={handleImport}
+          disabled={!raw.trim()}
+        >
           Import Request
         </Button>
       </ModalFooter>

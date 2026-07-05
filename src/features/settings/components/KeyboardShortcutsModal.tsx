@@ -26,7 +26,7 @@ const SECTIONS: { label: string; shortcuts: { keys: string[]; action: string }[]
   {
     label: "Other",
     shortcuts: [
-      { keys: ["⇧", "?"], action: "Show keyboard shortcuts" },
+      { keys: ["⌘", "/"], action: "Show keyboard shortcuts" },
       { keys: ["⌘", ","], action: "Open settings" },
       { keys: ["⌘", "⇧", "E"], action: "Open environment manager" },
     ],

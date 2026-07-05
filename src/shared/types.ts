@@ -46,6 +46,11 @@ export interface AuthConfig {
 export interface RequestConfig {
   id?: number;
   name: string;
+  /**
+   * Name origin. `false`/absent = auto-generated from the URL path (follows the
+   * path as it changes). `true` = user renamed it manually (never auto-changed).
+   */
+  nameLocked?: boolean;
   method: HttpMethod;
   url: string;
   params: KeyValue[];

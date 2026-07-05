@@ -1,4 +1,4 @@
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -33,10 +33,91 @@ pub fn init_db() -> Connection {
             id TEXT PRIMARY KEY,
             data TEXT NOT NULL,
             created_at INTEGER NOT NULL
-        );"
-    ).expect("Failed to create tables");
+        );",
+    )
+    .expect("Failed to create tables");
+
+    migrate_collections_id_to_text(&conn).expect("Failed to migrate collections table");
 
     conn
+}
+
+fn migrate_collections_id_to_text(conn: &Connection) -> Result<(), String> {
+    let table_exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'collections'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    if table_exists == 0 {
+        return Ok(());
+    }
+
+    let mut stmt = conn
+        .prepare("PRAGMA table_info(collections)")
+        .map_err(|e| e.to_string())?;
+    let columns = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?.to_uppercase(),
+            ))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut id_is_text = false;
+    let mut has_created_at = false;
+    for column in columns {
+        let (name, data_type) = column.map_err(|e| e.to_string())?;
+        if name == "id" {
+            id_is_text = data_type.contains("TEXT");
+        }
+        if name == "created_at" {
+            has_created_at = true;
+        }
+    }
+
+    if id_is_text && has_created_at {
+        return Ok(());
+    }
+
+    conn.execute_batch(
+        "ALTER TABLE collections RENAME TO collections_legacy;
+        CREATE TABLE collections (
+            id TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+        );",
+    )
+    .map_err(|e| e.to_string())?;
+
+    if has_created_at {
+        conn.execute(
+            "INSERT OR REPLACE INTO collections (id, data, created_at)
+             SELECT CAST(id AS TEXT), data, created_at FROM collections_legacy",
+            [],
+        )
+    } else {
+        conn.execute(
+            "INSERT OR REPLACE INTO collections (id, data, created_at)
+             SELECT CAST(id AS TEXT), data, ?1 FROM collections_legacy",
+            params![now_ms()?],
+        )
+    }
+    .map_err(|e| e.to_string())?;
+
+    conn.execute("DROP TABLE collections_legacy", [])
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+fn now_ms() -> Result<i64, String> {
+    Ok(std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_millis() as i64)
 }
 
 pub fn save_draft(conn: &Connection, data: &str) -> Result<i64, String> {
@@ -48,18 +129,22 @@ pub fn save_draft(conn: &Connection, data: &str) -> Result<i64, String> {
     conn.execute(
         "INSERT INTO drafts (data, created_at) VALUES (?1, ?2)",
         params![data, now],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
 
     Ok(conn.last_insert_rowid())
 }
 
 pub fn get_drafts(conn: &Connection) -> Result<Vec<(i64, String)>, String> {
-    let mut stmt = conn.prepare("SELECT id, data FROM drafts ORDER BY created_at DESC")
+    let mut stmt = conn
+        .prepare("SELECT id, data FROM drafts ORDER BY created_at DESC")
         .map_err(|e| e.to_string())?;
 
-    let rows = stmt.query_map([], |row| {
-        Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
-    }).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|e| e.to_string())?;
 
     let mut result = Vec::new();
     for row in rows {
@@ -78,7 +163,8 @@ pub fn update_draft(conn: &Connection, id: i64, data: &str) -> Result<(), String
     conn.execute(
         "UPDATE drafts SET data = ?1 WHERE id = ?2",
         params![data, id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -86,18 +172,22 @@ pub fn add_history(conn: &Connection, data: &str, timestamp: i64) -> Result<i64,
     conn.execute(
         "INSERT INTO history (data, timestamp) VALUES (?1, ?2)",
         params![data, timestamp],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
 
     Ok(conn.last_insert_rowid())
 }
 
 pub fn get_history(conn: &Connection) -> Result<Vec<(i64, String)>, String> {
-    let mut stmt = conn.prepare("SELECT id, data FROM history ORDER BY timestamp DESC")
+    let mut stmt = conn
+        .prepare("SELECT id, data FROM history ORDER BY timestamp DESC")
         .map_err(|e| e.to_string())?;
 
-    let rows = stmt.query_map([], |row| {
-        Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
-    }).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|e| e.to_string())?;
 
     let mut result = Vec::new();
     for row in rows {
@@ -109,11 +199,16 @@ pub fn get_history(conn: &Connection) -> Result<Vec<(i64, String)>, String> {
 pub fn update_history(conn: &Connection, id: i64, data: &str) -> Result<(), String> {
     conn.execute(
         "UPDATE history SET data = ?1, timestamp = ?2 WHERE id = ?3",
-        params![data, std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_err(|e| e.to_string())?
-            .as_millis() as i64, id],
-    ).map_err(|e| e.to_string())?;
+        params![
+            data,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|e| e.to_string())?
+                .as_millis() as i64,
+            id
+        ],
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -134,18 +229,22 @@ pub fn save_collection(conn: &Connection, id: &str, data: &str) -> Result<(), St
     conn.execute(
         "INSERT OR REPLACE INTO collections (id, data, created_at) VALUES (?1, ?2, ?3)",
         params![id, data, now],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
 
     Ok(())
 }
 
 pub fn get_collections(conn: &Connection) -> Result<Vec<(String, String)>, String> {
-    let mut stmt = conn.prepare("SELECT id, data FROM collections ORDER BY created_at ASC")
+    let mut stmt = conn
+        .prepare("SELECT id, data FROM collections ORDER BY created_at ASC")
         .map_err(|e| e.to_string())?;
 
-    let rows = stmt.query_map([], |row| {
-        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-    }).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|e| e.to_string())?;
 
     let mut result = Vec::new();
     for row in rows {
@@ -158,7 +257,8 @@ pub fn update_collection(conn: &Connection, id: &str, data: &str) -> Result<(), 
     conn.execute(
         "UPDATE collections SET data = ?1 WHERE id = ?2",
         params![data, id],
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
     Ok(())
 }
 

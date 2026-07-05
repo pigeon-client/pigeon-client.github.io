@@ -1,12 +1,15 @@
-import { Download, Search, Settings, X } from "lucide-react";
-import type { RefObject } from "react";
+import { Check, Search, Settings, Terminal, X } from "lucide-react";
+import { type RefObject, useEffect, useState } from "react";
 import pigeonLogo from "@/assets/pigeon-logo-32.png";
+import { getCachedUpdateResult, onUpdateCacheChange } from "@/features/settings";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 
 interface HeaderProps {
   onOpenSettings: () => void;
   onExportCurl: () => void;
+  curlCopied: boolean;
+  exportDisabled: boolean;
   search: string;
   onSearchChange: (v: string) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -18,6 +21,8 @@ interface HeaderProps {
 export function Header({
   onOpenSettings,
   onExportCurl,
+  curlCopied,
+  exportDisabled,
   search,
   onSearchChange,
   searchInputRef,
@@ -25,6 +30,15 @@ export function Header({
   onSearchFocus,
   onSearchBlur,
 }: HeaderProps) {
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
+  useEffect(() => {
+    setUpdateAvailable(getCachedUpdateResult()?.status === "available");
+    return onUpdateCacheChange(() => {
+      setUpdateAvailable(getCachedUpdateResult()?.status === "available");
+    });
+  }, []);
+
   return (
     <div className="flex h-11 flex-none items-center gap-2 border-b border-border bg-background/95 px-3.5 backdrop-blur">
       {/* Brand */}
@@ -75,12 +89,27 @@ export function Header({
 
       {/* Export + Settings */}
       <div className="flex items-center gap-1 shrink-0">
-        <Button variant="ghost" size="xs" onClick={onExportCurl} title="Export cURL">
-          <Download className="h-3.5 w-3.5" />
-          <span className="max-sm:hidden">Export</span>
+        <Button
+          variant="ghost-icon"
+          size="icon"
+          onClick={onExportCurl}
+          disabled={exportDisabled}
+          title={curlCopied ? "Copied!" : "Copy as cURL"}
+          aria-label="Copy as cURL"
+        >
+          {curlCopied ? (
+            <Check className="h-4 w-4 text-status-2xx" />
+          ) : (
+            <Terminal className="h-4 w-4" />
+          )}
         </Button>
         <Button variant="ghost-icon" size="icon" onClick={onOpenSettings} title="Settings (⌘,)">
-          <Settings className="h-4 w-4" />
+          <span className="relative">
+            <Settings className="h-4 w-4" />
+            {updateAvailable && (
+              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
+            )}
+          </span>
         </Button>
       </div>
     </div>

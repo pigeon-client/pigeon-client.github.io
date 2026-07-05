@@ -30,6 +30,35 @@ export function splitUrlQuery(url: string): {
   return { base, params };
 }
 
+/** URL without its `?query` (keeps any `#hash`). */
+export function stripQuery(url: string): string {
+  const qIdx = url.indexOf("?");
+  if (qIdx === -1) return url;
+  const hashIdx = url.indexOf("#", qIdx);
+  return url.slice(0, qIdx) + (hashIdx === -1 ? "" : url.slice(hashIdx));
+}
+
+/** Build a `k=v&k2=v2` query string from enabled, keyed params. */
+export function buildQueryString(params: { key: string; value: string; enabled?: boolean }[]) {
+  return params
+    .filter((p) => (p.enabled ?? true) && p.key.trim())
+    .map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value)}`)
+    .join("&");
+}
+
+/** Rewrite a URL's query to reflect the given params (keeps base + hash). */
+export function applyParamsToUrl(
+  url: string,
+  params: { key: string; value: string; enabled?: boolean }[],
+): string {
+  const base = stripQuery(url);
+  const hashIdx = base.indexOf("#");
+  const path = hashIdx === -1 ? base : base.slice(0, hashIdx);
+  const hash = hashIdx === -1 ? "" : base.slice(hashIdx);
+  const qs = buildQueryString(params);
+  return qs ? `${path}?${qs}${hash}` : `${path}${hash}`;
+}
+
 /**
  * Parse user input URL
  * :3000 -> http://localhost:3000

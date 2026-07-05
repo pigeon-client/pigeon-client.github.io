@@ -8,6 +8,8 @@ interface KeyValueEditorProps {
   onChange: (items: KeyValue[]) => void;
   keyPlaceholder?: string;
   valuePlaceholder?: string;
+  /** Test-id prefix for rows, e.g. "param" → `param-key-0`, `param-value-0`. */
+  testId?: string;
   showFilePicker?: boolean;
   inputRefs?: React.MutableRefObject<(HTMLInputElement | null)[]>;
   suggestions?: string[];
@@ -58,6 +60,7 @@ export function KeyValueEditor({
   onChange,
   keyPlaceholder = "Key",
   valuePlaceholder = "Value",
+  testId,
   showFilePicker = false,
   inputRefs,
   suggestions,
@@ -139,6 +142,7 @@ export function KeyValueEditor({
                 if (inputRefs) inputRefs.current[index] = el;
               }}
               type="text"
+              data-testid={testId ? `${testId}-key-${index}` : undefined}
               placeholder={keyPlaceholder}
               value={item.key}
               onChange={(e) =>
@@ -188,6 +192,7 @@ export function KeyValueEditor({
             ) : (
               <input
                 type="text"
+                data-testid={testId ? `${testId}-value-${index}` : undefined}
                 placeholder={valuePlaceholder}
                 value={item.value}
                 onChange={(e) => update(index, "value", e.target.value)}

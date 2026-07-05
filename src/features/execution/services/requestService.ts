@@ -1,8 +1,13 @@
 import { type Environment, replaceEnvVariables } from "@/features/environments";
-import { parseUrl } from "@/shared/lib/url";
+import { isTauri } from "@/shared/lib/platform";
+import { parseUrl, stripQuery } from "@/shared/lib/url";
 import type { RequestConfig } from "@/shared/types";
 import type { ApiResponse } from "../types";
+import { browserHttpClient } from "./BrowserHttpClient";
 import { tauriHttpClient } from "./TauriHttpClient";
+
+/** Rust transport in the app; fetch-based transport in a plain browser. */
+const httpClient = isTauri() ? tauriHttpClient : browserHttpClient;
 
 export interface SendOptions {
   followRedirects?: boolean;
@@ -20,10 +25,12 @@ export function resolveRequest(
   config: RequestConfig,
   activeEnv: Environment | null,
 ): ResolvedRequest {
-  let url = parseUrl(config.url);
+  const activeParams = config.params?.filter((p) => p.enabled && p.key) ?? [];
+  // Params mirror the URL's query, so drop the URL query when params exist to
+  // avoid sending it twice; keep the URL as typed when there are no params.
+  let url = parseUrl(activeParams.length > 0 ? stripQuery(config.url) : config.url);
   url = replaceEnvVariables(url, activeEnv);
 
-  const activeParams = config.params?.filter((p) => p.enabled && p.key) ?? [];
   if (activeParams.length > 0) {
     const separator = url.includes("?") ? "&" : "?";
     const queryString = activeParams
@@ -91,7 +98,7 @@ export async function sendRequest(
   const startTime = performance.now();
 
   try {
-    const response = await tauriHttpClient.send({
+    const response = await httpClient.send({
       method: config.method,
       url,
       headers,

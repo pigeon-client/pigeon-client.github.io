@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { applyParamsToUrl } from "@/shared/lib/url";
 import type { AuthConfig, BodyType, Header, KeyValue } from "@/shared/types";
 import { CountBadge } from "@/shared/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -19,9 +20,11 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
   const [activeTab, setActiveTab] = useState<RequestTab>("params");
 
+  // Editing params rewrites the URL's query so both views stay in sync.
   const onParamsChange = useCallback(
-    (params: KeyValue[]) => updateTabRequest(tabId, { params }),
-    [tabId, updateTabRequest],
+    (params: KeyValue[]) =>
+      updateTabRequest(tabId, { params, url: applyParamsToUrl(request?.url ?? "", params) }),
+    [tabId, updateTabRequest, request?.url],
   );
 
   const onHeadersChange = useCallback(
@@ -75,23 +78,23 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
         className="flex min-h-0 flex-1 flex-col px-4 pt-1"
       >
         <TabsList variant="underline" className="w-full justify-start">
-          <TabsTrigger variant="underline" value="params">
+          <TabsTrigger variant="underline" value="params" data-testid="editor-tab-params">
             Params
             {paramCount > 0 && <CountBadge count={paramCount} active={activeTab === "params"} />}
           </TabsTrigger>
-          <TabsTrigger variant="underline" value="headers">
+          <TabsTrigger variant="underline" value="auth" data-testid="editor-tab-auth">
+            Auth
+            {hasAuth && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-primary" />}
+          </TabsTrigger>
+          <TabsTrigger variant="underline" value="headers" data-testid="editor-tab-headers">
             Headers
             {headerCount > 0 && <CountBadge count={headerCount} active={activeTab === "headers"} />}
           </TabsTrigger>
-          <TabsTrigger variant="underline" value="body">
+          <TabsTrigger variant="underline" value="body" data-testid="editor-tab-body">
             Body
             {hasBody && (
               <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-status-2xx" />
             )}
-          </TabsTrigger>
-          <TabsTrigger variant="underline" value="auth">
-            Auth
-            {hasAuth && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-primary" />}
           </TabsTrigger>
         </TabsList>
 
@@ -101,6 +104,7 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
             onChange={onParamsChange}
             keyPlaceholder="Key"
             valuePlaceholder="Value"
+            testId="param"
           />
         </TabsContent>
         <TabsContent value="headers" className="m-0 px-4 py-2.5">
