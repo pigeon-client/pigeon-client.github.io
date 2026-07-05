@@ -289,6 +289,30 @@ fn delete_collection(state: State<db::DbState>, id: String) -> Result<(), String
     db::delete_collection(&conn, &id)
 }
 
+#[tauri::command]
+fn save_environment(state: State<db::DbState>, id: String, data: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::save_environment(&conn, &id, &data)
+}
+
+#[tauri::command]
+fn get_environments(state: State<db::DbState>) -> Result<Vec<(String, String)>, String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::get_environments(&conn)
+}
+
+#[tauri::command]
+fn update_environment(state: State<db::DbState>, id: String, data: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::update_environment(&conn, &id, &data)
+}
+
+#[tauri::command]
+fn delete_environment(state: State<db::DbState>, id: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::delete_environment(&conn, &id)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let db_conn = db::init_db();
@@ -315,6 +339,10 @@ pub fn run() {
             get_collections,
             update_collection,
             delete_collection,
+            save_environment,
+            get_environments,
+            update_environment,
+            delete_environment,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

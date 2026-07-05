@@ -1,6 +1,7 @@
 import { Check, Search, Settings, Terminal, X } from "lucide-react";
 import { type RefObject, useEffect, useState } from "react";
 import pigeonLogo from "@/assets/pigeon-logo-32.png";
+import { EnvSelector } from "@/features/environments";
 import { getCachedUpdateResult, onUpdateCacheChange } from "@/features/settings";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -8,6 +9,7 @@ import { Button } from "@/shared/ui/button";
 interface HeaderProps {
   onOpenSettings: () => void;
   onExportCurl: () => void;
+  onManageEnv: () => void;
   curlCopied: boolean;
   exportDisabled: boolean;
   search: string;
@@ -21,6 +23,7 @@ interface HeaderProps {
 export function Header({
   onOpenSettings,
   onExportCurl,
+  onManageEnv,
   curlCopied,
   exportDisabled,
   search,
@@ -40,7 +43,7 @@ export function Header({
   }, []);
 
   return (
-    <div className="flex h-11 flex-none items-center gap-2 border-b border-border bg-background/95 px-3.5 backdrop-blur">
+    <div className="relative z-[var(--z-sticky)] flex h-11 flex-none items-center gap-2 border-b border-border bg-background/95 px-3.5 backdrop-blur">
       {/* Brand */}
       <div className="flex items-center gap-2.5 shrink-0">
         <img src={pigeonLogo} alt="Pigeon" className="h-7 w-7 rounded object-contain" />
@@ -87,8 +90,9 @@ export function Header({
 
       <div className="flex-1" />
 
-      {/* Export + Settings */}
-      <div className="flex items-center gap-1 shrink-0">
+      {/* Env selector + Export + Settings */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <EnvSelector onManage={onManageEnv} />
         <Button
           variant="ghost-icon"
           size="icon"

@@ -1,6 +1,8 @@
 import { AlertCircle, CheckCircle2, Download, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import pigeonLogo from "@/assets/pigeon-logo-64.png";
 import { useCollectionStore } from "@/features/collections";
+import { useEnvStore } from "@/features/environments";
 import { useHistoryStore } from "@/features/history";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -79,13 +81,18 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
   const history = useHistoryStore((s) => s.history);
   const drafts = useHistoryStore((s) => s.drafts);
   const collections = useCollectionStore((s) => s.collections);
+  const environments = useEnvStore((s) => s.environments);
   const removeHistory = useHistoryStore((s) => s.removeHistory);
   const removeDraft = useHistoryStore((s) => s.removeDraft);
+  const deleteEnvironment = useEnvStore((s) => s.deleteEnvironment);
   const clearHistory = async () => {
     for (let i = history.length - 1; i >= 0; i--) await removeHistory(i);
   };
   const clearDrafts = async () => {
     for (let i = drafts.length - 1; i >= 0; i--) await removeDraft(i);
+  };
+  const clearEnvironments = async () => {
+    for (const e of [...environments]) await deleteEnvironment(e.id);
   };
 
   const [activeTab, setActiveTab] = useState<Tab>("General");
@@ -106,6 +113,8 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
   const [pendingUpdate, setPendingUpdate] = useState<UpdateCheckResult["update"]>(undefined);
   const [downloadedBytes, setDownloadedBytes] = useState(0);
   const checkIdRef = useRef(0);
+
+  const updateAvailable = updateStatus === "available";
 
   useEffect(() => {
     let cancelled = false;
@@ -208,13 +217,19 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
               type="button"
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "rounded px-3 py-2 text-left text-code transition-colors cursor-pointer",
+                "flex items-center justify-between rounded px-3 py-2 text-left text-code transition-colors cursor-pointer",
                 activeTab === tab
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               )}
             >
               {tab}
+              {tab === "About" && updateAvailable && (
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full bg-primary"
+                  title="Update available"
+                />
+              )}
             </button>
           ))}
         </div>
@@ -277,6 +292,7 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
                   ["History", history.length],
                   ["Drafts", drafts.length],
                   ["Collections", collections.length],
+                  ["Environments", environments.length],
                 ].map(([label, val], i) => (
                   <div
                     key={String(label)}
@@ -311,6 +327,7 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
                   onClick={() => {
                     clearHistory();
                     clearDrafts();
+                    clearEnvironments();
                   }}
                 >
                   Clear All Data
@@ -323,6 +340,13 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
             <>
               <div className="mb-3 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
                 About
+              </div>
+              <div className="mb-3 flex items-center gap-3">
+                <img src={pigeonLogo} alt="Pigeon" className="h-10 w-10 rounded object-contain" />
+                <div>
+                  <div className="text-sm font-semibold text-foreground">Pigeon</div>
+                  <div className="text-2xs text-muted-foreground">The fast, native API client</div>
+                </div>
               </div>
               <div className="flex justify-between py-1.5">
                 <span className="text-code text-muted-foreground">Version</span>

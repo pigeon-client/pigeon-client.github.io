@@ -1,4 +1,13 @@
-import { ChevronRight, FilePlus, FolderPlus, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import {
+  ChevronRight,
+  FilePlus,
+  FolderPlus,
+  PanelLeftClose,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CollectionNode } from "@/features/collections";
 import { useCollectionStore } from "@/features/collections";
@@ -598,7 +607,7 @@ function collapseChains(nodes: CollectionNode[], isTop = false): CollectionNode[
     let cur = n;
     while ((cur.children?.length ?? 0) === 1 && cur.children?.[0].type === "folder") {
       const only = cur.children[0];
-      name = `${name} / ${only.name}`;
+      name = `${name}/${only.name}`;
       cur = only;
     }
     return { ...cur, name, children: collapseChains(cur.children ?? []) };
@@ -891,10 +900,11 @@ function HistoryRow({
 /* ── Main Sidebar ── */
 interface SidebarProps {
   onImportClick: () => void;
+  onCollapse: () => void;
   search: string;
 }
 
-export function Sidebar({ onImportClick, search }: SidebarProps) {
+export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
   const addTab = useTabStore((s) => s.addTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
@@ -1272,13 +1282,20 @@ export function Sidebar({ onImportClick, search }: SidebarProps) {
       </div>
 
       {/* Status bar */}
-      <div className="flex h-6 flex-shrink-0 items-center justify-between border-t border-border px-3">
-        <span className="text-2xs text-muted-foreground">
+      <div className="flex h-6 flex-shrink-0 items-center justify-between border-t border-border px-2">
+        <span className="pl-1 text-2xs text-muted-foreground">
           {history.length} requests · {drafts.length} drafts
         </span>
-        <kbd className="rounded border border-border px-1 font-mono text-2xs text-muted-foreground">
-          ?
-        </kbd>
+        <button
+          type="button"
+          data-testid="sidebar-collapse"
+          onClick={onCollapse}
+          title="Hide sidebar"
+          aria-label="Hide sidebar"
+          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <PanelLeftClose className="h-3.5 w-3.5" />
+        </button>
       </div>
 
       {nameModal && <NameModal state={nameModal} onClose={() => setNameModal(null)} />}

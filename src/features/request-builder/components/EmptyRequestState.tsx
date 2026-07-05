@@ -79,53 +79,6 @@ export function EmptyRequestState() {
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 40 }}>
         <button
           type="button"
-          onClick={() => {
-            const id = addTab();
-            setActiveTab(id);
-          }}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            height: 38,
-            padding: "0 20px",
-            background: "var(--primary)",
-            border: "none",
-            borderRadius: "var(--radius)",
-            color: "var(--primary-foreground)",
-            fontFamily: "inherit",
-            fontSize: "var(--text-code)",
-            fontWeight: 600,
-            cursor: "pointer",
-            boxShadow: "0 4px 16px color-mix(in srgb, var(--accent) 40%, transparent)",
-            transition: "opacity 0.1s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.opacity = "0.85";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.opacity = "1";
-          }}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          New Request
-        </button>
-
-        <button
-          type="button"
           onClick={loadExample}
           style={{
             display: "flex",

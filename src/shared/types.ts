@@ -25,6 +25,8 @@ export interface KeyValue {
   isFile?: boolean;
   file?: File | null;
   fileName?: string;
+  /** Masked value (secret mode — used by the environment editor). */
+  secret?: boolean;
 }
 
 export interface FileData {

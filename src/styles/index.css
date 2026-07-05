@@ -1,5 +1,5 @@
 /* ── Fonts (must come before @import "tailwindcss" per biome rule) ── */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
@@ -32,7 +32,7 @@
   --sidebar-accent-foreground: oklch(0.325 0 0);
   --sidebar-border: oklch(0.9401 0 0);
   --sidebar-ring: oklch(0.7731 0 0);
-  --font-sans: Outfit, sans-serif;
+  --font-sans: Inter, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: Geist Mono, ui-monospace, monospace;
   --radius: 0.375rem; /* 6px — single source; was 0.25rem (see TOKENS.md) */
@@ -108,6 +108,8 @@
   --hljs-add-bg: rgba(22, 163, 74, 0.1);
   --hljs-del-bg: rgba(220, 38, 38, 0.1);
   --hljs-select: rgba(107, 80, 246, 0.2);
+  /* Light-primary tint for `{{variable}}` highlights (theme-aware). */
+  --var-token: color-mix(in oklch, var(--primary) 68%, var(--foreground) 32%);
 }
 
 .dark {
@@ -138,7 +140,7 @@
   --sidebar-accent-foreground: oklch(0.8074 0.0142 93.0137);
   --sidebar-border: oklch(0.9401 0 0);
   --sidebar-ring: oklch(0.7731 0 0);
-  --font-sans: Outfit, sans-serif;
+  --font-sans: Inter, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: Geist Mono, ui-monospace, monospace;
   --radius: 0.375rem; /* 6px — was 1rem (theme-mismatch bug), unified with :root */

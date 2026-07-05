@@ -1,6 +1,8 @@
 import hljs from "highlight.js";
 import { Check, ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { VarSuggestions } from "@/features/environments/components/VarSuggestions";
+import { useVarAutocomplete } from "@/features/environments/hooks/useVarAutocomplete";
 import { cn } from "@/shared/lib/utils";
 import type { BodyType, KeyValue } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
@@ -128,6 +130,15 @@ export function BodyEditor({
   const lineNumRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
   const { handleKeyDown } = useAutoClose(textareaRef);
+  const va = useVarAutocomplete();
+  const applyBody = (next: string, caret: number) => {
+    onBodyChange(next);
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      ta?.focus();
+      ta?.setSelectionRange(caret, caret);
+    });
+  };
   const activeRadio = getActiveRadio(bodyType);
   const [rawFormat, setRawFormat] = useState<BodyType>(
     ["text/plain", "text/xml"].includes(bodyType) ? bodyType : "text/plain",
@@ -281,16 +292,48 @@ export function BodyEditor({
         )}
 
         {isCodeEditor && (
-          <div className="flex min-h-0 flex-1">
+          <div className="relative flex min-h-0 flex-1">
             <LineNumbers count={lineCount} scrollRef={lineNumRef} />
+            {va.open && (
+              <VarSuggestions
+                items={va.items}
+                index={va.index}
+                onHover={va.setIndex}
+                onPick={(name) => {
+                  const ta = textareaRef.current;
+                  va.commit(name, ta?.value ?? body, ta?.selectionStart ?? body.length, applyBody);
+                }}
+                className="left-[46px] top-2"
+              />
+            )}
             <div className="relative min-h-0 flex-1 overflow-hidden">
               <HighlightLayer code={body} language={language} scrollRef={highlightRef} />
               <textarea
                 ref={textareaRef}
                 value={body}
-                onChange={(e) => onBodyChange(e.target.value)}
+                onChange={(e) => {
+                  onBodyChange(e.target.value);
+                  va.detect(e.target.value, e.target.selectionStart ?? e.target.value.length);
+                }}
+                onKeyUp={(e) =>
+                  va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0)
+                }
+                onClick={(e) =>
+                  va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0)
+                }
+                onBlur={() => setTimeout(va.close, 120)}
                 onScroll={handleScroll}
                 onKeyDown={(e) => {
+                  if (
+                    va.onKeyDown(
+                      e,
+                      e.currentTarget.value,
+                      e.currentTarget.selectionStart ?? 0,
+                      applyBody,
+                    )
+                  ) {
+                    return;
+                  }
                   if (e.key === "Tab") {
                     e.preventDefault();
                     const ta = textareaRef.current;

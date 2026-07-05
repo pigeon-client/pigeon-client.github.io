@@ -20,7 +20,10 @@ App preferences: theme, request options, update check, and a shortcuts reference
 - **Request options** persist to `localStorage` (`pg_follow_redirects`, `pg_ssl_verify`,
   `pg_proxy_url`); execution reads them at send time.
 - **Updates** (desktop) — Tauri updater. Startup runs a silent check; a badge dot appears on the
-  gear when an update is available. About tab surfaces status + a manual Check/Install flow.
+  gear **and on the About tab** when an update is available, and an in-app **toast** (`UpdateToast`,
+  bottom-right) shows on app launch — "Update" opens Settings, dismissible. No OS notification. The
+  About tab shows the app name/logo, current + latest version, status, and a manual Check/Install
+  flow.
 - **Data** — clear actions wipe history/drafts (and collections for "Clear All").
 
 ## Keyboard

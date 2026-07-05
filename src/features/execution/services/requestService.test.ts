@@ -33,13 +33,13 @@ describe("resolveRequest — query handling", () => {
       url: "https://api.example.com/todos?a=stale",
       params: [{ key: "a", value: "fresh", enabled: true }],
     });
-    const { url } = resolveRequest(config, null);
+    const { url } = resolveRequest(config, () => undefined);
     expect(url).toBe("https://api.example.com/todos?a=fresh");
   });
 
   it("keeps the URL's query when there are no params", () => {
     const config = makeConfig({ url: "https://api.example.com/todos?a=1&b=2" });
-    const { url } = resolveRequest(config, null);
+    const { url } = resolveRequest(config, () => undefined);
     expect(url).toBe("https://api.example.com/todos?a=1&b=2");
   });
 
@@ -52,12 +52,12 @@ describe("resolveRequest — query handling", () => {
         { key: "", value: "3", enabled: true },
       ],
     });
-    const { url } = resolveRequest(config, null);
+    const { url } = resolveRequest(config, () => undefined);
     expect(url).toBe("https://api.example.com/x?keep=1");
   });
 
   it("expands a bare-port URL", () => {
-    const { url } = resolveRequest(makeConfig({ url: ":3000/api" }), null);
+    const { url } = resolveRequest(makeConfig({ url: ":3000/api" }), () => undefined);
     expect(url).toBe("http://localhost:3000/api");
   });
 });

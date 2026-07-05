@@ -26,4 +26,16 @@ test.describe("smoke", () => {
       await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
     }
   });
+
+  test("sidebar collapses and expands", async ({ page }) => {
+    await openApp(page);
+    await expect(page.getByTestId("sidebar-new-request")).toBeVisible();
+
+    await page.getByTestId("sidebar-collapse").click();
+    await expect(page.getByTestId("sidebar-new-request")).toBeHidden();
+    await expect(page.getByTestId("sidebar-expand")).toBeVisible();
+
+    await page.getByTestId("sidebar-expand").click();
+    await expect(page.getByTestId("sidebar-new-request")).toBeVisible();
+  });
 });

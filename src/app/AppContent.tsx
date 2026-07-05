@@ -1,6 +1,7 @@
+import { PanelLeftOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SaveToCollectionModal, useCollectionStore } from "@/features/collections";
-import { EnvModal } from "@/features/environments";
+import { EnvModal, selectActiveEnv, useEnvStore } from "@/features/environments";
 import { useHistoryStore } from "@/features/history";
 import { generateCurl, ImportModal } from "@/features/import-export";
 import {
@@ -20,6 +21,7 @@ import {
 } from "@/features/settings";
 import { Header } from "./layout/Header";
 import { Sidebar } from "./layout/Sidebar";
+import { UpdateToast } from "./layout/UpdateToast";
 
 /* ── Empty state when no URL has been typed yet ── */
 export function AppContent() {
@@ -28,11 +30,13 @@ export function AppContent() {
     applyTheme(saved);
     useHistoryStore.getState().load();
     useCollectionStore.getState().load();
+    useEnvStore.getState().load();
     checkForUpdates(true);
   }, []);
 
   const [editorHeights, setEditorHeights] = useState<Record<string, number>>({});
   const [sidebarWidth, setSidebarWidth] = useState(300);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [search, setSearch] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -49,6 +53,7 @@ export function AppContent() {
   const closeTab = useTabStore((s) => s.closeTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const activeRequest = tabs.find((tab) => tab.id === activeTabId)?.request ?? null;
+  const prodActive = useEnvStore((s) => selectActiveEnv(s)?.isProduction ?? false);
 
   const handleExportCurl = async () => {
     if (!activeRequest) return;
@@ -163,6 +168,7 @@ export function AppContent() {
       <Header
         onOpenSettings={() => setShowSettings(true)}
         onExportCurl={handleExportCurl}
+        onManageEnv={() => setShowEnvModal(true)}
         curlCopied={curlCopied}
         exportDisabled={!activeRequest}
         search={search}
@@ -174,37 +180,60 @@ export function AppContent() {
       />
 
       {/* Body */}
-      <div className="flex min-h-0 flex-1">
-        {/* Sidebar */}
-        <div className="flex min-h-0 flex-shrink-0" style={{ width: sidebarWidth }}>
-          <Sidebar onImportClick={() => setShowImportModal(true)} search={search} />
-        </div>
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-driven resize handle for the sidebar */}
-        <div
-          className="group flex w-1 flex-shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors hover:bg-accent/40 active:bg-accent/60 select-none border-l border-border"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            const startX = e.clientX;
-            const startWidth = sidebarWidth;
-            const onMove = (ev: MouseEvent) => {
-              const delta = ev.clientX - startX;
-              setSidebarWidth(Math.min(480, Math.max(180, startWidth + delta)));
-            };
-            const onUp = () => {
-              document.removeEventListener("mousemove", onMove);
-              document.removeEventListener("mouseup", onUp);
-              document.body.style.cursor = "";
-              document.body.style.userSelect = "";
-            };
-            document.addEventListener("mousemove", onMove);
-            document.addEventListener("mouseup", onUp);
-            document.body.style.cursor = "col-resize";
-            document.body.style.userSelect = "none";
-          }}
-        />
+      <div className="relative flex min-h-0 flex-1">
+        {sidebarCollapsed ? (
+          /* Fully hidden — a floating button to reopen the sidebar */
+          <button
+            type="button"
+            data-testid="sidebar-expand"
+            onClick={() => setSidebarCollapsed(false)}
+            title="Show sidebar"
+            aria-label="Show sidebar"
+            className="absolute bottom-2 left-2 z-[var(--z-sticky)] flex h-7 w-7 items-center justify-center rounded border border-border bg-sidebar text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+          </button>
+        ) : (
+          <>
+            {/* Sidebar */}
+            <div className="flex min-h-0 flex-shrink-0" style={{ width: sidebarWidth }}>
+              <Sidebar
+                onImportClick={() => setShowImportModal(true)}
+                onCollapse={() => setSidebarCollapsed(true)}
+                search={search}
+              />
+            </div>
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-driven resize handle for the sidebar */}
+            <div
+              className="group flex w-1 flex-shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors hover:bg-accent/40 active:bg-accent/60 select-none border-l border-border"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const startX = e.clientX;
+                const startWidth = sidebarWidth;
+                const onMove = (ev: MouseEvent) => {
+                  const delta = ev.clientX - startX;
+                  setSidebarWidth(Math.min(480, Math.max(180, startWidth + delta)));
+                };
+                const onUp = () => {
+                  document.removeEventListener("mousemove", onMove);
+                  document.removeEventListener("mouseup", onUp);
+                  document.body.style.cursor = "";
+                  document.body.style.userSelect = "";
+                };
+                document.addEventListener("mousemove", onMove);
+                document.addEventListener("mouseup", onUp);
+                document.body.style.cursor = "col-resize";
+                document.body.style.userSelect = "none";
+              }}
+            />
+          </>
+        )}
 
-        {/* Main panel */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background">
+        {/* Main panel — in production the request bar's existing border turns red (R4) */}
+        <div
+          data-testid={prodActive ? "env-prod-indicator" : undefined}
+          className="flex min-h-0 min-w-0 flex-1 flex-col bg-background"
+        >
           {/* Tab strip */}
           <TabStrip />
 
@@ -275,6 +304,8 @@ export function AppContent() {
         <KeyboardShortcutsModal onClose={() => setShowShortcutsModal(false)} />
       )}
       {showSettings && <SettingsDrawer onClose={() => setShowSettings(false)} />}
+
+      <UpdateToast onOpenSettings={() => setShowSettings(true)} />
     </div>
   );
 }

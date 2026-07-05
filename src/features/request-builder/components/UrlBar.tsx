@@ -1,7 +1,14 @@
 import { ChevronDown, Loader2, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { replaceEnvVariables, useEnvStore } from "@/features/environments";
-import { useApiRequest } from "@/features/execution";
+import {
+  makeResolver,
+  resolveForPreview,
+  selectActiveEnv,
+  useEnvStore,
+} from "@/features/environments";
+import { VarSuggestions } from "@/features/environments/components/VarSuggestions";
+import { useVarAutocomplete } from "@/features/environments/hooks/useVarAutocomplete";
+import { UnresolvedVariablesError, useApiRequest } from "@/features/execution";
 import { parseCurl } from "@/features/import-export";
 import { extractEndpoint, parseUrl, splitUrlQuery } from "@/shared/lib/url";
 import { cn } from "@/shared/lib/utils";
@@ -11,6 +18,9 @@ import { useTabStore } from "../store";
 
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 
+// Session-level "don't ask again" for the production send guardrail (R4b).
+let prodGuardAcknowledged = false;
+
 export function UrlBar() {
   const tabs = useTabStore((s) => s.tabs);
   const activeTabId = useTabStore((s) => s.activeTabId);
@@ -18,12 +28,18 @@ export function UrlBar() {
   const setTabLoading = useTabStore((s) => s.setTabLoading);
   const updateTabResponse = useTabStore((s) => s.updateTabResponse);
   const setTabName = useTabStore((s) => s.setTabName);
-  const activeEnv = useEnvStore((s) => s.activeEnv);
+  const activeEnv = useEnvStore(selectActiveEnv);
+  const globals = useEnvStore((s) => s.globals);
+  const prod = activeEnv?.isProduction ?? false;
   const { sendRequest } = useApiRequest();
 
   const [methodOpen, setMethodOpen] = useState(false);
   const [curlToast, setCurlToast] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [hoveredToken, setHoveredToken] = useState<TokenInfo | null>(null);
+  const va = useVarAutocomplete();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -52,24 +68,55 @@ export function UrlBar() {
     updateTabRequest(activeTab.id, { url: raw, params: kv });
   };
 
+  /* ── {{variable}} autocomplete ── */
+  const applyUrlAt = (next: string, caret: number) => {
+    applyUrl(next);
+    requestAnimationFrame(() => {
+      urlInputRef.current?.focus();
+      urlInputRef.current?.setSelectionRange(caret, caret);
+    });
+  };
+
   const handleSend = async () => {
     if (!request.url) return;
+    // Production guardrail: confirm destructive methods against a prod env (R4b).
+    if (
+      prod &&
+      !prodGuardAcknowledged &&
+      (request.method === "DELETE" || request.method === "PUT" || request.method === "PATCH")
+    ) {
+      const ok = confirm(
+        `⚠️ ${request.method} against PRODUCTION environment "${activeEnv?.name}".\n\n` +
+          `This can modify or delete live data. Continue?\n\n` +
+          `(OK proceeds and won't ask again this session.)`,
+      );
+      if (!ok) return;
+      prodGuardAcknowledged = true;
+    }
+    setSendError(null);
     setTabLoading(activeTab.id, true);
     try {
       const result = await sendRequest(request);
       updateTabResponse(activeTab.id, result);
-    } catch {
-      updateTabResponse(activeTab.id, {
-        status: 0,
-        statusText: "Request Failed",
-        headers: {},
-        body: [],
-        contentType: "text/plain",
-        responseTime: 0,
-        size: 0,
-        resolvedUrl: request.url ?? "",
-        sentHeaders: {},
-      });
+    } catch (e) {
+      // Unresolved {{vars}} block the send — surface the message, don't fake a response.
+      if (e instanceof UnresolvedVariablesError) {
+        setSendError(e.message);
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setSendError(null), 5000);
+      } else {
+        updateTabResponse(activeTab.id, {
+          status: 0,
+          statusText: "Request Failed",
+          headers: {},
+          body: [],
+          contentType: "text/plain",
+          responseTime: 0,
+          size: 0,
+          resolvedUrl: request.url ?? "",
+          sentHeaders: {},
+        });
+      }
     } finally {
       setTabLoading(activeTab.id, false);
     }
@@ -77,7 +124,7 @@ export function UrlBar() {
 
   const previewUrl = (() => {
     const parsed = parseUrl(request.url);
-    return activeEnv ? replaceEnvVariables(parsed, activeEnv) : parsed;
+    return resolveForPreview(parsed, activeEnv, globals);
   })();
 
   /* ── Method colour swatch for the trigger + the dropdown list ── */
@@ -95,6 +142,41 @@ export function UrlBar() {
               : request.method === "HEAD"
                 ? "text-method-head"
                 : "text-method-options";
+
+  /* ── Resolve one token name for the hover preview ── */
+  const resolve = makeResolver(activeEnv, globals);
+  const tokenInfo = (name: string): TokenInfo => {
+    if (name.startsWith("$")) return { name, value: "generated per send", random: true };
+    const value = resolve(name);
+    return { name, value: value ?? null, random: false };
+  };
+
+  /* Split text into plain spans + hoverable {{token}} chips. */
+  const renderTokens = (text: string, className: string) => {
+    if (!text) return null;
+    return text.split(/(\{\{[^}]+\}\})/g).map((part, i) => {
+      const m = part.match(/^\{\{([^}]+)\}\}$/);
+      if (!m) {
+        return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: positional URL fragments
+          <span key={`t-${i}`} className={className}>
+            {part}
+          </span>
+        );
+      }
+      const info = tokenInfo(m[1].trim());
+      return (
+        <TokenChip
+          // biome-ignore lint/suspicious/noArrayIndexKey: positional URL fragments
+          key={`k-${i}`}
+          token={part}
+          missing={!info.random && info.value === null}
+          onEnter={() => setHoveredToken(info)}
+          onLeave={() => setHoveredToken((h) => (h?.name === info.name ? null : h))}
+        />
+      );
+    });
+  };
 
   /* ── Syntax-tinted URL display ── */
   const renderUrlSegments = (url: string) => {
@@ -114,10 +196,10 @@ export function UrlBar() {
     const path = slashIdx === -1 ? "" : beforeQ.slice(slashIdx);
     return (
       <>
-        <span className="text-muted-foreground">{scheme}</span>
-        <span className="font-medium text-foreground">{host}</span>
-        <span className="font-medium text-primary">{path}</span>
-        <span className="text-muted-foreground">{query}</span>
+        {renderTokens(scheme, "text-muted-foreground")}
+        {renderTokens(host, "font-medium text-foreground")}
+        {renderTokens(path, "font-medium text-primary")}
+        {renderTokens(query, "text-muted-foreground")}
       </>
     );
   };
@@ -159,78 +241,114 @@ export function UrlBar() {
         </div>
 
         {/* URL input */}
-        <div className="relative flex h-9 flex-1 items-center overflow-hidden rounded border border-border bg-card px-3">
-          <input
-            type="text"
-            data-testid="url-input"
-            value={request.url}
-            onPaste={(e) => {
-              const text = e.clipboardData.getData("text");
-              if (!text) return;
-              const trimmed = text.trim();
+        <div className="relative flex-1">
+          <div className="relative flex h-9 items-center overflow-hidden rounded border border-border bg-card px-3">
+            <input
+              ref={urlInputRef}
+              type="text"
+              data-testid="url-input"
+              value={request.url}
+              onPaste={(e) => {
+                const text = e.clipboardData.getData("text");
+                if (!text) return;
+                const trimmed = text.trim();
 
-              // cURL command → parse method/headers/body/params
-              if (trimmed.toLowerCase().startsWith("curl ")) {
-                const parsed = parseCurl(text);
-                if (parsed?.url) {
-                  e.preventDefault();
-                  updateTabRequest(activeTab.id, parsed);
-                  if (!activeTab.nameLocked) {
-                    setTabName(activeTab.id, extractEndpoint(parsed.url));
+                // cURL command → parse method/headers/body/params
+                if (trimmed.toLowerCase().startsWith("curl ")) {
+                  const parsed = parseCurl(text);
+                  if (parsed?.url) {
+                    e.preventDefault();
+                    updateTabRequest(activeTab.id, parsed);
+                    if (!activeTab.nameLocked) {
+                      setTabName(activeTab.id, extractEndpoint(parsed.url));
+                    }
+                    if (toastTimer.current) clearTimeout(toastTimer.current);
+                    setCurlToast(true);
+                    toastTimer.current = setTimeout(() => setCurlToast(false), 2500);
                   }
-                  if (toastTimer.current) clearTimeout(toastTimer.current);
-                  setCurlToast(true);
-                  toastTimer.current = setTimeout(() => setCurlToast(false), 2500);
-                }
-                return;
-              }
-
-              // Plain URL with a query string → sync into Params (default paste
-              // then flows through onChange). Guard: spaced pastes are left alone.
-              if (trimmed.includes("?") && !/\s/.test(trimmed)) {
-                e.preventDefault();
-                applyUrl(trimmed);
-              }
-            }}
-            onChange={(e) => {
-              const raw = e.target.value;
-              if (raw.trimStart().toLowerCase().startsWith("curl ")) {
-                const parsed = parseCurl(raw);
-                if (parsed?.url) {
-                  updateTabRequest(activeTab.id, parsed);
-                  if (!activeTab.nameLocked && parsed.url) {
-                    setTabName(activeTab.id, extractEndpoint(parsed.url));
-                  }
-                  if (toastTimer.current) clearTimeout(toastTimer.current);
-                  setCurlToast(true);
-                  toastTimer.current = setTimeout(() => setCurlToast(false), 2500);
                   return;
                 }
-              }
-              applyUrl(raw);
-            }}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="https://api.example.com/endpoint"
-            className="absolute inset-0 z-[var(--z-raised)] bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
-          />
-          <div className="pointer-events-none z-[var(--z-raised)] select-none truncate font-mono text-code">
-            {renderUrlSegments(request.url)}
+
+                // Plain URL with a query string → sync into Params (default paste
+                // then flows through onChange). Guard: spaced pastes are left alone.
+                if (trimmed.includes("?") && !/\s/.test(trimmed)) {
+                  e.preventDefault();
+                  applyUrl(trimmed);
+                }
+              }}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw.trimStart().toLowerCase().startsWith("curl ")) {
+                  const parsed = parseCurl(raw);
+                  if (parsed?.url) {
+                    updateTabRequest(activeTab.id, parsed);
+                    if (!activeTab.nameLocked && parsed.url) {
+                      setTabName(activeTab.id, extractEndpoint(parsed.url));
+                    }
+                    if (toastTimer.current) clearTimeout(toastTimer.current);
+                    setCurlToast(true);
+                    toastTimer.current = setTimeout(() => setCurlToast(false), 2500);
+                    return;
+                  }
+                }
+                applyUrl(raw);
+                va.detect(raw, e.target.selectionStart ?? raw.length);
+              }}
+              onKeyUp={(e) => va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0)}
+              onClick={(e) => va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0)}
+              onBlur={() => setTimeout(va.close, 120)}
+              onKeyDown={(e) => {
+                if (
+                  va.onKeyDown(
+                    e,
+                    e.currentTarget.value,
+                    e.currentTarget.selectionStart ?? 0,
+                    applyUrlAt,
+                  )
+                ) {
+                  return;
+                }
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="https://api.example.com/endpoint"
+              className="absolute inset-0 z-[var(--z-raised)] bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
+            />
+            <div className="pointer-events-none z-[var(--z-raised)] select-none truncate font-mono text-code">
+              {renderUrlSegments(request.url)}
+            </div>
           </div>
+
+          {/* {{variable}} autocomplete */}
+          {va.open && (
+            <VarSuggestions
+              items={va.items}
+              index={va.index}
+              onHover={va.setIndex}
+              onPick={(name) => {
+                const el = urlInputRef.current;
+                va.commit(
+                  name,
+                  el?.value ?? request.url,
+                  el?.selectionStart ?? request.url.length,
+                  applyUrlAt,
+                );
+              }}
+              className="left-0 top-[calc(100%+4px)]"
+            />
+          )}
         </div>
 
-        {/* Send */}
+        {/* Send — red in production (R4b) */}
         <Button
-          variant="primary"
-          size="sm"
+          variant={prod ? "danger-filled" : "primary"}
           onClick={handleSend}
           disabled={!request.url || activeTab.isLoading}
           data-send-btn
-          className="gap-1.5 w-[80px] shrink-0"
+          title={prod ? `Production: ${activeEnv?.name}` : undefined}
+          className="gap-1.5 w-[80px] shrink-0 h-9"
         >
           {activeTab.isLoading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -269,11 +387,93 @@ export function UrlBar() {
         </div>
       )}
 
+      {/* Unresolved-variable error (send blocked) */}
+      {sendError && (
+        <div
+          data-testid="send-error"
+          style={{ animation: "pgToast 150ms ease-out" }}
+          className="mt-1.5 flex items-center gap-2 rounded border border-destructive/30 bg-destructive/10 px-3 py-1"
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className="text-destructive"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span className="text-xs font-medium text-destructive">{sendError}</span>
+        </div>
+      )}
+
+      {/* Hovered {{token}} → resolved value (per-request env preview) */}
+      {hoveredToken && !sendError && (
+        <div className="ml-0.5 mt-1 flex items-center gap-1.5 truncate text-2xs">
+          <span className="font-mono text-[color:var(--var-token)]">{`{{${hoveredToken.name}}}`}</span>
+          <span className="text-muted-foreground">→</span>
+          {hoveredToken.value === null ? (
+            <span className="text-destructive">unresolved</span>
+          ) : (
+            <span
+              className={cn(
+                "truncate font-mono",
+                hoveredToken.random ? "text-muted-foreground italic" : "text-foreground",
+              )}
+            >
+              {hoveredToken.value}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Resolved URL preview */}
-      {!curlToast && request.url && previewUrl !== request.url && (
+      {!(curlToast || sendError || hoveredToken) && request.url && previewUrl !== request.url && (
         <div className="ml-0.5 mt-1 truncate text-2xs text-muted-foreground">{previewUrl}</div>
       )}
     </div>
+  );
+}
+
+interface TokenInfo {
+  name: string;
+  value: string | null;
+  random: boolean;
+}
+
+function TokenChip({
+  token,
+  missing,
+  onEnter,
+  onLeave,
+}: {
+  token: string;
+  missing: boolean;
+  onEnter: () => void;
+  onLeave: () => void;
+}) {
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: hover-only preview enhancement inside a display overlay; the resolved value is non-essential (also shown in the URL preview line) and needs no keyboard path
+    <span
+      data-testid="env-token"
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      className={cn(
+        "pointer-events-auto cursor-help font-medium",
+        missing
+          ? "text-destructive underline decoration-dotted underline-offset-2"
+          : "text-[color:var(--var-token)]",
+      )}
+    >
+      {token}
+    </span>
   );
 }
 
