@@ -1,0 +1,489 @@
+/* ── Fonts (must come before @import "tailwindcss" per biome rule) ── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(0.9818 0.0054 95.0986);
+  --foreground: oklch(0.3438 0.0269 95.7226);
+  --card: oklch(0.9665 0.0067 97.3521);
+  --card-foreground: oklch(0.1908 0.002 106.5859);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2671 0.0196 98.939);
+  --primary: oklch(0.6171 0.1375 39.0427);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.9245 0.0138 92.9892);
+  --secondary-foreground: oklch(0.4334 0.0177 98.6048);
+  --muted: oklch(0.9341 0.0153 90.239);
+  --muted-foreground: oklch(0.5341 0.0078 97.4503);
+  --accent: oklch(0.9245 0.0138 92.9892);
+  --accent-foreground: oklch(0.2671 0.0196 98.939);
+  --destructive: oklch(0.1908 0.002 106.5859);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.8847 0.0069 97.3627);
+  --input: oklch(0.7621 0.0156 98.3528);
+  --ring: oklch(0.6171 0.1375 39.0427);
+  --sidebar: oklch(0.9663 0.008 98.8792);
+  --sidebar-foreground: oklch(0.359 0.0051 106.6524);
+  --sidebar-primary: oklch(0.6171 0.1375 39.0427);
+  --sidebar-primary-foreground: oklch(0.9881 0 0);
+  --sidebar-accent: oklch(0.9245 0.0138 92.9892);
+  --sidebar-accent-foreground: oklch(0.325 0 0);
+  --sidebar-border: oklch(0.9401 0 0);
+  --sidebar-ring: oklch(0.7731 0 0);
+  --font-sans: Outfit, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: Geist Mono, ui-monospace, monospace;
+  --radius: 0.375rem; /* 6px — single source; was 0.25rem (see TOKENS.md) */
+  --shadow-x: 0;
+  --shadow-y: 1px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.1;
+  --shadow-color: oklch(0 0 0);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+  /* Overlay shadows (drawers/modals/toasts stop hand-rolling) */
+  --shadow-drawer: -8px 0 40px rgb(0 0 0 / 0.5);
+  --shadow-modal: 0 32px 80px rgb(0 0 0 / 0.6);
+  --shadow-toast: 0 14px 40px rgb(0 0 0 / 0.5);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* ── Pigeon-only additions ── */
+
+  /* HTTP method accents — light mode variants are richer for contrast on white */
+  --method-get: #1d6fd1;
+  --method-post: #16a34a;
+  --method-put: #c2410c;
+  --method-patch: #92620a;
+  --method-delete: #dc2626;
+  --method-head: #7c3aed;
+  --method-options: #64748b;
+
+  /* Status code accents */
+  --status-2xx: #16a34a;
+  --status-3xx: #1d6fd1;
+  --status-4xx: #c2410c;
+  --status-5xx: #dc2626;
+
+  /* ── Semantic surface + text aliases ──
+   * Consumed by inline styles as var(--bg-*) / var(--text-*). Aliased onto the
+   * shadcn palette so they resolve per-theme automatically (no .dark duplication).
+   * Defined once here; under .dark the referenced vars already hold dark values. */
+  --bg-base: var(--background);
+  --bg-surface: var(--card);
+  --bg-elevated: var(--popover);
+  --bg-input: var(--input);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+  --text-placeholder: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+
+  /* Backdrop scrim for modals/drawers */
+  --scrim: rgb(0 0 0 / 0.5);
+
+  /* Syntax highlight palette — dark by default, overridden under .dark */
+  --hljs-base: #12121e;
+  --hljs-attr: #5b3ee8;
+  --hljs-string: #16a34a;
+  --hljs-number: #1d6fd1;
+  --hljs-literal: #c2410c;
+  --hljs-keyword: #5b3ee8;
+  --hljs-builtin: #92620a;
+  --hljs-comment: #8888b8;
+  --hljs-punct: #5050a0;
+  --hljs-tag: #5050a0;
+  --hljs-name: #7c3aed;
+  --hljs-title: #1d6fd1;
+  --hljs-class: #92620a;
+  --hljs-variable: #1d6fd1;
+  --hljs-regexp: #92620a;
+  --hljs-section: #5b3ee8;
+  --hljs-meta: #8888b8;
+  --hljs-add-bg: rgba(22, 163, 74, 0.1);
+  --hljs-del-bg: rgba(220, 38, 38, 0.1);
+  --hljs-select: rgba(107, 80, 246, 0.2);
+}
+
+.dark {
+  --background: oklch(0.2679 0.0036 106.6427);
+  --foreground: oklch(0.9576 0.0027 106.4494);
+  --card: oklch(0.2928 0.0018 106.5092);
+  --card-foreground: oklch(0.9818 0.0054 95.0986);
+  --popover: oklch(0.3085 0.0035 106.6039);
+  --popover-foreground: oklch(0.9211 0.004 106.4781);
+  --primary: oklch(0.6724 0.1308 38.7559);
+  --primary-foreground: oklch(0.1908 0.002 106.5859);
+  --secondary: oklch(0.9818 0.0054 95.0986);
+  --secondary-foreground: oklch(0.3085 0.0035 106.6039);
+  --muted: oklch(0.2213 0.0038 106.707);
+  --muted-foreground: oklch(0.7713 0.0169 99.0657);
+  --accent: oklch(0.213 0.0078 95.4245);
+  --accent-foreground: oklch(0.9663 0.008 98.8792);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.3618 0.0101 106.8928);
+  --input: oklch(0.4336 0.0113 100.2195);
+  --ring: oklch(0.6724 0.1308 38.7559);
+  --sidebar: oklch(0.2357 0.0024 67.7077);
+  --sidebar-foreground: oklch(0.8074 0.0142 93.0137);
+  --sidebar-primary: oklch(0.325 0 0);
+  --sidebar-primary-foreground: oklch(0.9881 0 0);
+  --sidebar-accent: oklch(0.168 0.002 106.6177);
+  --sidebar-accent-foreground: oklch(0.8074 0.0142 93.0137);
+  --sidebar-border: oklch(0.9401 0 0);
+  --sidebar-ring: oklch(0.7731 0 0);
+  --font-sans: Outfit, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: Geist Mono, ui-monospace, monospace;
+  --radius: 0.375rem; /* 6px — was 1rem (theme-mismatch bug), unified with :root */
+  --shadow-x: 0;
+  --shadow-y: 1px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.1;
+  --shadow-color: oklch(0 0 0);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+
+  /* Pigeon dark-mode adjustments */
+  --method-get: #4a9efa;
+  --method-post: #4ade80;
+  --method-put: #fb923c;
+  --method-patch: #fbbf24;
+  --method-delete: #f87171;
+  --method-head: #c084fc;
+  --method-options: #94a3b8;
+
+  --status-2xx: #4ade80;
+  --status-3xx: #60a5fa;
+  --status-4xx: #fb923c;
+  --status-5xx: #f87171;
+
+  --hljs-base: #e8e8f2;
+  --hljs-attr: #b7aefc;
+  --hljs-string: #4ade80;
+  --hljs-number: #4a9efa;
+  --hljs-literal: #fb923c;
+  --hljs-keyword: #7c6efa;
+  --hljs-builtin: #fbbf24;
+  --hljs-comment: #6a6a90;
+  --hljs-punct: #6a6a90;
+  --hljs-tag: #6a6a90;
+  --hljs-name: #c084fc;
+  --hljs-title: #4a9efa;
+  --hljs-class: #fbbf24;
+  --hljs-variable: #4a9efa;
+  --hljs-regexp: #fbbf24;
+  --hljs-section: #7c6efa;
+  --hljs-meta: #6a6a90;
+  --hljs-add-bg: rgba(74, 222, 128, 0.08);
+  --hljs-del-bg: rgba(248, 113, 113, 0.08);
+  --hljs-select: rgba(124, 110, 250, 0.32);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-method-get: var(--method-get);
+  --color-method-post: var(--method-post);
+  --color-method-put: var(--method-put);
+  --color-method-patch: var(--method-patch);
+  --color-method-delete: var(--method-delete);
+  --color-method-head: var(--method-head);
+  --color-method-options: var(--method-options);
+
+  --color-status-2xx: var(--status-2xx);
+  --color-status-3xx: var(--status-3xx);
+  --color-status-4xx: var(--status-4xx);
+  --color-status-5xx: var(--status-5xx);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  /* Radius scale — fixed px, no longer theme-variant (bare `rounded` = --radius = md) */
+  --radius-sm: 0.25rem; /* 4px */
+  --radius-md: 0.375rem; /* 6px */
+  --radius-lg: 0.5rem; /* 8px */
+  --radius-xl: 0.75rem; /* 12px — cards */
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+  --shadow-drawer: var(--shadow-drawer);
+  --shadow-modal: var(--shadow-modal);
+  --shadow-toast: var(--shadow-toast);
+
+  /* ── Type scale ──
+   * Tailwind's xs(12)/sm(14)/base(16)/lg(18)/2xl(24) are kept as-is (used correctly,
+   * ~48 sites, zero drift). Two additions cover the app's divergent clusters. */
+  --text-2xs: 0.625rem; /* 10px */
+  --text-2xs--line-height: 0.875rem; /* 14px */
+  --text-code: 0.8125rem; /* 13px — dense/mono body (most common raw size) */
+  --text-code--line-height: 1.3125rem; /* 21px */
+
+  /* Line-height tokens */
+  --leading-normal: 1.5; /* body */
+  --leading-mono: 1.6154; /* 21/13 — code blocks */
+  --leading-relaxed: 1.625;
+
+  /* Scrim (backdrop) as a color token so `bg-scrim` works too */
+  --color-scrim: var(--scrim);
+
+  /* ── z-index scale ── replaces ad-hoc 1/10/40/50/90/100/999/1000 */
+  --z-raised: 1;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-popover: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--background);
+    color: var(--foreground);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  code,
+  pre,
+  .font-mono {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius);
+  border: 2px solid var(--background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+::selection {
+  background: var(--hljs-select);
+}
+
+/* ── Pigeon logo adapts to theme ── */
+.theme-light .pg-logo,
+:root:not(.dark) .pg-logo {
+  filter: none;
+}
+.dark .pg-logo {
+  filter: brightness(0) invert(1);
+}
+
+/* ── Motion ── */
+@keyframes pgFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pgSlide {
+  from {
+    transform: translateX(24px);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes pgPop {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes pgSlideRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes pgToast {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms;
+    animation-duration: 0.01ms;
+  }
+}
+
+/* ── Pigeon syntax highlight tokens ── */
+code.hljs,
+pre code.hljs,
+.hljs {
+  background: transparent;
+  padding: 0;
+  color: var(--hljs-base);
+  font-family: var(--font-mono);
+}
+.hljs-attr,
+.hljs-attribute {
+  color: var(--hljs-attr);
+}
+.hljs-string,
+.hljs-doctag {
+  color: var(--hljs-string);
+}
+.hljs-number {
+  color: var(--hljs-number);
+}
+.hljs-literal {
+  color: var(--hljs-literal);
+}
+.hljs-keyword,
+.hljs-selector-tag {
+  color: var(--hljs-keyword);
+  font-style: normal;
+}
+.hljs-built_in,
+.hljs-type {
+  color: var(--hljs-builtin);
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--hljs-comment);
+  font-style: italic;
+}
+.hljs-punctuation {
+  color: var(--hljs-punct);
+}
+.hljs-tag {
+  color: var(--hljs-tag);
+}
+.hljs-name {
+  color: var(--hljs-name);
+}
+.hljs-title,
+.hljs-title.function_ {
+  color: var(--hljs-title);
+}
+.hljs-title.class_,
+.hljs-class .hljs-title {
+  color: var(--hljs-class);
+}
+.hljs-variable,
+.hljs-template-variable {
+  color: var(--hljs-variable);
+}
+.hljs-regexp {
+  color: var(--hljs-regexp);
+}
+.hljs-section,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: var(--hljs-section);
+}
+.hljs-meta {
+  color: var(--hljs-meta);
+}
+.hljs-meta .hljs-string {
+  color: var(--hljs-string);
+}
+.hljs-meta .hljs-keyword {
+  color: var(--hljs-keyword);
+}
+.hljs-addition {
+  color: var(--hljs-string);
+  background: var(--hljs-add-bg);
+}
+.hljs-deletion {
+  color: var(--hljs-literal);
+  background: var(--hljs-del-bg);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 700;
+}
