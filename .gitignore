@@ -39,3 +39,6 @@ playwright-report
 /e2e/.cache
 blob-report
 .last-run.json
+
+# Rust lock — untracked; version-bump churns it (see CLAUDE.md)
+Cargo.lock
