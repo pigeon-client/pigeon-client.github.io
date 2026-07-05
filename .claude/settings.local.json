@@ -145,7 +145,8 @@
       "Bash(grep -iE \"\\\\.png$\")",
       "Bash(pnpm test *)",
       "Bash(pnpm e2e *)",
-      "Bash(perl -0pi -e 's/await page\\\\.getByText\\\\\\(\"Params\", \\\\{ exact: true \\\\}\\\\\\)\\\\.click\\\\\\(\\\\\\);/await editorTab\\(page, \"Params\"\\);/g' e2e/url-params.spec.ts)"
+      "Bash(perl -0pi -e 's/await page\\\\.getByText\\\\\\(\"Params\", \\\\{ exact: true \\\\}\\\\\\)\\\\.click\\\\\\(\\\\\\);/await editorTab\\(page, \"Params\"\\);/g' e2e/url-params.spec.ts)",
+      "Bash(git rm *)"
     ]
   }
 }
