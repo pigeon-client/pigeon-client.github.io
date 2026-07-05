@@ -83,9 +83,17 @@ npm run preview       # Preview at localhost:4173
 ```
 
 ### Release
+**Merging to `main` releases automatically.** `version-bump.yml` bumps the patch from
+`.version.json`, commits it, and pushes a `v<version>` tag; the tag fires `release.yml` (4-platform
+build → publish), and the published release triggers `deploy-site.yml` to refresh the download
+links. No manual tagging needed.
+
+- Needs a repo secret **`RELEASE_TOKEN`** (fine-grained PAT, `contents: write`). Required because a
+  tag/release created with the default `GITHUB_TOKEN` does **not** trigger downstream workflows.
+- Minor/major bumps: edit `.version.json` (and it flows to package/tauri/Cargo on the next merge),
+  or tag manually:
 ```bash
-git tag v0.x.y
-git push origin v0.x.y   # Triggers release.yml — builds all 4 platforms
+git tag v0.x.0 && git push origin v0.x.0   # manual tag still works
 ```
 
 ## Feature docs
@@ -218,17 +226,31 @@ The site is a separate React app (not part of the main Tauri build). It reads `s
 ### `ci.yml` — push/PR to `main` (ignores `site/**` and `**.md`)
 Single job: `pnpm ci:check` (Biome) → `pnpm build` (tsc + Vite). Has concurrency group — cancels stale runs on force-push.
 
+### `e2e.yml` — push/PR to `main` (ignores `site/**` and `**.md`)
+Vitest unit tests → Playwright browser E2E (`pnpm e2e`) → uploads the HTML report artifact.
+
+### `version-bump.yml` (`Release on merge`) — push to `main` (ignores `.version.json`, `**.md`, `site/**`)
+The auto-release entry point: bumps the patch from `.version.json`, syncs `package.json` /
+`tauri.conf.json` / `Cargo.toml`, commits (`[version-bump]` guard prevents a loop), then pushes a
+`v<version>` **tag** using `RELEASE_TOKEN`. The PAT is required — a tag pushed with `GITHUB_TOKEN`
+would not trigger `release.yml`.
+
 ### `release.yml` — `v*` tag push
 1. Creates a draft GitHub release
 2. Builds Tauri for 4 targets in parallel (macOS Intel, macOS ARM, Linux, Windows)
-3. Publishes draft → public once all builds pass
+3. Publishes draft → public once all builds pass (via `RELEASE_TOKEN` so the `release: published`
+   event can trigger `deploy-site.yml`)
 
-Required secrets: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+Required secrets: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, `RELEASE_TOKEN`.
 
-### `deploy-site.yml` — push to `main` when `site/**` changes
+### `deploy-site.yml` — push to `main` (`site/**`) **or** on `release: published`
 1. Fetches latest release JSON from GitHub API into `site/src/release.json` (uses `curl -o` — only writes on success, leaving the stub intact on 404)
 2. `npm install` + `npm run build`
 3. Deploys to GitHub Pages (`https://pigeon-client.github.io`)
+
+The download buttons come from the release assets automatically — `parseRelease()` in
+`site/src/lib/github.ts` maps each asset's `browser_download_url` to the right platform button, so a
+new release refreshes the site's download links with no code change.
 
 ## Known Gotchas
 

@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+  # Redeploy after a release publishes so the download buttons point at the new
+  # release's assets (site/src/release.json is fetched at build time).
+  release:
+    types: [published]
   workflow_dispatch:
 
 concurrency:
