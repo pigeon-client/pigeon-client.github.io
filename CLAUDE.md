@@ -238,12 +238,14 @@ would not trigger `release.yml`.
 ### `release.yml` — `v*` tag push
 1. Creates a draft GitHub release
 2. Builds Tauri for 4 targets in parallel (macOS Intel, macOS ARM, Linux, Windows)
-3. Publishes draft → public once all builds pass (via `RELEASE_TOKEN` so the `release: published`
-   event can trigger `deploy-site.yml`)
+3. Publishes draft → public once all builds pass, then dispatches `deploy-site.yml` on `main`
+   (via `RELEASE_TOKEN`) to refresh the site's download links
 
 Required secrets: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, `RELEASE_TOKEN`.
+The site deploy is dispatched on `main` (not a `release` event) because the `github-pages`
+environment blocks deploys from a tag ref.
 
-### `deploy-site.yml` — push to `main` (`site/**`) **or** on `release: published`
+### `deploy-site.yml` — push to `main` (`site/**`) **or** dispatched by `release.yml`
 1. Fetches latest release JSON from GitHub API into `site/src/release.json` (uses `curl -o` — only writes on success, leaving the stub intact on 404)
 2. `npm install` + `npm run build`
 3. Deploys to GitHub Pages (`https://pigeon-client.github.io`)

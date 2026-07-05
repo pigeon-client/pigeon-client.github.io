@@ -5,10 +5,8 @@ on:
     branches: [main]
     paths:
       - 'site/**'
-  # Redeploy after a release publishes so the download buttons point at the new
-  # release's assets (site/src/release.json is fetched at build time).
-  release:
-    types: [published]
+  # release.yml dispatches this on `main` after publishing (a `release`-event run
+  # would execute on the tag ref, which the github-pages environment blocks).
   workflow_dispatch:
 
 concurrency:
