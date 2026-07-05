@@ -1,4 +1,8 @@
 export { EnvModal } from "./components/EnvModal";
-export { replaceEnvVariables } from "./lib/resolve";
-export { useEnvStore } from "./store";
-export type { Environment } from "./types";
+export { EnvSelector } from "./components/EnvSelector";
+export { VarSuggestions } from "./components/VarSuggestions";
+export { useVarAutocomplete } from "./hooks/useVarAutocomplete";
+export { makeResolver, resolveForPreview } from "./lib/resolve";
+export { selectActiveEnv, useEnvStore } from "./store";
+export type { Environment, EnvVariable } from "./types";
+export { GLOBALS_ID, RANDOM_TOKENS } from "./types";

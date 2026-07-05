@@ -33,6 +33,11 @@ pub fn init_db() -> Connection {
             id TEXT PRIMARY KEY,
             data TEXT NOT NULL,
             created_at INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS environments (
+            id TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            created_at INTEGER NOT NULL
         );",
     )
     .expect("Failed to create tables");
@@ -264,6 +269,54 @@ pub fn update_collection(conn: &Connection, id: &str, data: &str) -> Result<(), 
 
 pub fn delete_collection(conn: &Connection, id: &str) -> Result<(), String> {
     conn.execute("DELETE FROM collections WHERE id = ?1", params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn save_environment(conn: &Connection, id: &str, data: &str) -> Result<(), String> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_millis() as i64;
+
+    conn.execute(
+        "INSERT OR REPLACE INTO environments (id, data, created_at) VALUES (?1, ?2, ?3)",
+        params![id, data, now],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+pub fn get_environments(conn: &Connection) -> Result<Vec<(String, String)>, String> {
+    let mut stmt = conn
+        .prepare("SELECT id, data FROM environments ORDER BY created_at ASC")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut result = Vec::new();
+    for row in rows {
+        result.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(result)
+}
+
+pub fn update_environment(conn: &Connection, id: &str, data: &str) -> Result<(), String> {
+    conn.execute(
+        "UPDATE environments SET data = ?1 WHERE id = ?2",
+        params![data, id],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn delete_environment(conn: &Connection, id: &str) -> Result<(), String> {
+    conn.execute("DELETE FROM environments WHERE id = ?1", params![id])
         .map_err(|e| e.to_string())?;
     Ok(())
 }

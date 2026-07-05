@@ -1,5 +1,5 @@
-import { type Environment, replaceEnvVariables } from "@/features/environments";
 import { isTauri } from "@/shared/lib/platform";
+import { resolveTemplate } from "@/shared/lib/template";
 import { parseUrl, stripQuery } from "@/shared/lib/url";
 import type { RequestConfig } from "@/shared/types";
 import type { ApiResponse } from "../types";
@@ -8,6 +8,20 @@ import { tauriHttpClient } from "./TauriHttpClient";
 
 /** Rust transport in the app; fetch-based transport in a plain browser. */
 const httpClient = isTauri() ? tauriHttpClient : browserHttpClient;
+
+/** Resolves a `{{token}}` name to a value (env → globals; $-random handled by
+    resolveTemplate). Undefined means the variable is missing → send blocked. */
+export type Resolver = (name: string) => string | undefined;
+
+/** Thrown before dispatch when any `{{token}}` can't be resolved (R3b). */
+export class UnresolvedVariablesError extends Error {
+  variables: string[];
+  constructor(variables: string[]) {
+    super(`Unresolved variable${variables.length > 1 ? "s" : ""}: ${variables.join(", ")}`);
+    this.name = "UnresolvedVariablesError";
+    this.variables = variables;
+  }
+}
 
 export interface SendOptions {
   followRedirects?: boolean;
@@ -18,33 +32,34 @@ export interface SendOptions {
 export interface ResolvedRequest {
   url: string;
   headers: { key: string; value: string }[];
-  body: string | null;
+  missing: string[];
 }
 
-export function resolveRequest(
-  config: RequestConfig,
-  activeEnv: Environment | null,
-): ResolvedRequest {
+export function resolveRequest(config: RequestConfig, resolve: Resolver): ResolvedRequest {
+  const missing = new Set<string>();
+  const sub = (s: string): string => {
+    const r = resolveTemplate(s, resolve);
+    for (const m of r.missing) missing.add(m);
+    return r.result;
+  };
+
   const activeParams = config.params?.filter((p) => p.enabled && p.key) ?? [];
   // Params mirror the URL's query, so drop the URL query when params exist to
   // avoid sending it twice; keep the URL as typed when there are no params.
   let url = parseUrl(activeParams.length > 0 ? stripQuery(config.url) : config.url);
-  url = replaceEnvVariables(url, activeEnv);
+  url = sub(url);
 
   if (activeParams.length > 0) {
     const separator = url.includes("?") ? "&" : "?";
     const queryString = activeParams
-      .map(
-        (p) =>
-          `${encodeURIComponent(p.key)}=${encodeURIComponent(replaceEnvVariables(p.value, activeEnv))}`,
-      )
+      .map((p) => `${encodeURIComponent(p.key)}=${encodeURIComponent(sub(p.value))}`)
       .join("&");
     url += separator + queryString;
   }
 
   const headers = config.headers
     .filter((h) => h.enabled && h.key)
-    .map((h) => ({ key: h.key, value: replaceEnvVariables(h.value, activeEnv) }));
+    .map((h) => ({ key: h.key, value: sub(h.value) }));
 
   if (config.auth.type === "basic" && config.auth.username) {
     const encoded = btoa(`${config.auth.username}:${config.auth.password}`);
@@ -60,37 +75,48 @@ export function resolveRequest(
     }
   }
 
-  return { url, headers, body: null };
+  return { url, headers, missing: [...missing] };
 }
 
 export async function sendRequest(
   config: RequestConfig,
-  activeEnv: Environment | null,
+  resolve: Resolver,
   options: SendOptions = {},
 ): Promise<ApiResponse> {
   const { followRedirects = true, sslVerify = true, proxyUrl = "" } = options;
 
   if (config.bodyType === "multipart/form-data") {
-    return sendMultipartRequest(config, activeEnv);
+    return sendMultipartRequest(config, resolve);
   }
 
-  const { url, headers } = resolveRequest(config, activeEnv);
+  const missing = new Set<string>();
+  const sub = (s: string): string => {
+    const r = resolveTemplate(s, resolve);
+    for (const m of r.missing) missing.add(m);
+    return r.result;
+  };
+
+  const { url, headers, missing: reqMissing } = resolveRequest(config, resolve);
+  for (const m of reqMissing) missing.add(m);
 
   let body: string | null = null;
   if (config.bodyType === "application/json" && config.body) {
-    body = replaceEnvVariables(config.body, activeEnv);
+    body = sub(config.body);
   } else if (config.bodyType === "text/plain" || config.bodyType === "text/xml") {
-    body = replaceEnvVariables(config.body, activeEnv);
+    body = sub(config.body);
   } else if (config.bodyType === "application/x-www-form-urlencoded") {
     const params = new URLSearchParams();
     for (const f of config.formData.filter((f) => f.enabled && f.key)) {
-      params.append(f.key, replaceEnvVariables(f.value, activeEnv));
+      params.append(f.key, sub(f.value));
     }
     body = params.toString();
   } else if (config.bodyType === "application/octet-stream" && config.file) {
     const arrayBuffer = await config.file.arrayBuffer();
     body = Array.from(new Uint8Array(arrayBuffer)).join(",");
   }
+
+  // Strict: block the send if any variable was unresolved (R3b).
+  if (missing.size > 0) throw new UnresolvedVariablesError([...missing]);
 
   const sentHeaders: Record<string, string> = Object.fromEntries(
     headers.map((h) => [h.key, h.value]),
@@ -132,9 +158,10 @@ export async function sendRequest(
 
 async function sendMultipartRequest(
   config: RequestConfig,
-  activeEnv: Environment | null,
+  resolve: Resolver,
 ): Promise<ApiResponse> {
-  const { url, headers } = resolveRequest(config, activeEnv);
+  const { url, headers, missing: reqMissing } = resolveRequest(config, resolve);
+  const missing = new Set(reqMissing);
   const formData = new FormData();
 
   for (const field of config.multipart) {
@@ -142,9 +169,13 @@ async function sendMultipartRequest(
     if (field.isFile && field.file) {
       formData.append(field.key, field.file);
     } else {
-      formData.append(field.key, replaceEnvVariables(field.value, activeEnv));
+      const r = resolveTemplate(field.value, resolve);
+      for (const m of r.missing) missing.add(m);
+      formData.append(field.key, r.result);
     }
   }
+
+  if (missing.size > 0) throw new UnresolvedVariablesError([...missing]);
 
   const sentHeaders: Record<string, string> = Object.fromEntries(
     headers.map((h) => [h.key, h.value]),

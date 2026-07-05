@@ -1,5 +1,5 @@
 import hljs from "highlight.js";
-import { Download, FileCode, Send } from "lucide-react";
+import { Download, FileCode, Send, WrapText } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { generateCurl } from "@/features/import-export";
 import { useTabStore } from "@/features/request-builder";
@@ -64,7 +64,15 @@ function hljsHighlight(code: string, language: string): string {
 }
 
 /* ── Line-numbered code block ── */
-function CodeBlock({ code, language }: { code: string; language: string }) {
+function CodeBlock({
+  code,
+  language,
+  wrap = false,
+}: {
+  code: string;
+  language: string;
+  wrap?: boolean;
+}) {
   const lines = code.split("\n");
   const lineNums = useMemo(() => lines.map((_, i) => i + 1), [lines]);
   const highlighted = useMemo(() => hljsHighlight(code, language), [code, language]);
@@ -76,7 +84,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
         fontFamily: "var(--font-mono)",
         fontSize: "var(--text-code)",
         lineHeight: "21px",
-        minWidth: "max-content",
+        minWidth: wrap ? undefined : "max-content",
       }}
     >
       {/* Line numbers */}
@@ -105,7 +113,8 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
           margin: 0,
           padding: "0 18px 6px 0",
           overflow: "visible",
-          whiteSpace: "pre",
+          whiteSpace: wrap ? "pre-wrap" : "pre",
+          wordBreak: wrap ? "break-word" : "normal",
           background: "transparent",
         }}
       >
@@ -234,6 +243,8 @@ function ResponseContent({
   setActiveTab,
   pretty,
   setPretty,
+  wordWrap,
+  setWordWrap,
   toast,
   toastTimer,
   setToast,
@@ -253,6 +264,8 @@ function ResponseContent({
   setActiveTab: (tab: "body" | "headers") => void;
   pretty: boolean;
   setPretty: (v: boolean) => void;
+  wordWrap: boolean;
+  setWordWrap: (v: boolean) => void;
   toast: boolean;
   toastTimer: ReturnType<typeof useRef<ReturnType<typeof setTimeout> | null>>;
   setToast: (v: boolean) => void;
@@ -362,6 +375,17 @@ function ResponseContent({
             </button>
           ))}
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          data-testid="response-wrap-toggle"
+          onClick={() => setWordWrap(!wordWrap)}
+          aria-pressed={wordWrap}
+          title={wordWrap ? "Word wrap: on" : "Word wrap: off"}
+          className={wordWrap ? "text-primary" : undefined}
+        >
+          <WrapText className="h-3.5 w-3.5" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"
@@ -536,7 +560,7 @@ function ResponseContent({
             {!(isImage || isBinary) && bodyBytes.length > 0 && (
               <div data-testid="response-body" style={{ padding: "12px 0 12px 16px" }}>
                 {pretty ? (
-                  <CodeBlock code={getFormattedCode()} language={codeLanguage} />
+                  <CodeBlock code={getFormattedCode()} language={codeLanguage} wrap={wordWrap} />
                 ) : (
                   <div
                     style={{
@@ -544,8 +568,8 @@ function ResponseContent({
                       fontSize: "var(--text-xs)",
                       lineHeight: 1.7,
                       color: "var(--text-secondary)",
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-all",
+                      whiteSpace: wordWrap ? "pre-wrap" : "pre",
+                      wordBreak: wordWrap ? "break-all" : "normal",
                       padding: "0 18px",
                     }}
                   >
@@ -673,6 +697,13 @@ export function ResponsePanel({
 
   const [activeTab, setActiveTab] = useState<"body" | "headers">("body");
   const [pretty, setPretty] = useState(true);
+  const [wordWrap, setWordWrapState] = useState(
+    () => localStorage.getItem("pg_word_wrap") === "true",
+  );
+  const setWordWrap = (v: boolean) => {
+    setWordWrapState(v);
+    localStorage.setItem("pg_word_wrap", String(v));
+  };
   const [toast, setToast] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -747,6 +778,8 @@ export function ResponsePanel({
           setActiveTab={setActiveTab}
           pretty={pretty}
           setPretty={setPretty}
+          wordWrap={wordWrap}
+          setWordWrap={setWordWrap}
           toast={toast}
           toastTimer={toastTimer}
           setToast={setToast}

@@ -146,7 +146,10 @@
       "Bash(pnpm test *)",
       "Bash(pnpm e2e *)",
       "Bash(perl -0pi -e 's/await page\\\\.getByText\\\\\\(\"Params\", \\\\{ exact: true \\\\}\\\\\\)\\\\.click\\\\\\(\\\\\\);/await editorTab\\(page, \"Params\"\\);/g' e2e/url-params.spec.ts)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(perl -pi -e 's/28px_1fr_1\\\\.4fr_56px/28px_1fr_1.4fr_72px/g' src/features/environments/components/EnvModal.tsx)",
+      "Bash(perl -pi -e 's/resolveRequest\\\\\\(\\(config|makeConfig\\\\\\(\\\\{ url: \":3000\\\\/api\" \\\\}\\\\\\)\\), null\\\\\\)/resolveRequest\\($1, \\(\\) => undefined\\)/g' src/features/execution/services/requestService.test.ts)",
+      "Bash(pnpm check *)"
     ]
   }
 }
