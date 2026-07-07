@@ -3,6 +3,9 @@ import { FeaturesSection } from "./components/FeaturesSection";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
+import { OpenSourceSection } from "./components/OpenSourceSection";
+import { OrganizeSection } from "./components/OrganizeSection";
+import { WhySection } from "./components/WhySection";
 import { useScrollReveal } from "./hooks/useScrollReveal";
 import { detectOS, parseRelease } from "./lib/github";
 import releaseData from "./release.json";
@@ -22,20 +25,18 @@ function App() {
   useScrollReveal();
 
   return (
-    <div className="app">
-      <div className="bg-fx" aria-hidden="true" />
-      <Header release={parsed} />
+    <>
+      <Header />
       <main>
-        <HeroSection
-          primaryDownload={primaryAsset}
-          detectedOS={detectedOS}
-          version={parsed.version}
-        />
+        <HeroSection primaryDownload={primaryAsset} />
+        <OrganizeSection />
         <FeaturesSection />
-        <DownloadSection assets={parsed.assets} detectedOS={detectedOS} />
+        <WhySection />
+        <OpenSourceSection />
+        <DownloadSection assets={parsed.assets} />
       </main>
-      <Footer version={parsed.version} />
-    </div>
+      <Footer />
+    </>
   );
 }
 

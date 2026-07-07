@@ -1,39 +1,15 @@
-const REPO = "https://github.com/pigeon-client/pigeon";
+import { ISSUES_URL, LICENSE_URL, RELEASES_URL, REPO_URL } from "../lib/constants";
 
-interface FooterProps {
-  version: string;
-}
-
-export function Footer({ version }: FooterProps) {
+export function Footer() {
   return (
-    <footer className="site-footer">
-      <div className="footer-inner">
-        <div className="footer-brand">
-          <img
-            src="/pigeon-logo-32.png"
-            alt=""
-            width={22}
-            height={22}
-            className="brand-mark"
-            style={{ width: 22, height: 22 }}
-          />
-          Pigeon
-          {version && version !== "0.0.0" && (
-            <span className="ver-pill" style={{ marginLeft: 4 }}>
-              <span className="dot" />v{version}
-            </span>
-          )}
-        </div>
-
-        <nav className="footer-links">
-          <a href="#features">Features</a>
-          <a href="#download">Download</a>
-          <a href={`${REPO}/releases`} target="_blank" rel="noopener noreferrer">
-            Releases
-          </a>
-          <a href={REPO} target="_blank" rel="noopener noreferrer">
-            GitHub
-          </a>
+    <footer>
+      <div className="wrap foot">
+        <p>© 2026 Pigeon contributors · MIT License</p>
+        <nav aria-label="Footer">
+          <a href={REPO_URL}>GitHub</a>
+          <a href={ISSUES_URL}>Issues</a>
+          <a href={RELEASES_URL}>Releases</a>
+          <a href={LICENSE_URL}>License</a>
         </nav>
       </div>
     </footer>
