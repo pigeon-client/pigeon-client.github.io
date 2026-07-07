@@ -430,8 +430,8 @@ function CollectionTreeNode({
   onAddFolder: (collectionId: string, parentId: string | null) => void;
   onAddRequest: (collectionId: string, parentId: string | null, request: RequestConfig) => void;
 }) {
-  // Folders open by default — nothing is buried behind a collapse.
-  const [expanded, setExpanded] = useState(() => node.type === "folder");
+  // Folders start collapsed by default.
+  const [expanded, setExpanded] = useState(false);
   const removeNode = useCollectionStore((s) => s.removeNode);
 
   if (!collectionId) return null;
@@ -655,8 +655,8 @@ function countRequests(nodes: CollectionNode[]): number {
 
 /* ── Render auto-organized tree ──
    Controlled expand map lives in Sidebar so it survives tab switches and
-   feeds expand-all/collapse-all. Folders open by default; the map only stores
-   explicit collapse overrides. */
+   feeds expand-all/collapse-all. Folders start collapsed; the map only stores
+   explicit expand overrides. */
 function AutoTree({
   nodes,
   depth,
@@ -689,7 +689,7 @@ function AutoTree({
           );
         }
         const count = (n as InternalNode)._count ?? 0;
-        const isOpen = expanded[n.id] ?? true;
+        const isOpen = expanded[n.id] ?? false;
         return (
           <div key={n.id}>
             <TreeRow
