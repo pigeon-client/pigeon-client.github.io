@@ -1,55 +1,35 @@
-import type { ParsedRelease } from "../types/release";
+import { REPO_URL } from "../lib/constants";
 
-const REPO = "https://github.com/pigeon-client/pigeon";
-
-interface HeaderProps {
-  release: ParsedRelease | null;
-}
-
-export function Header({ release }: HeaderProps) {
+export function Header() {
   return (
-    <header className="site-header">
-      <div className="header-inner">
-        <a className="brand" href="#top" aria-label="Pigeon">
-          <img className="brand-mark" src="/pigeon-logo-32.png" alt="" width={30} height={30} />
-          <span className="brand-name">Pigeon</span>
+    <header className="nav">
+      <div className="wrap nav-inner">
+        <a className="logo" href="/" aria-label="Pigeon home">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M3 12c4-1 7-4 8-8 1 4 2 6 5 7l5 1-4 3c-2 1.5-5 2-7 1l-2 4-1-4c-2-.5-3-2-4-4z"
+              fill="#c96442"
+            />
+          </svg>
+          pigeon
         </a>
-
-        <nav className="header-nav">
-          <a className="nav-link" href="#features">
-            Features
-          </a>
-          <a className="nav-link" href="#download">
-            Download
-          </a>
-          {release && release.version !== "0.0.0" && (
-            <span className="ver-pill">
-              <span className="dot" />v{release.version}
-            </span>
-          )}
-          <a
-            className="nav-icon"
-            href={REPO}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="GitHub repository"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-            </svg>
-            <span
-              style={{
-                position: "absolute",
-                width: 1,
-                height: 1,
-                overflow: "hidden",
-                clip: "rect(0 0 0 0)",
-              }}
-            >
-              GitHub
-            </span>
-          </a>
+        <nav className="links" aria-label="Main">
+          <a href="#organize">organize</a>
+          <a href="#features">features</a>
+          <a href="#open-source">open-source</a>
+          <a href="#download">download</a>
         </nav>
+        <div className="nav-cta">
+          <a className="btn btn-ghost" href={REPO_URL} aria-label="Star Pigeon on GitHub">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+            star
+          </a>
+          <a className="btn btn-primary" href="#download">
+            download
+          </a>
+        </div>
       </div>
     </header>
   );

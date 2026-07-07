@@ -23,10 +23,6 @@ import { Tab } from "@/shared/ui/tabs-shim";
 
 type SidebarTab = "history" | "draft" | "collections";
 
-/* Draft tree tuning */
-const AUTO_EXPAND_MAX = 3; // folders with <= this many leaves open by default
-const FLAT_VIEW_MAX = 8; // <= this many drafts total → flat list, skip the tree
-
 interface NameModalState {
   title: string;
   label: string;
@@ -434,10 +430,8 @@ function CollectionTreeNode({
   onAddFolder: (collectionId: string, parentId: string | null) => void;
   onAddRequest: (collectionId: string, parentId: string | null, request: RequestConfig) => void;
 }) {
-  // Small folders open by default so a lone request isn't buried.
-  const [expanded, setExpanded] = useState(
-    () => node.type === "folder" && countRequests(node.children ?? []) <= AUTO_EXPAND_MAX,
-  );
+  // Folders open by default — nothing is buried behind a collapse.
+  const [expanded, setExpanded] = useState(() => node.type === "folder");
   const removeNode = useCollectionStore((s) => s.removeNode);
 
   if (!collectionId) return null;
@@ -661,8 +655,8 @@ function countRequests(nodes: CollectionNode[]): number {
 
 /* ── Render auto-organized tree ──
    Controlled expand map lives in Sidebar so it survives tab switches and
-   feeds expand-all/collapse-all. Small subtrees (<= AUTO_EXPAND_MAX leaves)
-   open by default; the map only stores explicit overrides. */
+   feeds expand-all/collapse-all. Folders open by default; the map only stores
+   explicit collapse overrides. */
 function AutoTree({
   nodes,
   depth,
@@ -695,7 +689,7 @@ function AutoTree({
           );
         }
         const count = (n as InternalNode)._count ?? 0;
-        const isOpen = expanded[n.id] ?? false;
+        const isOpen = expanded[n.id] ?? true;
         return (
           <div key={n.id}>
             <TreeRow
@@ -719,49 +713,6 @@ function AutoTree({
               />
             )}
           </div>
-        );
-      })}
-    </>
-  );
-}
-
-/* ── Flat draft list — used when there are few drafts (tree is overkill) ──
-   Shows method badge + endpoint + muted host/path so context needs no folders. */
-function DraftList({
-  reqs,
-  onSelect,
-  onDelete,
-}: {
-  reqs: Array<{ method: string; url: string; request?: RequestConfig }>;
-  onSelect: (req: RequestConfig) => void;
-  onDelete: (req: { method: string; url: string }) => void;
-}) {
-  return (
-    <>
-      {reqs.map((r) => {
-        let endpoint = "/";
-        let path = r.url;
-        try {
-          const u = new URL(r.url.startsWith("http") ? r.url : parseUrl(r.url));
-          const parts = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
-          endpoint = parts.at(-1) ?? "/";
-          path =
-            `${u.hostname}${u.pathname.replace(/\/+$/, "")}`.replace(`/${endpoint}`, "") ||
-            u.hostname;
-        } catch {
-          /* keep raw url */
-        }
-        return (
-          <TreeRow
-            key={`${r.method}:${r.url}`}
-            depth={0}
-            isFolder={false}
-            label={endpoint}
-            method={r.method}
-            meta={path}
-            onClick={() => r.request && onSelect(r.request)}
-            onDelete={() => onDelete(r)}
-          />
         );
       })}
     </>
@@ -1064,7 +1015,7 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
     [collections, search, filter, filterTree],
   );
 
-  /* Draft tree — path-compressed, plus a flat list for the small-set view */
+  /* Draft tree — path-compressed host/path grouping */
   const draft = useMemo(() => {
     const reqs = drafts
       .filter((d) => filter(d.name || d.url || ""))
@@ -1073,7 +1024,7 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
     relabelLeaves(tree);
     tree = collapseChains(tree, true);
     for (const t of tree) countNode(t);
-    return { reqs, tree, total: reqs.length };
+    return { tree, total: reqs.length };
   }, [drafts, filter]);
 
   /* Grouped history */
@@ -1173,15 +1124,6 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
               icon="🌱"
               label={search ? "No matching drafts" : "No drafts yet"}
               sub="Drafts appear automatically after you send a request"
-            />
-          ) : draft.total <= FLAT_VIEW_MAX ? (
-            <DraftList
-              reqs={draft.reqs}
-              onSelect={loadRequest}
-              onDelete={(r) => {
-                const idx = draftIdxByUrl.get(`${r.method}:${r.url}`);
-                if (idx !== undefined) removeDraft(idx);
-              }}
             />
           ) : (
             <AutoTree

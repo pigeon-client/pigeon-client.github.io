@@ -3,23 +3,37 @@
 
   <h1>Pigeon</h1>
 
-  <p>A beautiful, fast API client for macOS, Linux and Windows.<br/>Built with Tauri v2 — native performance, web-tech flexibility.</p>
+  <p><strong>The API client that organizes itself.</strong><br/>
+  Free, open-source, and native. No account, no cloud, no busywork.</p>
 
   <p>
-    <img src="https://img.shields.io/badge/version-0.1.0-7C6EFA?style=flat-square" alt="version" />
-    <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-6A6A90?style=flat-square" alt="platform" />
-    <img src="https://img.shields.io/badge/Tauri-v2-24C8D8?style=flat-square&logo=tauri&logoColor=white" alt="Tauri" />
-    <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
-    <img src="https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
-    <img src="https://img.shields.io/github/actions/workflow/status/k1n1/pigeon/ci.yml?style=flat-square&label=CI" alt="CI" />
+    <img src="https://img.shields.io/badge/license-MIT-c96442?style=flat-square" alt="MIT License" />
+    <img src="https://img.shields.io/badge/platform-macOS-6A6A90?style=flat-square" alt="platform" />
+    <img src="https://img.shields.io/badge/price-free_forever-72b872?style=flat-square" alt="free" />
   </p>
+
+  <a href="https://github.com/pigeon-client/pigeon/releases/latest"><strong>Download for macOS →</strong></a>
 </div>
 
 ---
 
 ## What is Pigeon?
 
-Pigeon is a desktop API client — think Postman or Insomnia, but lighter and native. It lets you craft HTTP requests, inspect responses with syntax highlighting, organise saved requests into collections, and manage environments with variable interpolation. Everything stays local; no account required.
+Pigeon is a desktop API client — like Postman or Insomnia, but lighter, native, and
+self-organizing. You send HTTP requests and inspect responses; Pigeon handles the filing.
+
+The difference is what happens **after** you hit Send. Other clients make you name every
+request, pick a folder, and click "Save." Pigeon does that work for you:
+
+- **Tabs name themselves** from the URL path, and follow it as you type. Rename one by hand and
+  your name locks in.
+- **Requests file themselves** — every send is auto-saved and dropped into a tidy tree, one folder
+  per domain, grouped by endpoint. No "Save as…" dialog, ever.
+- **History writes itself** — a time-bucketed log (Today, Yesterday, This Week) of everything you
+  sent, with method, name, and status.
+
+Everything lives on your machine. There's no sign-up, no workspace invite, and nothing syncs to
+anyone's cloud.
 
 ---
 
@@ -27,170 +41,31 @@ Pigeon is a desktop API client — think Postman or Insomnia, but lighter and na
 
 | | |
 |---|---|
-| **Multi-tab workflow** | Open multiple requests side-by-side, rename tabs by double-clicking, restore on relaunch |
-| **Smart URL bar** | Paste a raw `curl` command and Pigeon auto-imports the method, headers and body |
-| **Syntax-highlighted responses** | Pretty-printed JSON/XML/HTML with per-theme colours; Raw mode for plain text |
-| **Request editor** | Params, Headers, Body (JSON with Tab-indent, form-data, multipart, file), Auth (Bearer, Basic, API Key) |
-| **Collections** | Save requests in nested folders; drag-and-drop tree with horizontal scroll for deep hierarchies |
-| **Environments** | Create environments with `{{variable}}` interpolation across URLs, headers and bodies |
-| **History & Drafts** | Every request is auto-saved; revisit, re-run or save to a collection |
-| **Import / Export cURL** | Import from the sidebar or paste directly into the URL bar; export any tab as a cURL command |
-| **Three themes** | Dark · Light · Pink — persisted across sessions |
-| **Keyboard-first** | Full shortcut coverage: `⌘N` new tab, `⌘Enter` send, `⌘F` search, `⌘,` settings and more |
-| **Right-click tab menu** | Close Tab, Close Other Tabs, Close All Tabs, New Request |
-| **Auto-updater** | Built-in Tauri updater checks for new releases on launch |
+| **Self-organizing workspace** | Auto-named tabs, auto-filed drafts, and an auto-written history — zero manual housekeeping |
+| **Request builder** | Params, headers, body (JSON, form-data, multipart, file), and auth (Bearer, Basic, API Key) |
+| **Environments** | `{{variable}}` sets for dev / staging / prod, with secret masking and red production guardrails |
+| **Collections** | Curate requests into nested folders when you want deliberate structure — stored locally |
+| **cURL in & out** | Paste any `curl` command to build a request instantly; copy any request back out as cURL |
+| **Native speed** | A Rust engine sends the request — no CORS limits, full control over redirects, SSL, and proxies |
+| **Syntax-highlighted responses** | Pretty-printed JSON/XML/HTML with per-theme colors; Raw mode for plain text |
+| **Keyboard-first** | Send, search, save, switch tabs, and manage environments without touching the mouse |
+| **Themes** | Dark and Light, persisted across sessions |
+| **Auto-updates** | Checks for new releases on launch |
 
 ---
 
-## Tech Stack
+## Install
 
-### Desktop App (`/src` + `/src-tauri`)
-
-| Layer | Technology |
-|-------|-----------|
-| Shell | [Tauri v2](https://tauri.app) (Rust) |
-| UI | [React 19](https://react.dev) + [TypeScript 5.8](https://www.typescriptlang.org) |
-| Styling | [TailwindCSS 4](https://tailwindcss.com) + CSS custom properties |
-| Component primitives | [HeroUI](https://heroui.com) + [Lucide Icons](https://lucide.dev) |
-| State | [Zustand](https://zustand-demo.pmnd.rs) |
-| Routing | [React Router DOM v7](https://reactrouter.com) |
-| Syntax highlighting | [highlight.js](https://highlightjs.org) |
-| Build | [Vite 7](https://vitejs.dev) |
-| Lint / Format | [Biome v2](https://biomejs.dev) |
-| Git hooks | [Lefthook v2](https://github.com/evilmartians/lefthook) |
-| Package manager | [pnpm 11](https://pnpm.io) |
-
-### Marketing Site (`/site`)
-
-| Layer | Technology |
-|-------|-----------|
-| UI | React 18 + TypeScript |
-| Build | Vite 5 |
-| Hosting | GitHub Pages (auto-deploy on push to `main`) |
-
----
-
-## Project Structure
-
-```
-pigeon/
-├── src/                     # Frontend (React)
-│   ├── components/          # UI components
-│   │   ├── ui/              # Primitives — Button, Tab, Badge
-│   │   ├── Toolbar.tsx      # Top bar: logo, Export, Settings
-│   │   ├── Sidebar.tsx      # History / Drafts / Collections
-│   │   ├── UrlBar.tsx       # Method picker, URL input, Send
-│   │   ├── RequestEditor.tsx
-│   │   ├── ResponsePanel.tsx
-│   │   ├── BodyEditor.tsx
-│   │   ├── ImportModal.tsx  # cURL import drawer + shared Modal shell
-│   │   └── ExportCurlModal.tsx
-│   ├── store/               # Zustand stores
-│   ├── hooks/               # useApiRequest, useAutoClose
-│   ├── lib/                 # curl, curlParser, env, url utilities
-│   ├── assets/              # Logo PNGs (retina-ready)
-│   ├── App.tsx              # Root layout + TabStrip + SettingsDrawer
-│   └── index.css            # Design tokens, theme classes, animations
-├── src-tauri/               # Rust / Tauri backend
-│   ├── src/                 # Rust source
-│   └── icons/               # App icons (all sizes, transparent bg)
-├── logo/                    # Source brand assets
-│   ├── macOS/               # Icon-16 through Icon-1024
-│   ├── iOS/
-│   ├── Android/
-│   └── Watch/
-├── site/                    # Marketing site
-├── .github/workflows/
-│   ├── ci.yml               # Lint + typecheck + build on every PR
-│   ├── release.yml          # Tag-triggered cross-platform release build
-│   └── deploy-site.yml      # Auto-deploy marketing site to GitHub Pages
-├── biome.json               # Lint + format rules
-├── lefthook.yml             # Git hook config
-├── Makefile                 # Common task shortcuts
-└── CLAUDE.md                # AI agent instructions
-```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org) 20.19+ or 22.12+
-- [pnpm](https://pnpm.io) 11+
-- [Rust](https://rustup.rs) (stable)
-- Tauri system dependencies — see [Tauri prerequisites](https://tauri.app/start/prerequisites/)
-
-### Install
+**macOS (Apple Silicon & Intel)** — one command:
 
 ```bash
-# Clone the repo
-git clone https://github.com/k1n1/pigeon.git
-cd pigeon
-
-# Install JS dependencies
-pnpm install
-
-# Start the desktop app (hot-reload)
-pnpm tauri dev
+curl -fsSL https://raw.githubusercontent.com/pigeon-client/pigeon/main/scripts/install.sh | sh
 ```
 
-### Build for production
+Or grab the `.dmg` from the [latest release](https://github.com/pigeon-client/pigeon/releases/latest).
 
-```bash
-pnpm tauri build
-# Output: src-tauri/target/release/bundle/
-```
-
----
-
-## Development
-
-### Useful commands
-
-```bash
-pnpm dev            # Vite dev server only (browser preview)
-pnpm build          # TypeScript check + Vite build
-pnpm lint           # Biome lint (read-only)
-pnpm check:write    # Auto-fix lint + format
-pnpm ci:check       # Full CI-grade check (fails on warnings)
-```
-
-### Makefile shortcuts
-
-```bash
-make dev            # pnpm tauri dev
-make build          # pnpm tauri build
-make format         # Auto-fix lint + format
-make lint           # Lint only
-make clean          # Remove build artifacts
-```
-
-### Code conventions
-
-- **No hardcoded colours** — all tokens via `var(--token)` CSS custom properties
-- **No `any`** — strict TypeScript throughout
-- **Biome** enforces formatting (2-space indent, double quotes, 100-char lines)
-- Pre-commit hook auto-fixes staged files; pre-push validates everything
-
----
-
-## CI / CD
-
-| Workflow | Trigger | What it does |
-|----------|---------|-------------|
-| **CI** | Push / PR → `main` | Biome check + `tsc --noEmit` + Vite build |
-| **Release** | Push a `v*` tag | Builds Tauri for macOS (Intel + ARM), Linux, Windows → publishes GitHub Release |
-| **Deploy Site** | Push → `main` (`site/**`) | Builds marketing site → deploys to GitHub Pages |
-
-To cut a release:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-Required repository secrets: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+> **Linux & Windows** are on the roadmap.
+> [Watch the releases](https://github.com/pigeon-client/pigeon/releases) to be notified.
 
 ---
 
@@ -206,24 +81,18 @@ Required repository secrets: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE
 | `⌘ ,` | Open settings |
 | `⌘ ⇧ E` | Open environment manager |
 | `⌘ ⇧ 1–9` | Switch to tab by number |
-| `?` | Show keyboard shortcuts |
+| `?` | Show all shortcuts |
 
 ---
 
-## Theme System
+## Contributing
 
-Pigeon ships with three themes toggled from Settings:
-
-| Theme | Preview |
-|-------|---------|
-| **Dark** | Deep purple-grey backgrounds, violet accent |
-| **Light** | White surfaces, indigo accent |
-| **Pink** | Dark with rose/pink accent |
-
-Theme preference is saved to `localStorage` and restored on next launch.
+Pigeon is built in the open and welcomes contributions. Found a bug or want a feature? Open an
+[issue](https://github.com/pigeon-client/pigeon/issues). Want to send a patch? Good-first-issues are
+labeled. Build and workflow details for contributors live in [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
 ## License
 
-MIT © k1n1
+[MIT](LICENSE) © Pigeon contributors
