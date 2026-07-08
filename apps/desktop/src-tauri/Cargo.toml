@@ -1,6 +1,6 @@
 [package]
 name = "pigeon"
-version = "0.1.8"
+version = "0.1.9"
 description = "Pigeon - Lightweight API Testing Tool"
 authors = ["k1n1"]
 edition = "2021"
