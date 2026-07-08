@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo/macOS/Icon-128.png" width="96" alt="Pigeon logo" />
+  <img src="logo/mark.svg" width="96" alt="Pigeon logo" />
 
   <h1>Pigeon</h1>
 

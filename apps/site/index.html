@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/pigeon-mark.svg" />
+    <link rel="icon" type="image/png" href="/pigeon-mark.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0a0b" />
+    <title>
+      Pigeon — The API Client That Organizes Itself | Free Open-Source Postman Alternative
+    </title>
+    <meta
+      name="description"
+      content="Pigeon auto-names your tabs, files every request by domain, and writes your history for you. A free, open-source, native API client for macOS. No account, no cloud, no busywork."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://pigeon-client.github.io/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pigeon" />
+    <meta property="og:title" content="Pigeon — The API Client That Organizes Itself" />
+    <meta
+      property="og:description"
+      content="Send a request. Pigeon names the tab, files it by domain, and saves the history — automatically. Free, open-source, native."
+    />
+    <meta property="og:url" content="https://pigeon-client.github.io/" />
+    <meta property="og:image" content="https://pigeon-client.github.io/pigeon-mark.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Pigeon — The API Client That Organizes Itself" />
+    <meta
+      name="twitter:description"
+      content="Send a request. Pigeon names the tab, files it by domain, and saves the history — automatically. Free, open-source, native."
+    />
+    <meta name="twitter:image" content="https://pigeon-client.github.io/pigeon-mark.png" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Pigeon",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "macOS",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "A free, open-source desktop API client that organizes itself — auto-named tabs, requests filed by domain, auto-saved history. With environments, collections, and cURL import.",
+        "url": "https://pigeon-client.github.io/",
+        "downloadUrl": "https://github.com/pigeon-client/pigeon/releases/latest",
+        "license": "https://github.com/pigeon-client/pigeon/blob/main/LICENSE"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is Pigeon a free alternative to Postman?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Pigeon is completely free and open source. There are no paid tiers, no account requirements, and no cloud sync — your data stays on your machine."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What platforms does Pigeon support?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pigeon is available for macOS today (Apple Silicon and Intel) — install it with a single curl command or download the .dmg from GitHub releases. Linux and Windows builds are on the roadmap — watch releases on GitHub to be notified."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I import my existing requests?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Paste any cURL command into the URL bar or import modal and Pigeon builds the full request — method, headers, auth, and body. You can also copy any request back out as cURL."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
