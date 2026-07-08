@@ -149,7 +149,29 @@
       "Bash(git rm *)",
       "Bash(perl -pi -e 's/28px_1fr_1\\\\.4fr_56px/28px_1fr_1.4fr_72px/g' src/features/environments/components/EnvModal.tsx)",
       "Bash(perl -pi -e 's/resolveRequest\\\\\\(\\(config|makeConfig\\\\\\(\\\\{ url: \":3000\\\\/api\" \\\\}\\\\\\)\\), null\\\\\\)/resolveRequest\\($1, \\(\\) => undefined\\)/g' src/features/execution/services/requestService.test.ts)",
-      "Bash(pnpm check *)"
+      "Bash(pnpm check *)",
+      "Bash(grep -v \"^\\\\.git$\")",
+      "Bash(grep -oE \"^[^/]+\\(/|$\\)\")",
+      "Bash(pnpm install *)",
+      "Bash(pnpm build:site)",
+      "Bash(grep -vE \"^\\\\s*$\")",
+      "Bash(~/.cargo/bin/cargo clean *)",
+      "Bash(~/.cargo/bin/cargo check *)",
+      "Bash(git check-ignore *)",
+      "Bash(make ci-check *)",
+      "Bash(make -n dev build-site open clean)",
+      "Bash(make test *)",
+      "Bash(make e2e *)",
+      "Bash(make -n build build-release format dev-site preview-site)",
+      "Bash(sips -z 1024 1024 __TRACKED_VAR__/icon-1024.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight __TRACKED_VAR__/icon-1024.png)",
+      "Bash(python3 -c \"import cairosvg; print\\('cairosvg OK'\\)\")",
+      "Bash(python3 -c \"import PIL; print\\('PIL', PIL.__version__\\)\")",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(rsvg-convert -w 1024 -h 1024 __TRACKED_VAR__/icon-src.svg -o __TRACKED_VAR__/icon-1024.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight -g hasAlpha __TRACKED_VAR__/icon-1024.png)",
+      "Bash(pnpm --filter pigeon exec tauri icon \"$\\(pwd\\)/logo/icon-source.png\")",
+      "Bash(sips -g hasAlpha apps/desktop/src-tauri/icons/icon.png)"
     ]
   }
 }

@@ -14,7 +14,7 @@ on:
     paths-ignore:
       - '.version.json'
       - '**.md'
-      - 'site/**'
+      - 'apps/site/**'
   workflow_dispatch:
 
 jobs:
@@ -42,16 +42,16 @@ jobs:
           echo "new_version=${VERSION}" >> "$GITHUB_OUTPUT"
 
           jq ".patch = ${NEW_PATCH}" .version.json > .version.tmp && mv .version.tmp .version.json
-          jq ".version = \"${VERSION}\"" package.json > pkg.tmp && mv pkg.tmp package.json
-          jq ".version = \"${VERSION}\"" src-tauri/tauri.conf.json > tauri.tmp && mv tauri.tmp src-tauri/tauri.conf.json
-          sed -i "s/^version = \".*\"/version = \"${VERSION}\"/" src-tauri/Cargo.toml
+          jq ".version = \"${VERSION}\"" apps/desktop/package.json > pkg.tmp && mv pkg.tmp apps/desktop/package.json
+          jq ".version = \"${VERSION}\"" apps/desktop/src-tauri/tauri.conf.json > tauri.tmp && mv tauri.tmp apps/desktop/src-tauri/tauri.conf.json
+          sed -i "s/^version = \".*\"/version = \"${VERSION}\"/" apps/desktop/src-tauri/Cargo.toml
 
       - name: Commit, tag, and push
         run: |
           V="${{ steps.bump.outputs.new_version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .version.json package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+          git add .version.json apps/desktop/package.json apps/desktop/src-tauri/tauri.conf.json apps/desktop/src-tauri/Cargo.toml
           git commit -m "chore: release v${V}
 
           [version-bump]

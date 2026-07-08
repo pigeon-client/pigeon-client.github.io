@@ -61,25 +61,27 @@ to `:visible` (the helpers already do). Runs in CI via `.github/workflows/e2e.ym
 This covers UI + JS against the mock backend, **not** the real Rust send/SQLite (that needs
 `tauri-driver`).
 
-### Makefile shortcuts
+### Makefile shortcuts (root — delegate to the workspace)
 ```bash
-make dev              # pnpm tauri dev
+make dev              # pnpm tauri dev (desktop)
 make build            # pnpm tauri build (full Tauri)
 make build-release    # pnpm tauri build --bundles dmg
-make lint             # pnpm lint
+make lint             # pnpm lint (Biome, repo-wide)
 make format           # pnpm check:write
 make ci-check         # pnpm ci:check
+make test             # pnpm test        make e2e     # pnpm e2e
+make dev-site         # site dev         make build-site / preview-site
 make deps             # pnpm install --frozen-lockfile
-make clean            # Remove dist, src-tauri/target, node_modules
-make open             # Open built DMG folder
+make clean            # Remove apps/*/dist, apps/desktop/src-tauri/target, node_modules
+make open             # Open built DMG folder (apps/desktop/…/bundle/dmg)
 ```
 
-### Marketing site (`/site`)
+### Marketing site (`apps/site`)
 ```bash
-cd site
-npm install           # Install (no lockfile — platform-native deps)
-npm run build         # tsc + Vite build
-npm run preview       # Preview at localhost:4173
+pnpm install                     # Root workspace install (covers both apps)
+pnpm build:site                  # Build the site (tsc + Vite)
+pnpm preview:site                # Preview at localhost:4173
+# or from the package: pnpm --filter pigeon-site <script>
 ```
 
 ### Release
@@ -111,7 +113,25 @@ UUIDs — those change per render and can't be selected). Convention: `<area>-<e
 
 ## Architecture
 
-### Main App (`src/`)
+### Monorepo layout
+
+This is a **pnpm workspace** (`pnpm-workspace.yaml` → `packages: ['apps/*']`). The repo root is a
+private workspace-only package (`pigeon-monorepo`, no app code); its scripts delegate to the
+members via `--filter`, so `pnpm dev`, `pnpm build`, `pnpm tauri dev`, `pnpm test`, `pnpm e2e` all
+still run from the root. Biome and Lefthook are repo-wide and configured at the root.
+
+- **`apps/desktop/`** — the Tauri desktop app (package `pigeon`). Holds `src/`, `src-tauri/`,
+  `e2e/`, and all its build config (`vite`, `vitest`, `playwright`, `tsconfig`, `postcss`,
+  `scripts/copy-wasm.js` + `version-bump.js`). Tauri is invoked here (release CI passes
+  `projectPath: apps/desktop`).
+- **`apps/site/`** — the marketing site (package `pigeon-site`), a pnpm workspace member.
+- Root-level: `Makefile` (delegates to the workspace), `biome.json`, `lefthook.yml`,
+  `.version.json`, `logo/`, `docs/`, and `scripts/install.sh` (kept at root because its raw URL is
+  the published install command).
+
+Paths below like `src/features/...` are relative to **`apps/desktop/`**.
+
+### Main App (`apps/desktop/src/`)
 
 Architecture is feature-based. `src/app/` owns bootstrap/layout/global shortcuts only.
 Business logic belongs in `src/features/*`; shared primitives and shared request types live in
@@ -131,10 +151,16 @@ State lives in co-located Zustand stores:
 - `src/features/collections/store.ts` — collection tree CRUD/move/reorder
 - `src/features/environments/store.ts` — environment variables and interpolation
 
-Persistence uses Rust SQLite commands through thin `services/db.ts` wrappers. Do not call
-`invoke()` directly from components. Collections are stored as JSON in `collections(id TEXT PRIMARY
-KEY, data TEXT, created_at INTEGER)`; `src-tauri/src/db.rs` migrates legacy integer IDs to text so
-UUID collection IDs work.
+Drafts, history, and collections persist via Rust SQLite commands through thin `services/db.ts`
+wrappers. Do not call `invoke()` directly from components. Collections are stored as JSON in
+`collections(id TEXT PRIMARY KEY, data TEXT, created_at INTEGER)`; `src-tauri/src/db.rs` migrates
+legacy integer IDs to text so UUID collection IDs work.
+
+**Environments are the exception**: they persist to `localStorage` for *both* builds
+(`environments/services/db.ts`, keys `pg_browser_environments` / `pg_globals` / `pg_active_env`) —
+the Tauri webview's `localStorage` is durable, so there is no Rust `environments` table. Response
+word-wrap (`pg_word_wrap`) and theme (`pg_theme`) likewise persist through small feature-owned
+`localStorage` helpers, not SQLite.
 
 HTTP requests are sent from Rust via `reqwest` (not browser fetch) so there are no CORS
 restrictions. Use `src/features/execution/hooks/useApiRequest.ts`; Rust owns the actual
@@ -215,29 +241,34 @@ so `highlight.js` output adapts automatically.
 - **Modal keyboard behaviour**: Shared `Modal` only closes on backdrop keyboard events when the
   backdrop itself is focused. Space inside inputs/selects must not close modals.
 
-### Marketing Site (`site/`)
+### Marketing Site (`apps/site/`)
 
-The site is a separate React app (not part of the main Tauri build). It reads `site/src/release.json` which is fetched from the GitHub API **at build time** by `deploy-site.yml` — not at runtime. The repo ships a stub `release.json` with empty `assets: []` as the fallback. `parseRelease()` in `site/src/lib/github.ts` handles missing/empty fields defensively.
+A separate React app (package `pigeon-site`, workspace member — not part of the Tauri build). It
+reads `apps/site/src/release.json`, fetched from the GitHub API **at build time** by
+`deploy-site.yml` — not at runtime. The repo ships a stub `release.json` with empty `assets: []` as
+the fallback. `parseRelease()` in `apps/site/src/lib/github.ts` handles missing/empty fields
+defensively.
 
-`site/postcss.config.js` must exist (even if empty) to prevent Vite from walking up to the root `postcss.config.js` which requires `@tailwindcss/postcss` — a root-only dependency.
+`apps/site/postcss.config.js` must exist (even if empty) to stop Vite walking up to
+`apps/desktop/postcss.config.js` / any Tailwind PostCSS config.
 
 ## CI/CD Pipelines
 
-### `ci.yml` — push/PR to `main` (ignores `site/**` and `**.md`)
-Single job: `pnpm ci:check` (Biome) → `pnpm build` (tsc + Vite). Has concurrency group — cancels stale runs on force-push.
+### `ci.yml` — push/PR to `main` (ignores `apps/site/**` and `**.md`)
+Single job: `pnpm ci:check` (Biome) → `pnpm build` (delegates to `pigeon`). Has concurrency group — cancels stale runs on force-push.
 
-### `e2e.yml` — push/PR to `main` (ignores `site/**` and `**.md`)
-Vitest unit tests → Playwright browser E2E (`pnpm e2e`) → uploads the HTML report artifact.
+### `e2e.yml` — push/PR to `main` (ignores `apps/site/**` and `**.md`)
+Vitest unit tests → Playwright browser E2E (`pnpm e2e`) → uploads the HTML report artifact (`apps/desktop/playwright-report/`).
 
-### `version-bump.yml` (`Release on merge`) — push to `main` (ignores `.version.json`, `**.md`, `site/**`)
-The auto-release entry point: bumps the patch from `.version.json`, syncs `package.json` /
-`tauri.conf.json` / `Cargo.toml`, commits (`[version-bump]` guard prevents a loop), then pushes a
+### `version-bump.yml` (`Release on merge`) — push to `main` (ignores `.version.json`, `**.md`, `apps/site/**`)
+The auto-release entry point: bumps the patch from `.version.json`, syncs `apps/desktop/package.json` /
+`apps/desktop/src-tauri/tauri.conf.json` / `apps/desktop/src-tauri/Cargo.toml`, commits (`[version-bump]` guard prevents a loop), then pushes a
 `v<version>` **tag** using `RELEASE_TOKEN`. The PAT is required — a tag pushed with `GITHUB_TOKEN`
 would not trigger `release.yml`.
 
 ### `release.yml` — `v*` tag push
 1. Creates a draft GitHub release
-2. Builds Tauri for 4 targets in parallel (macOS Intel, macOS ARM, Linux, Windows)
+2. Builds Tauri for 4 targets in parallel (macOS Intel, macOS ARM, Linux, Windows) — `tauri-action` with `projectPath: apps/desktop`
 3. Publishes draft → public once all builds pass, then dispatches `deploy-site.yml` on `main`
    (via `RELEASE_TOKEN`) to refresh the site's download links
 
@@ -245,28 +276,35 @@ Required secrets: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWO
 The site deploy is dispatched on `main` (not a `release` event) because the `github-pages`
 environment blocks deploys from a tag ref.
 
-### `deploy-site.yml` — push to `main` (`site/**`) **or** dispatched by `release.yml`
-1. Fetches latest release JSON from GitHub API into `site/src/release.json` (uses `curl -o` — only writes on success, leaving the stub intact on 404)
-2. `npm install` + `npm run build`
-3. Deploys to GitHub Pages (`https://pigeon-client.github.io`)
+### `deploy-site.yml` — push to `main` (`apps/site/**`) **or** dispatched by `release.yml`
+1. Fetches latest release JSON from GitHub API into `apps/site/src/release.json` (uses `curl -o` — only writes on success, leaving the stub intact on 404)
+2. `pnpm install --frozen-lockfile` + `pnpm --filter pigeon-site build`
+3. Deploys `apps/site/dist` to GitHub Pages (`https://pigeon-client.github.io`)
 
 The download buttons come from the release assets automatically — `parseRelease()` in
-`site/src/lib/github.ts` maps each asset's `browser_download_url` to the right platform button, so a
+`apps/site/src/lib/github.ts` maps each asset's `browser_download_url` to the right platform button, so a
 new release refreshes the site's download links with no code change.
 
 ## Known Gotchas
 
-- **`pnpm-workspace.yaml`** must have a `packages` field (even `packages: ['.']` for a single-package project) — pnpm 9+ fails every command without it
-- **TypeScript target is ES2022** (`tsconfig.json`) — required for `Object.hasOwn`; do not lower it
+- **`pnpm-workspace.yaml`** must have a `packages` field (`packages: ['apps/*']`) — pnpm 9+ fails every command without it
+- **One root `pnpm-lock.yaml`** covers both apps — `pnpm install` at the root; never run `npm install` in `apps/site` (the old npm-only workaround is gone; pnpm's lockfile records per-platform optional deps, so the rollup-native-binary problem doesn't apply)
+- **Root scripts delegate** via `pnpm --filter pigeon` / `--filter pigeon-site`; `pnpm dev`/`build`/`tauri`/`test`/`e2e` from the root still work
+- **Tauri lives in `apps/desktop`** — run `pnpm tauri dev` from the root, or `cd apps/desktop`; release CI passes `projectPath: apps/desktop`
+- **TypeScript target is ES2022** (`apps/desktop/tsconfig.json`) — required for `Object.hasOwn`; do not lower it
 - **`make build-release` passes `--bundles` directly to tauri** (no `--` separator) — the `--` separator in Tauri CLI forwards remaining args to Cargo, not Tauri
-- **Site uses `npm`, not pnpm** — do not run `pnpm install` inside `site/`
-- **No `site/package-lock.json`** in the repo — lockfiles generated on macOS omit Linux native rollup binaries, breaking CI; `npm install` at deploy time resolves the correct platform binary
 
 ## Icons / Assets
 
-All app icons originate from `logo/macOS/` — **do not design or generate new icons**.
+**Brand mark** — `logo/logo.svg` is the master. Derived variants live in `logo/`:
+`mark.svg` (orange), `mark-mono.svg` (`currentColor`), `mark-duotone.svg`, `wordmark.svg`. The UI
+uses the mark: `apps/desktop/src/assets/pigeon-mark.svg` (header, empty states, settings) and
+`apps/site/public/pigeon-mark.svg` + `pigeon-mark.png` (nav, favicon, OG). Do not reintroduce the
+old `pigeon-logo-*.png` files — they were removed.
 
-To update icons: replace source files in `logo/`, run the PIL script to generate `-transparent` variants, copy to `src-tauri/icons/`, rebuild `icon.icns` with `iconutil`, copy high-res variants to `src/assets/`.
+**OS app icon** — the source master is `logo/icon-source.png` (1024², white bg + orange dove,
+rendered from `logo/mark.svg`). To regenerate the full `apps/desktop/src-tauri/icons/` set (icns,
+ico, pngs, iOS, Android): `pnpm --filter pigeon exec tauri icon logo/icon-source.png`.
 
 ## Conventions
 

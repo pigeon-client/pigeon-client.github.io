@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'site/**'
+      - 'apps/site/**'
   # release.yml dispatches this on `main` after publishing (a `release`-event run
   # would execute on the tag ref, which the github-pages environment blocks).
   workflow_dispatch:
@@ -25,13 +25,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm install
-        working-directory: site
+        run: pnpm install --frozen-lockfile
 
       - name: Fetch latest release data
         run: |
@@ -39,16 +43,15 @@ jobs:
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -o src/release.json \
             https://api.github.com/repos/${{ github.repository }}/releases/latest || true
-        working-directory: site
+        working-directory: apps/site
 
       - name: Build
-        run: npm run build
-        working-directory: site
+        run: pnpm --filter pigeon-site build
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site/dist
+          path: apps/site/dist
 
   deploy:
     name: Deploy to GitHub Pages

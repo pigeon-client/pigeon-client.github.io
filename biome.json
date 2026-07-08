@@ -14,12 +14,14 @@
   },
   "files": {
     "includes": [
-      "src/**",
-      "site/src/**",
-      "vite.config.ts",
-      "site/vite.config.ts",
-      "postcss.config.js",
-      "scripts/**"
+      "apps/desktop/src/**",
+      "apps/desktop/scripts/**",
+      "apps/desktop/vite.config.ts",
+      "apps/desktop/vitest.config.ts",
+      "apps/desktop/playwright.config.ts",
+      "apps/desktop/postcss.config.js",
+      "apps/site/src/**",
+      "apps/site/vite.config.ts"
     ],
     "ignoreUnknown": false
   },
