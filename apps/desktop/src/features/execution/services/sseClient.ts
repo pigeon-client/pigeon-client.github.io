@@ -1,0 +1,245 @@
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { methodAllowsRequestBody } from "@/shared/lib/httpMethod";
+import { isTauri } from "@/shared/lib/platform";
+import {
+  isEventStreamContentType,
+  type SseEvent,
+  type SseMeta,
+  SseParser,
+  sseEventsToBody,
+} from "../lib/sse";
+import type { HttpRequest } from "../ports/HttpClient";
+import type { ApiResponse } from "../types";
+
+export interface SseHandlers {
+  onMeta?: (meta: SseMeta) => void;
+  onEvent?: (event: SseEvent) => void;
+}
+
+interface RustSseMeta {
+  streamId: string;
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  contentType: string;
+}
+
+interface RustSseEvent {
+  streamId: string;
+  event: string;
+  data: string;
+  id?: string;
+  raw: string;
+}
+
+interface RustSseDone {
+  streamId: string;
+  error?: string | null;
+}
+
+/**
+ * Send a request that may be an SSE stream. If the response is
+ * `text/event-stream`, handlers fire live; otherwise behaves like a normal send.
+ * Returns a final `ApiResponse` (body = joined SSE text when streamed).
+ */
+export async function sendMaybeSse(
+  request: HttpRequest,
+  streamId: string,
+  handlers: SseHandlers = {},
+  signal?: AbortSignal,
+): Promise<ApiResponse> {
+  if (isTauri()) {
+    return sendTauriMaybeSse(request, streamId, handlers, signal);
+  }
+  return sendBrowserMaybeSse(request, streamId, handlers, signal);
+}
+
+export async function cancelSseStream(streamId: string): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    await invoke("cancel_sse_stream", { streamId });
+  } catch {
+    // Stream may already be gone.
+  }
+}
+
+async function sendTauriMaybeSse(
+  request: HttpRequest,
+  streamId: string,
+  handlers: SseHandlers,
+  signal?: AbortSignal,
+): Promise<ApiResponse> {
+  const events: SseEvent[] = [];
+  const unlisteners: UnlistenFn[] = [];
+
+  const onAbort = () => {
+    void cancelSseStream(streamId);
+  };
+  signal?.addEventListener("abort", onAbort);
+
+  try {
+    unlisteners.push(
+      await listen<RustSseMeta>("sse-meta", (e) => {
+        if (e.payload.streamId !== streamId) return;
+        handlers.onMeta?.({
+          status: e.payload.status,
+          statusText: e.payload.statusText,
+          headers: e.payload.headers,
+          contentType: e.payload.contentType,
+        });
+      }),
+    );
+    unlisteners.push(
+      await listen<RustSseEvent>("sse-event", (e) => {
+        if (e.payload.streamId !== streamId) return;
+        const ev: SseEvent = {
+          event: e.payload.event,
+          data: e.payload.data,
+          raw: e.payload.raw,
+        };
+        if (e.payload.id) ev.id = e.payload.id;
+        events.push(ev);
+        handlers.onEvent?.(ev);
+      }),
+    );
+    // Done is informational; invoke resolves with the final ApiResponse.
+    unlisteners.push(
+      await listen<RustSseDone>("sse-done", (e) => {
+        if (e.payload.streamId !== streamId) return;
+      }),
+    );
+
+    const response = await invoke<ApiResponse>("send_api_request", {
+      method: request.method,
+      url: request.url,
+      headers: request.headers,
+      body: request.body,
+      bodyType: request.bodyType,
+      followRedirects: request.followRedirects,
+      sslVerify: request.sslVerify,
+      proxyUrl: request.proxyUrl,
+      streamId,
+    });
+
+    // If Rust streamed, body may already be filled; prefer collected events when present.
+    if (events.length > 0) {
+      const text = sseEventsToBody(events);
+      const body = Array.from(new TextEncoder().encode(text));
+      return {
+        ...response,
+        body,
+        size: body.length,
+        contentType: response.contentType || "text/event-stream",
+        sse: true,
+        sseEvents: events,
+      };
+    }
+
+    return {
+      ...response,
+      sse: isEventStreamContentType(response.contentType),
+      sseEvents: events.length > 0 ? events : undefined,
+    };
+  } finally {
+    signal?.removeEventListener("abort", onAbort);
+    for (const u of unlisteners) u();
+  }
+}
+
+async function sendBrowserMaybeSse(
+  request: HttpRequest,
+  _streamId: string,
+  handlers: SseHandlers,
+  signal?: AbortSignal,
+): Promise<ApiResponse> {
+  if (request.url === "*") {
+    throw new Error(
+      "OPTIONS * cannot be sent from the browser transport — use the desktop app with a Host header",
+    );
+  }
+
+  const headers: Record<string, string> = {};
+  for (const h of request.headers) if (h.key) headers[h.key] = h.value;
+
+  const method = request.method.toUpperCase();
+  const hasBody = request.body != null && methodAllowsRequestBody(method);
+
+  const res = await fetch(request.url, {
+    method,
+    headers,
+    body: hasBody ? request.body : undefined,
+    redirect: request.followRedirects ? "follow" : "manual",
+    signal,
+  });
+
+  const respHeaders: Record<string, string> = {};
+  res.headers.forEach((value, key) => {
+    respHeaders[key] = value;
+  });
+  const contentType = respHeaders["content-type"] ?? "application/octet-stream";
+  const statusText = res.statusText || "Unknown";
+
+  handlers.onMeta?.({
+    status: res.status,
+    statusText,
+    headers: respHeaders,
+    contentType,
+  });
+
+  if (!(isEventStreamContentType(contentType) && res.body)) {
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    return {
+      status: res.status,
+      statusText,
+      headers: respHeaders,
+      body: Array.from(bytes),
+      contentType,
+      responseTime: 0,
+      size: bytes.length,
+      resolvedUrl: request.url,
+    };
+  }
+
+  const parser = new SseParser();
+  const events: SseEvent[] = [];
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      for (const ev of parser.push(chunk)) {
+        events.push(ev);
+        handlers.onEvent?.(ev);
+      }
+    }
+    for (const ev of parser.flush()) {
+      events.push(ev);
+      handlers.onEvent?.(ev);
+    }
+  } catch (err) {
+    if (signal?.aborted) {
+      // User cancelled — return what we have.
+    } else {
+      throw err;
+    }
+  }
+
+  const text = sseEventsToBody(events);
+  const body = Array.from(new TextEncoder().encode(text));
+  return {
+    status: res.status,
+    statusText,
+    headers: respHeaders,
+    body,
+    contentType,
+    responseTime: 0,
+    size: body.length,
+    resolvedUrl: request.url,
+    sse: true,
+    sseEvents: events,
+  };
+}

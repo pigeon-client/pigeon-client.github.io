@@ -1,68 +1,85 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useHeroDemo } from "../hooks/useHeroDemo";
-import { INSTALL_CMD, RELEASES_LATEST_URL, REPO_URL } from "../lib/constants";
-import type { PlatformAsset } from "../types/release";
-import { InstallBox } from "./CopyButton";
+import { REPO_URL } from "../lib/constants";
+import { HERO_DEMO_STEPS } from "../lib/heroDemoSteps";
 
-export function HeroSection({ primaryDownload }: { primaryDownload: PlatformAsset | null }) {
+export function HeroSection() {
   const appRef = useRef<HTMLDivElement>(null);
-  useHeroDemo(appRef);
-
-  const downloadUrl = primaryDownload?.downloadUrl ?? RELEASES_LATEST_URL;
+  const [offerOn, setOfferOn] = useState(false);
+  useHeroDemo(appRef, () => setOfferOn(true));
 
   return (
-    <section className="hero">
-      <div className="wrap">
-        <span className="badge reveal visible">
-          <span className="dot" aria-hidden="true" /> free &amp; open source · MIT licensed
-        </span>
-        <h1 className="reveal visible">
-          The API client that
-          <br />
-          <span className="accent">organizes itself</span>
-          <span className="cursor" aria-hidden="true" />
-        </h1>
-        <p className="sub reveal visible" style={{ "--d": "0.1s" } as React.CSSProperties}>
-          Send a request — Pigeon names the tab, files it under its domain, and saves your history.
-          Zero housekeeping. Free, open-source, native.
-        </p>
-        <div className="hero-ctas reveal visible" style={{ "--d": "0.2s" } as React.CSSProperties}>
-          <a className="btn btn-primary" href={downloadUrl} aria-label="Download Pigeon for macOS">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" />
-            </svg>
-            Download for macOS
-          </a>
-          <a
-            className="btn btn-ghost"
-            href={REPO_URL}
-            aria-label="View Pigeon source code on GitHub"
-          >
-            Star on GitHub
-          </a>
-        </div>
-        <div className="reveal visible" style={{ "--d": "0.3s" } as React.CSSProperties}>
-          <InstallBox command={INSTALL_CMD} />
-        </div>
-        <p className="hero-note reveal visible" style={{ "--d": "0.3s" } as React.CSSProperties}>
-          macOS (Apple Silicon &amp; Intel) · Linux &amp; Windows coming soon
-        </p>
+    <section className={`hero${offerOn ? " offer-on" : ""}`}>
+      <div className="orbs" aria-hidden="true">
+        <span className="orb o1" />
+        <span className="orb o2" />
+        <span className="orb o3" />
+      </div>
 
+      <div className="hero-stage">
         <div
           ref={appRef}
-          className="app reveal visible"
-          style={{ "--d": "0.3s" } as React.CSSProperties}
+          className="app demo-app"
           role="img"
-          aria-label="Animated demo of Pigeon sending a GET request and receiving a 200 OK JSON response"
+          aria-label="Animated demo: Pigeon launches instantly, auto-names a tab from the URL, sends a GET request, receives a 200 OK JSON response, auto-saves as draft, and files it by domain"
         >
+          <div className="demo-launch" id="demo-launch" aria-hidden="true">
+            <div className="mac-desktop" id="demo-launch-dock">
+              <div className="mac-menubar">
+                <span className="mac-apple" aria-hidden="true" />
+                <span className="mac-menu-items">Pigeon File Edit View</span>
+                <span className="mac-menu-clock">9:41</span>
+              </div>
+              <div className="mac-wallpaper" aria-hidden="true" />
+              <div className="launch-center">
+                <img className="launch-mark" src="/pigeon-mark.svg" alt="" aria-hidden="true" />
+                <p className="launch-kicker">native · local · free</p>
+                <p className="launch-title">
+                  Launch in <strong>0.3s</strong>
+                </p>
+                <p className="launch-sub">
+                  Click the dock icon — other API clients are still waking up
+                </p>
+              </div>
+              <div className="mac-dock">
+                <span className="dock-icon slot" aria-hidden="true" />
+                <span className="dock-icon slot" aria-hidden="true" />
+                <button
+                  className="dock-icon pigeon"
+                  id="demo-dock-icon"
+                  type="button"
+                  tabIndex={-1}
+                >
+                  <img src="/pigeon-mark.svg" alt="" />
+                </button>
+                <span className="dock-icon slot" aria-hidden="true" />
+                <span className="dock-icon slot" aria-hidden="true" />
+              </div>
+              <span className="launch-dock-hint">click to open</span>
+            </div>
+            <div className="launch-compare" id="demo-launch-compare">
+              <div className="launch-row">
+                <span className="launch-lbl">Pigeon</span>
+                <span className="launch-bar">
+                  <span className="launch-fill fast" id="demo-launch-fast" />
+                </span>
+                <span className="launch-ms fast" id="demo-launch-ms">
+                  0.3s
+                </span>
+              </div>
+              <div className="launch-row">
+                <span className="launch-lbl muted">Others</span>
+                <span className="launch-bar">
+                  <span className="launch-fill slow" id="demo-launch-slow" />
+                </span>
+                <span className="launch-ms slow">3.4s</span>
+              </div>
+            </div>
+            <p className="launch-headline" id="demo-launch-headline">
+              Opens in <strong>0.3s</strong> — ahead of other API clients
+            </p>
+          </div>
+
           <div className="app-titlebar">
             <span />
             <span />
@@ -74,15 +91,21 @@ export function HeroSection({ primaryDownload }: { primaryDownload: PlatformAsse
               <div className="sb-new">+ New Request</div>
               <div className="sb-tabs">
                 <span>History</span>
-                <span className="on">Draft</span>
+                <span className="on" id="demo-draft-tab">
+                  Draft
+                </span>
                 <span>Collections</span>
               </div>
               <div className="sb-tree">
                 <div className="sb-item newf" id="demo-folder">
-                  <span>▸ 📁 jsonplaceholder…</span>
+                  <span id="demo-folder-label">▸ 📁 jsonplaceholder…</span>
                   <span className="cnt" id="demo-cnt">
                     1
                   </span>
+                </div>
+                <div className="sb-item newf-child" id="demo-folder-child">
+                  <span className="m">GET</span>
+                  <span>/todos/1</span>
                 </div>
                 <div className="sb-item">
                   <span>▸ 📁 api.z.ai</span>
@@ -119,14 +142,14 @@ export function HeroSection({ primaryDownload }: { primaryDownload: PlatformAsse
                 </span>
               </div>
               <div className="urlrow">
-                <span className="method">
+                <span className="method" id="demo-method">
                   GET <i />
                 </span>
                 <span className="url" id="demo-url">
                   <span className="caret" />
                 </span>
                 <span className="send" id="demo-send">
-                  Send
+                  <span className="send-label">Send</span>
                   <svg
                     width="12"
                     height="12"
@@ -163,8 +186,10 @@ export function HeroSection({ primaryDownload }: { primaryDownload: PlatformAsse
                     ◎ 83 B
                   </span>
                   <span className="right">
-                    <span style={{ color: "var(--text)" }}>Body</span>
-                    <span>Headers 25</span>
+                    <span className="resp-extra" style={{ color: "var(--text)" }}>
+                      Body
+                    </span>
+                    <span className="resp-extra">Headers 25</span>
                     <span className="pill">
                       <span className="on">Pretty</span>
                       <span>Raw</span>
@@ -215,10 +240,76 @@ export function HeroSection({ primaryDownload }: { primaryDownload: PlatformAsse
               </div>
             </div>
           </div>
+
+          <div className="demo-draft-badge" id="demo-draft-badge" aria-hidden="true">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+              <path d="M17 21v-8H7v8M7 3v5h8" />
+            </svg>
+            Draft saved
+          </div>
         </div>
-        <p className="demo-caption reveal visible" style={{ "--d": "0.4s" } as React.CSSProperties}>
-          ▲ watch it organize itself — no folders were harmed (or created by hand)
+
+        <div className="demo-steps" aria-hidden="true">
+          {HERO_DEMO_STEPS.map((step, i) => (
+            <span key={step.id} className="demo-step-wrap">
+              {i > 0 ? <span className="step-sep">→</span> : null}
+              <span className="step" id={`step-${i}`}>
+                <span className="step-ico">{step.ico}</span> {step.label}
+              </span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Tagline + CTAs — reveal after first demo cycle */}
+      <div className="hero-offer" aria-hidden={offerOn ? undefined : true}>
+        <span className="badge">
+          <span className="dot" aria-hidden="true" /> free &amp; open source · MIT licensed
+        </span>
+        <h1>
+          The API client that <span className="accent">organizes itself</span>
+          <span className="cursor" aria-hidden="true" />
+        </h1>
+        <p className="sub">
+          Send a request. Pigeon names the tab, files it by domain, saves the history.
         </p>
+        <div className="hero-ctas">
+          <a
+            className="btn btn-primary"
+            href="#download"
+            aria-label="Get the install command for macOS"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" />
+            </svg>
+            Install for macOS
+          </a>
+          <a
+            className="btn btn-ghost"
+            href={REPO_URL}
+            aria-label="View Pigeon source code on GitHub"
+          >
+            Star on GitHub
+          </a>
+        </div>
+        <p className="hero-note">macOS · Apple Silicon &amp; Intel · free forever</p>
       </div>
     </section>
   );

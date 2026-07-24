@@ -8,6 +8,7 @@ export const METHOD_COLORS: Record<string, string> = {
   DELETE: "bg-method-delete/15 text-method-delete border border-method-delete/30",
   HEAD: "bg-method-head/15 text-method-head border border-method-head/30",
   OPTIONS: "bg-method-options/15 text-method-options border border-method-options/30",
+  QUERY: "bg-method-query/15 text-method-query border border-method-query/30",
 };
 
 export function MethodBadge({ method }: { method: string }) {

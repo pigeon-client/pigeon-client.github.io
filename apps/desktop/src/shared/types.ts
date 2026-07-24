@@ -1,16 +1,58 @@
 // Core request-shaping types shared across features
 // (request-builder, execution, history, collections, import-export).
 
-export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS" | "QUERY";
 
+/**
+ * Request body Content-Type (or `none`). Values match curl `-H 'Content-Type: …'`
+ * media types; see `shared/lib/contentType.ts` for the full catalog + specs.
+ */
 export type BodyType =
   | "none"
+  // Text & structured
   | "application/json"
+  | "application/problem+json"
+  | "application/x-ndjson"
+  | "application/yaml"
+  | "text/yaml"
+  | "application/graphql"
+  | "application/graphql+json"
+  | "text/plain"
+  | "text/html"
+  | "text/csv"
+  | "text/xml"
+  | "application/xml"
+  | "text/event-stream"
+  // Forms
   | "application/x-www-form-urlencoded"
   | "multipart/form-data"
-  | "text/plain"
-  | "text/xml"
-  | "application/octet-stream";
+  // Binary / generic
+  | "application/octet-stream"
+  | "application/pdf"
+  | "application/zip"
+  | "application/protobuf"
+  | "application/x-protobuf"
+  | "application/msgpack"
+  | "application/x-msgpack"
+  // Image
+  | "image/jpeg"
+  | "image/png"
+  | "image/gif"
+  | "image/webp"
+  | "image/svg+xml"
+  | "image/avif"
+  // Video
+  | "video/mp4"
+  | "video/webm"
+  | "video/ogg"
+  | "video/quicktime"
+  // Audio
+  | "audio/mpeg"
+  | "audio/wav"
+  | "audio/x-wav"
+  | "audio/ogg"
+  | "audio/aac"
+  | "audio/webm";
 
 export interface Header {
   key: string;

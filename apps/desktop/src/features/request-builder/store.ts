@@ -28,6 +28,8 @@ interface TabState {
   nextId: number;
 
   addTab: () => string;
+  /** Clone a tab's request into a new tab (clears response). Returns new id or null. */
+  duplicateTab: (id: string) => string | null;
   closeTab: (id: string) => void;
   closeOtherTabs: (id: string) => void;
   closeAllTabs: () => void;
@@ -62,9 +64,22 @@ const defaultRequest = (): RequestConfig => ({
   },
 });
 
+function cloneRequest(req: RequestConfig): RequestConfig {
+  return {
+    ...req,
+    params: req.params.map((p) => ({ ...p })),
+    headers: req.headers.map((h) => ({ ...h })),
+    formData: req.formData.map((f) => ({ ...f })),
+    multipart: req.multipart.map((m) => ({ ...m })),
+    auth: { ...req.auth },
+    // Same-session File handle is fine to share; collections still strip on save.
+    file: req.file,
+  };
+}
+
 let tabCounter = 1;
 
-export const useTabStore = create<TabState>((set) => ({
+export const useTabStore = create<TabState>((set, get) => ({
   tabs: [],
   activeTabId: null,
   nextId: 1,
@@ -84,6 +99,28 @@ export const useTabStore = create<TabState>((set) => ({
       activeTabId: id,
     }));
     return id;
+  },
+
+  duplicateTab: (id) => {
+    const source = get().tabs.find((t) => t.id === id);
+    if (!source) return null;
+
+    const newId = `tab-${tabCounter++}`;
+    // New tab with the same request payload — keep name / lock as-is (no "copy" suffix).
+    const request = cloneRequest(source.request);
+    const tab: Tab = {
+      id: newId,
+      name: source.name,
+      nameLocked: source.nameLocked,
+      request,
+      response: null,
+      isLoading: false,
+    };
+    set((s) => ({
+      tabs: [...s.tabs, tab],
+      activeTabId: newId,
+    }));
+    return newId;
   },
 
   closeTab: (id) => {

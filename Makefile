@@ -7,7 +7,7 @@ export PATH := $(HOME)/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$(PATH)
 
 .PHONY: all dev run build build-release clean install deps open \
         lint format format-check ci-check test e2e \
-        dev-site build-site preview-site
+        dev-site build-site preview-site bench-startup
 
 all: build
 
@@ -49,6 +49,11 @@ build-release:
 
 open:
 	open apps/desktop/src-tauri/target/release/bundle/dmg/
+
+# Launch-time bench (macOS): process start → first window. Default 25 runs.
+# Needs Accessibility for Terminal. Prefer release .app for real numbers.
+bench-startup:
+	./scripts/bench-startup.sh --runs 25
 
 # ── Marketing site (apps/site) ──
 dev-site:

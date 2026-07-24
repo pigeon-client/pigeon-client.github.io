@@ -65,6 +65,7 @@
   --method-delete: #dc2626;
   --method-head: #7c3aed;
   --method-options: #64748b;
+  --method-query: #0f766e;
 
   /* Status code accents */
   --status-2xx: #16a34a;
@@ -165,6 +166,7 @@
   --method-delete: #f87171;
   --method-head: #c084fc;
   --method-options: #94a3b8;
+  --method-query: #2dd4bf;
 
   --status-2xx: #4ade80;
   --status-3xx: #60a5fa;
@@ -229,6 +231,7 @@
   --color-method-delete: var(--method-delete);
   --color-method-head: var(--method-head);
   --color-method-options: var(--method-options);
+  --color-method-query: var(--method-query);
 
   --color-status-2xx: var(--status-2xx);
   --color-status-3xx: var(--status-3xx);

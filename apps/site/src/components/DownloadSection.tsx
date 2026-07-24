@@ -1,6 +1,5 @@
 import type { CSSProperties } from "react";
-import { INSTALL_CMD, RELEASES_LATEST_URL, RELEASES_URL } from "../lib/constants";
-import type { PlatformAsset } from "../types/release";
+import { getInstallCmd } from "../lib/constants";
 import { InstallBox } from "./CopyButton";
 
 const delay = (s: number): CSSProperties => ({ "--d": `${s}s` }) as CSSProperties;
@@ -11,13 +10,8 @@ const AppleIcon = (
   </svg>
 );
 
-export function DownloadSection({ assets }: { assets: PlatformAsset[] }) {
-  const macAsset =
-    assets.find((a) => a.platform === "darwin-arm64") ||
-    assets.find((a) => a.platform === "darwin-x64") ||
-    null;
-  const linux = assets.find((a) => a.platform === "linux") ?? null;
-  const windows = assets.find((a) => a.platform === "windows") ?? null;
+export function DownloadSection() {
+  const installCmd = getInstallCmd();
 
   return (
     <section id="download" className="center">
@@ -27,73 +21,18 @@ export function DownloadSection({ assets }: { assets: PlatformAsset[] }) {
         <p className="lead reveal" style={delay(0.1)}>
           Free forever. No account required.
         </p>
-        <div className="dl-grid">
+        <div
+          className="dl-grid"
+          style={{ gridTemplateColumns: "1fr", maxWidth: 640, margin: "0 auto" }}
+        >
           <div className="dl-card active reveal">
             <div className="os-icon">{AppleIcon}</div>
             <h3>macOS</h3>
-            <p className="meta">Apple Silicon &amp; Intel · one command</p>
-            <InstallBox command={INSTALL_CMD} />
-            <a
-              className="rel-link"
-              href={macAsset?.downloadUrl ?? RELEASES_LATEST_URL}
-              aria-label="Download the macOS dmg from GitHub releases"
-            >
-              or grab the .dmg from Releases →
-            </a>
+            <p className="meta">Apple Silicon &amp; Intel · terminal install</p>
+            <InstallBox command={installCmd} />
           </div>
-
-          <ComingOrDownload name="Linux" meta=".deb & .AppImage" asset={linux} style={delay(0.1)} />
-          <ComingOrDownload
-            name="Windows"
-            meta=".msi installer"
-            asset={windows}
-            style={delay(0.2)}
-          />
         </div>
       </div>
     </section>
-  );
-}
-
-function ComingOrDownload({
-  name,
-  meta,
-  asset,
-  style,
-}: {
-  name: string;
-  meta: string;
-  asset: PlatformAsset | null;
-  style: CSSProperties;
-}) {
-  return (
-    <div className="dl-card reveal" style={style}>
-      {asset ? (
-        <>
-          <h3>{name}</h3>
-          <p className="meta">{meta} · ready</p>
-          <a
-            className="btn btn-primary"
-            href={asset.downloadUrl}
-            aria-label={`Download for ${name}`}
-          >
-            Download
-          </a>
-        </>
-      ) : (
-        <>
-          <span className="soon">Coming soon</span>
-          <h3>{name}</h3>
-          <p className="meta">{meta} planned</p>
-          <a
-            className="btn btn-ghost"
-            href={RELEASES_URL}
-            aria-label={`Watch GitHub releases for the ${name} build`}
-          >
-            Watch releases
-          </a>
-        </>
-      )}
-    </div>
   );
 }

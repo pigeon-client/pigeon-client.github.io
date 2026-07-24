@@ -19,10 +19,14 @@ being composed plus its last response.
 
 - **Tab strip** — each tab shows its method (colored) + name, an ✕ close, and a trailing `+` to
   add a tab. The active tab is highlighted; inactive tabs stay mounted but hidden.
-- **URL bar** — method dropdown (color-coded), URL field with syntax tint (scheme muted, host
-  normal, path in accent, query muted), and the Send button.
+- **URL bar** — method dropdown (color-coded: GET, POST, PUT, PATCH, DELETE, HEAD,
+  OPTIONS, QUERY), URL field with syntax tint (scheme muted, host normal, path in accent,
+  query muted), and the Send button. GET/HEAD never send a body. `*` is preserved as an
+  OPTIONS request-target (requires a `Host` header on send in the desktop app).
 - **Editor tabs** — Params, Auth, Headers, Body. Each shows a count badge or dot when it has
-  content (`Params²`, `Headers¹`, `Body●`).
+  content (`Params²`, `Headers¹`, `Body●`). Body supports JSON, Raw (HTML/CSV/XML/YAML/NDJSON/
+  Problem Details/GraphQL/SSE/text), Form Data, URL Encoded, and Binary (PDF/ZIP/protobuf/
+  msgpack/image/audio/video). See `docs/features/content-types.md`.
 
 ## UX / interactions
 
@@ -46,6 +50,7 @@ being composed plus its last response.
 - `⌘N` new tab · `⌘W` close tab · `⌘⇧1–9` switch to tab N
 - `⌘↵` send · `⌘S` save to collection · `⌘F` focus sidebar search
 - Double-click tab label → rename (Enter commit, Esc cancel)
+- Right-click tab → New Request / Duplicate Request / Close Tab / Close Other / Close All
 
 ## States & edge cases
 

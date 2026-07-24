@@ -1,3 +1,5 @@
+import type { SseEvent } from "./lib/sse";
+
 // Normalized response produced by execution. response-viewer depends only on this;
 // it must not know how the request was sent.
 export interface ApiResponse {
@@ -10,4 +12,8 @@ export interface ApiResponse {
   size: number;
   resolvedUrl?: string;
   sentHeaders?: Record<string, string>;
+  /** True when the response was (or is) an SSE stream. */
+  sse?: boolean;
+  /** Parsed SSE events when streamed; empty while waiting for the first event. */
+  sseEvents?: SseEvent[];
 }

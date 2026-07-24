@@ -50,3 +50,74 @@ describe("tab name — auto vs manual", () => {
     expect(useTabStore.getState().tabs.find((t) => t.id === id)?.name).toBe("Saved Name");
   });
 });
+
+describe("duplicateTab", () => {
+  it("clones request into a new active tab and clears response", () => {
+    const s = useTabStore.getState();
+    const id = s.addTab();
+    s.updateTabRequest(id, {
+      method: "POST",
+      url: "https://api.example.com/todos",
+      headers: [{ key: "X-Test", value: "1", enabled: true }],
+      params: [{ key: "q", value: "a", enabled: true }],
+      bodyType: "application/json",
+      body: '{"ok":true}',
+      auth: {
+        type: "bearer",
+        username: "",
+        password: "",
+        token: "secret",
+        apiKey: "",
+        apiValue: "",
+        apiAddTo: "header",
+      },
+    });
+    s.updateTabResponse(id, {
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      body: [],
+      responseTime: 1,
+      size: 0,
+      contentType: "application/json",
+    });
+
+    const source = useTabStore.getState().tabs.find((t) => t.id === id);
+    expect(source).toBeTruthy();
+
+    const copyId = useTabStore.getState().duplicateTab(id);
+    expect(copyId).toBeTruthy();
+
+    const state = useTabStore.getState();
+    const copy = state.tabs.find((t) => t.id === copyId);
+    expect(state.activeTabId).toBe(copyId);
+    expect(copy?.name).toBe(source?.name);
+    expect(copy?.nameLocked).toBe(source?.nameLocked);
+    expect(copy?.response).toBeNull();
+    expect(copy?.isLoading).toBe(false);
+    expect(copy?.request.method).toBe("POST");
+    expect(copy?.request.url).toBe("https://api.example.com/todos");
+    expect(copy?.request.body).toBe('{"ok":true}');
+    expect(copy?.request.auth.token).toBe("secret");
+    // Mutating the copy must not touch the source arrays.
+    copy?.request.headers.push({ key: "X-New", value: "2", enabled: true });
+    expect(source?.request.headers).toHaveLength(1);
+  });
+
+  it("keeps auto-name unlocked so URL edits still rename the tab", () => {
+    const s = useTabStore.getState();
+    const id = s.addTab();
+    s.updateTabRequest(id, { url: "https://api.example.com/todos" });
+    const copyId = s.duplicateTab(id);
+    expect(copyId).toBeTruthy();
+    if (!copyId) throw new Error("Expected duplicate tab id");
+    s.updateTabRequest(copyId, { url: "https://api.example.com/other" });
+    const copy = useTabStore.getState().tabs.find((t) => t.id === copyId);
+    expect(copy?.nameLocked).toBe(false);
+    expect(copy?.name).toBe("/other");
+  });
+
+  it("returns null for an unknown tab id", () => {
+    expect(useTabStore.getState().duplicateTab("missing")).toBeNull();
+  });
+});

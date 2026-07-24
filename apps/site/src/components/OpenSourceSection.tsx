@@ -4,15 +4,9 @@ import { ISSUES_URL, REPO_URL } from "../lib/constants";
 const delay = (s: number): CSSProperties => ({ "--d": `${s}s` }) as CSSProperties;
 
 const STEPS = [
-  { title: "Star the repo", body: "Stars help other developers discover Pigeon." },
-  {
-    title: "Report or request",
-    body: "Found a bug? Missing a feature? Open an issue — we read all of them.",
-  },
-  {
-    title: "Send a PR",
-    body: "Good-first-issues are labeled. TypeScript + React + Rust. Docs included.",
-  },
+  { title: "Star the repo", body: "Helps other devs discover Pigeon." },
+  { title: "Report or request", body: "Found a bug or missing feature? Open an issue." },
+  { title: "Send a PR", body: "TypeScript + React + Rust. Good-first-issues labeled." },
 ];
 
 export function OpenSourceSection() {
@@ -24,9 +18,8 @@ export function OpenSourceSection() {
         <div className="oss-flex">
           <div className="reveal" style={delay(0.1)}>
             <p className="lead">
-              Pigeon is MIT-licensed and developed publicly on GitHub. Every feature, every fix,
-              every decision — out in the open. If it doesn't do what you need, you can change it.
-              That's the point.
+              MIT-licensed and built publicly on GitHub. Every decision in the open. If it doesn't
+              do what you need, you can change it.
             </p>
             <div style={{ marginTop: 26, display: "flex", gap: 12, flexWrap: "wrap" }}>
               <a

@@ -232,7 +232,8 @@ so `highlight.js` output adapts automatically.
   `features/import-export` (`parseCurl`) and applies method, headers, auth, params, and body.
 - **Tab rename**: Double-click any tab label to rename inline (Enter/blur saves, Esc cancels);
   name locks on manual rename, otherwise derived from URL path.
-- **Tab right-click menu**: New Request / Close Tab / Close Other Tabs / Close All Tabs.
+- **Tab right-click menu**: New Request / Duplicate Request / Close Tab / Close Other Tabs / Close All Tabs.
+- **HTTP methods**: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, QUERY (RFC 10008). TRACE and CONNECT are not offered. GET/HEAD never send a request body (RFC 9110).
 - **Import/Export cURL**: Right-side slide-in drawer panels. Header export button is icon-only.
 - **Collections CRUD**: Create/rename/delete collections use modals; create collection disables modal
   animation. Folders/requests support nested save paths.

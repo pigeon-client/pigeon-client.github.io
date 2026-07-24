@@ -1,13 +1,22 @@
+import { bodyTypeFromContentType, isBinaryBodyType } from "@/shared/lib/contentType";
+import { HTTP_METHODS, isHttpMethod } from "@/shared/lib/httpMethod";
 import { parseUrl } from "@/shared/lib/url";
 import type { AuthConfig, BodyType, HttpMethod, KeyValue, RequestConfig } from "@/shared/types";
 import type { Auth, Body, FormField, RequestModel } from "../model/RequestModel";
 
-const VALID_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
-
-function toMethod(raw: string): HttpMethod {
+/**
+ * Map a raw method token into a supported HttpMethod.
+ * QUERY is supported (RFC 10008). TRACE/CONNECT and other unknowns fall back
+ * to GET — those methods are intentionally not offered in the client.
+ */
+export function toMethod(raw: string): HttpMethod {
   const upper = raw.toUpperCase();
-  return VALID_METHODS.has(upper) ? (upper as HttpMethod) : "GET";
+  if (isHttpMethod(upper)) return upper;
+  return "GET";
 }
+
+// Keep the allow-list exported for tests / docs parity with HTTP_METHODS.
+export const VALID_METHODS = new Set<string>(HTTP_METHODS);
 
 function toBaseUrl(model: RequestModel): string {
   const url = model.url.raw || "";
@@ -77,6 +86,7 @@ function toKeyValue(field: FormField): KeyValue {
 
 function bodyToRequestConfig(
   body: Body | undefined,
+  headers: { key: string; value: string; enabled?: boolean }[] = [],
 ): Pick<RequestConfig, "body" | "bodyType" | "formData" | "multipart" | "file"> {
   if (!body || body.mode === "none") {
     return { body: "", bodyType: "none", formData: [], multipart: [], file: null };
@@ -113,16 +123,29 @@ function bodyToRequestConfig(
   }
 
   if (body.mode === "binary") {
+    const ct = headers.find((h) => h.key.toLowerCase() === "content-type")?.value;
+    const inferred = bodyTypeFromContentType(ct);
     return {
       body: "",
-      bodyType: "application/octet-stream",
+      bodyType: inferred && isBinaryBodyType(inferred) ? inferred : "application/octet-stream",
       formData: [],
       multipart: [],
       file: null,
     };
   }
 
-  const rawBodyType: BodyType = body.raw?.trim().startsWith("<") ? "text/xml" : "text/plain";
+  // Raw: prefer Content-Type header, then sniff XML / JSON / plain.
+  const ct = headers.find((h) => h.key.toLowerCase() === "content-type")?.value;
+  const fromHeader = bodyTypeFromContentType(ct);
+  let rawBodyType: BodyType = "text/plain";
+  if (fromHeader && fromHeader !== "multipart/form-data" && fromHeader !== "none") {
+    rawBodyType = fromHeader;
+  } else {
+    const raw = body.raw?.trim() ?? "";
+    if (raw.startsWith("<")) rawBodyType = "text/xml";
+    else if (raw.startsWith("{") || raw.startsWith("[")) rawBodyType = "application/json";
+  }
+
   return {
     body: body.raw ?? "",
     bodyType: rawBodyType,
@@ -139,7 +162,7 @@ function shouldKeepHeader(key: string, auth: Auth | undefined): boolean {
 
 export function requestModelToRequestConfig(model: RequestModel): Partial<RequestConfig> {
   const auth = toAuth(model.auth);
-  const body = bodyToRequestConfig(model.body);
+  const body = bodyToRequestConfig(model.body, model.headers);
 
   return {
     name: model.name,
@@ -204,7 +227,7 @@ export function requestConfigToRequestModel(config: RequestConfig): RequestModel
             ? "urlencoded"
             : config.bodyType === "multipart/form-data"
               ? "form-data"
-              : config.bodyType === "application/octet-stream"
+              : isBinaryBodyType(config.bodyType)
                 ? "binary"
                 : config.bodyType === "none"
                   ? "none"

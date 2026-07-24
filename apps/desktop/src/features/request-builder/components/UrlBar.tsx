@@ -8,15 +8,19 @@ import {
 } from "@/features/environments";
 import { VarSuggestions } from "@/features/environments/components/VarSuggestions";
 import { useVarAutocomplete } from "@/features/environments/hooks/useVarAutocomplete";
-import { UnresolvedVariablesError, useApiRequest } from "@/features/execution";
+import {
+  beginTabStream,
+  endTabStream,
+  UnresolvedVariablesError,
+  useApiRequest,
+} from "@/features/execution";
 import { parseCurl } from "@/features/import-export";
-import { extractEndpoint, parseUrl, splitUrlQuery } from "@/shared/lib/url";
+import { HTTP_METHODS, methodTextClass } from "@/shared/lib/httpMethod";
+import { extractEndpoint, splitUrlQuery } from "@/shared/lib/url";
 import { cn } from "@/shared/lib/utils";
 import type { HttpMethod } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
 import { useTabStore } from "../store";
-
-const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 
 // Session-level "don't ask again" for the production send guardrail (R4b).
 let prodGuardAcknowledged = false;
@@ -40,7 +44,19 @@ export function UrlBar() {
   const va = useVarAutocomplete();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
+  const urlOverlayRef = useRef<HTMLDivElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep the syntax overlay scrolled in lockstep with the transparent input so
+  // long URLs stay readable while arrow keys / wheel / selection move.
+  const syncUrlOverlayScroll = () => {
+    const input = urlInputRef.current;
+    const overlay = urlOverlayRef.current;
+    if (!(input && overlay)) return;
+    if (overlay.scrollLeft !== input.scrollLeft) {
+      overlay.scrollLeft = input.scrollLeft;
+    }
+  };
 
   useEffect(() => {
     if (!methodOpen) return;
@@ -54,6 +70,13 @@ export function UrlBar() {
   }, [methodOpen]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
+  // Re-sync after URL text changes (paste / store write) — caret scroll may
+  // land before the overlay's content width updates.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional sync on url change
+  useEffect(() => {
+    requestAnimationFrame(syncUrlOverlayScroll);
+  }, [activeTab?.request.url]);
+
   if (!activeTab) return null;
 
   const { request } = activeTab;
@@ -74,6 +97,7 @@ export function UrlBar() {
     requestAnimationFrame(() => {
       urlInputRef.current?.focus();
       urlInputRef.current?.setSelectionRange(caret, caret);
+      syncUrlOverlayScroll();
     });
   };
 
@@ -95,8 +119,34 @@ export function UrlBar() {
     }
     setSendError(null);
     setTabLoading(activeTab.id, true);
+    updateTabResponse(activeTab.id, null);
+    const { streamId, signal } = beginTabStream(activeTab.id);
     try {
-      const result = await sendRequest(request);
+      const result = await sendRequest(request, {
+        streamId,
+        signal,
+        onSseMeta: (meta) => {
+          updateTabResponse(activeTab.id, {
+            status: meta.status,
+            statusText: meta.statusText,
+            headers: meta.headers,
+            body: [],
+            contentType: meta.contentType,
+            responseTime: 0,
+            size: 0,
+            sse: true,
+            sseEvents: [],
+          });
+        },
+        onSseEvent: (ev) => {
+          const prev = useTabStore.getState().tabs.find((t) => t.id === activeTab.id)?.response;
+          if (!prev?.sse) return;
+          updateTabResponse(activeTab.id, {
+            ...prev,
+            sseEvents: [...(prev.sseEvents ?? []), ev],
+          });
+        },
+      });
       updateTabResponse(activeTab.id, result);
     } catch (e) {
       // Unresolved {{vars}} block the send — surface the message, don't fake a response.
@@ -118,31 +168,17 @@ export function UrlBar() {
         });
       }
     } finally {
+      endTabStream(activeTab.id);
       setTabLoading(activeTab.id, false);
     }
   };
 
-  const previewUrl = (() => {
-    const parsed = parseUrl(request.url);
-    return resolveForPreview(parsed, activeEnv, globals);
-  })();
+  // Preview only expands {{vars}} — don't run parseUrl here or mid-typing
+  // "https" becomes the nonsense "http://https".
+  const previewUrl = resolveForPreview(request.url, activeEnv, globals);
 
   /* ── Method colour swatch for the trigger + the dropdown list ── */
-  const methodTriggerClass =
-    request.method === "GET"
-      ? "text-method-get"
-      : request.method === "POST"
-        ? "text-method-post"
-        : request.method === "PUT"
-          ? "text-method-put"
-          : request.method === "PATCH"
-            ? "text-method-patch"
-            : request.method === "DELETE"
-              ? "text-method-delete"
-              : request.method === "HEAD"
-                ? "text-method-head"
-                : "text-method-options";
-
+  const methodTriggerClass = methodTextClass(request.method);
   /* ── Resolve one token name for the hover preview ── */
   const resolve = makeResolver(activeEnv, globals);
   const tokenInfo = (name: string): TokenInfo => {
@@ -205,8 +241,8 @@ export function UrlBar() {
   };
 
   return (
-    <div className="flex flex-col border-b border-border bg-background px-4 py-2.5">
-      <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-col border-b border-border bg-background px-4 py-2.5">
+      <div className="flex min-w-0 items-center gap-2">
         {/* Method selector */}
         <div className="relative shrink-0" ref={dropdownRef}>
           <button
@@ -214,7 +250,7 @@ export function UrlBar() {
             data-testid="method-trigger"
             onClick={() => setMethodOpen((o) => !o)}
             className={cn(
-              "flex h-9 w-[104px] cursor-pointer items-center justify-between gap-2 rounded border bg-card px-3 font-mono text-code font-bold transition-colors",
+              "flex h-9 min-w-[104px] cursor-pointer items-center justify-between gap-2 rounded border bg-card px-3 font-mono text-code font-bold transition-colors",
               methodOpen ? "border-primary" : "border-border",
               methodTriggerClass,
             )}
@@ -225,7 +261,7 @@ export function UrlBar() {
 
           {methodOpen && (
             <div className="absolute left-0 top-10 z-[var(--z-dropdown)] w-[150px] rounded border border-border bg-popover p-1 shadow-lg">
-              {METHODS.map((m) => (
+              {HTTP_METHODS.map((m) => (
                 <MethodOption
                   key={m}
                   method={m}
@@ -240,9 +276,9 @@ export function UrlBar() {
           )}
         </div>
 
-        {/* URL input */}
-        <div className="relative flex-1">
-          <div className="relative flex h-9 items-center overflow-hidden rounded border border-border bg-card px-3">
+        {/* URL input — min-w-0 so long URLs shrink inside the flex row instead of blowing the panel out */}
+        <div className="relative min-w-0 flex-1">
+          <div className="relative flex h-9 w-full min-w-0 items-center overflow-hidden rounded border border-border bg-card">
             <input
               ref={urlInputRef}
               type="text"
@@ -294,8 +330,31 @@ export function UrlBar() {
                 applyUrl(raw);
                 va.detect(raw, e.target.selectionStart ?? raw.length);
               }}
-              onKeyUp={(e) => va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0)}
-              onClick={(e) => va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0)}
+              onScroll={syncUrlOverlayScroll}
+              onSelect={syncUrlOverlayScroll}
+              onWheel={(e) => {
+                // Text inputs often ignore trackpad/wheel; scroll horizontally so
+                // the caret (and synced overlay) can reach the end of long URLs.
+                const el = e.currentTarget;
+                if (el.scrollWidth <= el.clientWidth) return;
+                const dx =
+                  Math.abs(e.deltaX) >= Math.abs(e.deltaY) ? e.deltaX : e.shiftKey ? e.deltaY : 0;
+                if (dx === 0) return;
+                const max = el.scrollWidth - el.clientWidth;
+                const next = Math.max(0, Math.min(max, el.scrollLeft + dx));
+                if (next === el.scrollLeft) return;
+                e.preventDefault();
+                el.scrollLeft = next;
+                syncUrlOverlayScroll();
+              }}
+              onKeyUp={(e) => {
+                syncUrlOverlayScroll();
+                va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0);
+              }}
+              onClick={(e) => {
+                syncUrlOverlayScroll();
+                va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0);
+              }}
               onBlur={() => setTimeout(va.close, 120)}
               onKeyDown={(e) => {
                 if (
@@ -314,10 +373,20 @@ export function UrlBar() {
                 }
               }}
               placeholder="https://api.example.com/endpoint"
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
+              autoComplete="off"
               className="absolute inset-0 z-[var(--z-raised)] bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
             />
-            <div className="pointer-events-none z-[var(--z-raised)] select-none truncate font-mono text-code">
-              {renderUrlSegments(request.url)}
+            <div
+              ref={urlOverlayRef}
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-0 overflow-hidden px-3"
+            >
+              <div className="flex h-full min-w-max items-center whitespace-nowrap font-mono text-code">
+                {renderUrlSegments(request.url)}
+              </div>
             </div>
           </div>
 
@@ -486,20 +555,7 @@ function MethodOption({
   active: boolean;
   onSelect: () => void;
 }) {
-  const cls =
-    method === "GET"
-      ? "text-method-get"
-      : method === "POST"
-        ? "text-method-post"
-        : method === "PUT"
-          ? "text-method-put"
-          : method === "PATCH"
-            ? "text-method-patch"
-            : method === "DELETE"
-              ? "text-method-delete"
-              : method === "HEAD"
-                ? "text-method-head"
-                : "text-method-options";
+  const cls = methodTextClass(method);
   const dotCls = cls.replace("text-", "bg-");
   return (
     <button

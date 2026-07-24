@@ -8,6 +8,7 @@ the E2E suite.
 | Doc | Feature | Code |
 |-----|---------|------|
 | [request-builder.md](./request-builder.md) | Tabs, URL bar, request editors (Params/Auth/Headers/Body) | `src/features/request-builder` |
+| [content-types.md](./content-types.md) | Request/response body formats (JSON…media) + curl CT parity | `src/shared/lib/contentType.ts` |
 | [execution.md](./execution.md) | Sending requests, transport (Rust vs browser) | `src/features/execution` |
 | [response-viewer.md](./response-viewer.md) | Response status, body, headers, empty/loading states | `src/features/response-viewer` |
 | [collections.md](./collections.md) | Saved request tree, folders, save-to-collection | `src/features/collections` |

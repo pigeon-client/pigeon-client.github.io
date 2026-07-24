@@ -43,19 +43,17 @@ export function Header({
   }, []);
 
   return (
-    <div className="relative z-[var(--z-sticky)] flex h-11 flex-none items-center gap-2 border-b border-border bg-background/95 px-3.5 backdrop-blur">
+    <div className="relative z-[var(--z-sticky)] grid h-11 flex-none grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-background/95 px-3.5 backdrop-blur">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 shrink-0">
+      <div className="flex items-center gap-2.5 justify-self-start">
         <img src={pigeonLogo} alt="Pigeon" className="h-7 w-7 rounded object-contain" />
         <span className="text-sm font-semibold tracking-tight max-sm:hidden">Pigeon</span>
       </div>
 
-      <div className="flex-1" />
-
-      {/* Search — centered */}
+      {/* Search — truly centered between equal side columns */}
       <div
         className={cn(
-          "relative flex h-8 w-[320px] shrink-0 items-center rounded border bg-card transition-colors",
+          "relative flex h-8 w-[min(320px,40vw)] items-center rounded border bg-card transition-colors",
           searchFocused ? "border-primary" : "border-border",
         )}
       >
@@ -88,10 +86,8 @@ export function Header({
         )}
       </div>
 
-      <div className="flex-1" />
-
       {/* Env selector + Export + Settings */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center justify-end gap-1.5 justify-self-end">
         <EnvSelector onManage={onManageEnv} />
         <Button
           variant="ghost-icon"

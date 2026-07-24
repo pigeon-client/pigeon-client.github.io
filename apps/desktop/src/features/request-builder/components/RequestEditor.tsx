@@ -71,13 +71,13 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
   const hasAuth = request.auth.type !== "none";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-b border-border bg-background">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-b border-border bg-background">
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as RequestTab)}
-        className="flex min-h-0 flex-1 flex-col px-4 pt-1"
+        className="flex min-h-0 min-w-0 flex-1 flex-col px-4 pt-1"
       >
-        <TabsList variant="underline" className="w-full justify-start">
+        <TabsList variant="underline" className="w-full shrink-0 justify-start overflow-x-auto">
           <TabsTrigger variant="underline" value="params" data-testid="editor-tab-params">
             Params
             {paramCount > 0 && <CountBadge count={paramCount} active={activeTab === "params"} />}
@@ -98,7 +98,10 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="params" className="m-0 px-4 py-2.5">
+        <TabsContent
+          value="params"
+          className="m-0 min-h-0 min-w-0 flex-1 overflow-auto px-4 py-2.5"
+        >
           <KeyValueEditor
             items={request.params}
             onChange={onParamsChange}
@@ -107,10 +110,16 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
             testId="param"
           />
         </TabsContent>
-        <TabsContent value="headers" className="m-0 px-4 py-2.5">
+        <TabsContent
+          value="headers"
+          className="m-0 min-h-0 min-w-0 flex-1 overflow-auto px-4 py-2.5"
+        >
           <HeadersEditor headers={request.headers} onHeadersChange={onHeadersChange} />
         </TabsContent>
-        <TabsContent value="body" className="m-0 flex min-h-0 flex-1 flex-col">
+        <TabsContent
+          value="body"
+          className="m-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-auto"
+        >
           <BodyEditor
             bodyType={request.bodyType}
             body={request.body}
@@ -124,7 +133,7 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
             onFileChange={onFileChange}
           />
         </TabsContent>
-        <TabsContent value="auth" className="m-0 px-4 py-4">
+        <TabsContent value="auth" className="m-0 min-h-0 min-w-0 flex-1 overflow-auto px-4 py-4">
           <AuthEditor auth={request.auth} onAuthChange={onAuthChange} />
         </TabsContent>
       </Tabs>

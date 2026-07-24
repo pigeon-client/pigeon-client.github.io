@@ -3,18 +3,27 @@ import type { HistoryItem } from "@/features/history";
 import { useHistoryStore } from "@/features/history";
 import { extractEndpoint } from "@/shared/lib/url";
 import type { RequestConfig } from "@/shared/types";
-import { sendRequest, UnresolvedVariablesError } from "../services/requestService";
+import type { SseEvent, SseMeta } from "../lib/sse";
+import {
+  type SendOptions,
+  sendRequest,
+  UnresolvedVariablesError,
+} from "../services/requestService";
 import type { ApiResponse } from "../types";
 
 export function useApiRequest() {
   const activeEnv = useEnvStore(selectActiveEnv);
   const globals = useEnvStore((s) => s.globals);
 
-  const send = async (config: RequestConfig): Promise<ApiResponse> => {
-    const options = {
+  const send = async (
+    config: RequestConfig,
+    streamOpts?: Pick<SendOptions, "streamId" | "signal" | "onSseMeta" | "onSseEvent">,
+  ): Promise<ApiResponse> => {
+    const options: SendOptions = {
       followRedirects: localStorage.getItem("pg_follow_redirects") !== "false",
       sslVerify: localStorage.getItem("pg_ssl_verify") !== "false",
       proxyUrl: localStorage.getItem("pg_proxy_url") ?? "",
+      ...streamOpts,
     };
 
     const resolve = makeResolver(activeEnv, globals);
@@ -68,3 +77,5 @@ async function autoSave(config: RequestConfig, result: ApiResponse) {
   };
   await historyStore.addToHistory(historyItem);
 }
+
+export type { SseEvent, SseMeta };

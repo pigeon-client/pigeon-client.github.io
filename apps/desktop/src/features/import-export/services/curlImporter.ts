@@ -134,7 +134,7 @@ function parseBody(parsed: JSONOutput, headers: Header[]): Body {
     };
   }
 
-  if (hasContentType(headers, "application/json")) {
+  if (hasContentType(headers, "application/json") && !hasContentType(headers, "ndjson")) {
     return {
       mode: "json",
       raw: typeof parsed.data === "string" ? parsed.data : JSON.stringify(parsed.data, null, 2),
@@ -149,6 +149,24 @@ function parseBody(parsed: JSONOutput, headers: Header[]): Body {
     return {
       mode: "urlencoded",
       urlEncoded: objectToFields(parsed.data),
+    };
+  }
+
+  // Binary media types (PDF, ZIP, protobuf, images, audio, video, …)
+  const ct = getHeader(headers, "content-type").toLowerCase();
+  if (
+    ct.includes("octet-stream") ||
+    ct.includes("protobuf") ||
+    ct.includes("msgpack") ||
+    ct.startsWith("image/") ||
+    ct.startsWith("audio/") ||
+    ct.startsWith("video/") ||
+    ct.includes("application/pdf") ||
+    ct.includes("application/zip")
+  ) {
+    return {
+      mode: "binary",
+      raw: typeof parsed.data === "string" ? parsed.data : undefined,
     };
   }
 

@@ -17,8 +17,11 @@
 - Use curlconverter package for curl parsing. Confidence: 0.65
 
 # branding
-- Use purple (#7c6efa) as the primary accent color, not green. Confidence: 0.70
+- Use the original orange-red accent color (oklch(0.6171 0.1375 39.0427) / #c96442), not purple. Confidence: 0.75
 
 # site
-- Show curl install option (curl | sh) for all platforms, not just macOS. Confidence: 0.65
+- Currently only support macOS with a terminal-based approach; don't add other platform options. Confidence: 0.70
+
+# git
+- Do not add Co-authored-by bot trailers to commits; only include the project name. Confidence: 0.65
 

@@ -47,7 +47,7 @@ export function InstallBox({ command }: { command: string }) {
       <span className="dollar" aria-hidden="true">
         $
       </span>
-      <code>{command}</code>
+      <code title={command}>{command}</code>
       <CopyButton text={command} />
     </div>
   );

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pigeon-site",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "pigeon-site", "dev"],
+      "port": 5173
+    }
+  ]
+}

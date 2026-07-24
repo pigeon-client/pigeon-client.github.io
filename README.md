@@ -59,7 +59,7 @@ anyone's cloud.
 **macOS (Apple Silicon & Intel)** — one command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/pigeon-client/pigeon/main/scripts/install.sh | sh
+curl -fsSL https://pigeon-client.github.io/install.sh | sh
 ```
 
 Or grab the `.dmg` from the [latest release](https://github.com/pigeon-client/pigeon/releases/latest).

@@ -8,6 +8,7 @@ import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { Modal, ModalHeader } from "@/shared/ui/Modal";
 import { Switch } from "@/shared/ui/switch";
+import { useWordWrap } from "../hooks/useWordWrap";
 import { type AppTheme, applyTheme } from "../lib/theme";
 import {
   checkUpdateVersion,
@@ -106,6 +107,7 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
     () => localStorage.getItem("pg_ssl_verify") !== "false",
   );
   const [proxyUrl, setProxyUrl] = useState(() => localStorage.getItem("pg_proxy_url") ?? "");
+  const { wordWrap, setWordWrap } = useWordWrap();
   const [currentVersion, setCurrentVersion] = useState("0.1.0");
   const [updateStatus, setUpdateStatus] = useState<UpdateCheckStatus>("idle");
   const [updateInfo, setUpdateInfo] = useState<UpdateVersionModel | null>(null);
@@ -250,6 +252,23 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
                     onClick={() => handleTheme(t.id)}
                   />
                 ))}
+              </div>
+
+              <div className="mb-3 mt-5 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Editor
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <div className="min-w-0 pr-3">
+                  <div className="text-code text-foreground">Word wrap</div>
+                  <div className="text-2xs text-muted-foreground">
+                    Wrap long lines in request body and response
+                  </div>
+                </div>
+                <Switch
+                  checked={wordWrap}
+                  onCheckedChange={setWordWrap}
+                  data-testid="settings-word-wrap"
+                />
               </div>
             </>
           )}

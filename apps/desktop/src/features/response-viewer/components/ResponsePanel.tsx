@@ -1,49 +1,25 @@
 import hljs from "highlight.js";
 import { Download, FileCode, Send, WrapText } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { cancelTabStream, getTabStreamId, isEventStreamContentType } from "@/features/execution";
+import { cancelSseStream } from "@/features/execution/services/sseClient";
 import { generateCurl } from "@/features/import-export";
 import { useTabStore } from "@/features/request-builder";
+import { useWordWrap } from "@/features/settings/hooks/useWordWrap";
+import {
+  classifyResponse,
+  highlightLanguageFor,
+  type ResponseKind,
+  responseKindLabel,
+} from "@/shared/lib/contentType";
 import { Button } from "@/shared/ui/button";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { Tab } from "@/shared/ui/tabs-shim";
-import { getWordWrap, setWordWrap as setStoredWordWrap } from "../lib/prefs";
+import { SseEventList } from "./SseEventList";
+import { StatusEmptyBody } from "./StatusEmptyBody";
 
 function formatBody(body: number[]): string {
   return new TextDecoder().decode(new Uint8Array(body));
-}
-
-type ResponseType =
-  | "json"
-  | "html"
-  | "xml"
-  | "image"
-  | "audio"
-  | "video"
-  | "octet"
-  | "text"
-  | "form"
-  | "other";
-
-function detectType(contentType: string): ResponseType {
-  const ct = contentType.toLowerCase();
-  if (ct.includes("json")) return "json";
-  if (ct.includes("html")) return "html";
-  if (ct.includes("xml")) return "xml";
-  if (ct.startsWith("image/")) return "image";
-  if (ct.startsWith("audio/")) return "audio";
-  if (ct.startsWith("video/")) return "video";
-  if (ct.includes("octet-stream")) return "octet";
-  if (ct.includes("text/")) return "text";
-  if (ct.includes("form")) return "form";
-  return "other";
-}
-
-function isBinaryBody(body: number[]): boolean {
-  const sample = body.slice(0, 4096);
-  for (const byte of sample) {
-    if (byte === 0 || (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13)) return true;
-  }
-  return false;
 }
 
 function getStatusColor(status: number): string {
@@ -62,6 +38,183 @@ function hljsHighlight(code: string, language: string): string {
   } catch {
     return code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
+}
+
+function MediaPane({
+  kind,
+  contentType,
+  bodyBytes,
+  responseSize,
+  onDownload,
+}: {
+  kind: ResponseKind;
+  contentType: string;
+  bodyBytes: number[];
+  responseSize: number;
+  onDownload: () => void;
+}) {
+  const blob = new Blob([new Uint8Array(bodyBytes)], { type: contentType });
+  const url = URL.createObjectURL(blob);
+  const revoke = () => setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const label = responseKindLabel(kind, contentType);
+
+  if (kind === "image" || kind === "svg") {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 16,
+          height: "100%",
+        }}
+      >
+        <img
+          src={url}
+          alt={label}
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "contain",
+            borderRadius: "var(--radius)",
+          }}
+          onLoad={revoke}
+        />
+      </div>
+    );
+  }
+
+  if (kind === "audio") {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+          padding: 24,
+          height: "100%",
+        }}
+      >
+        {/* biome-ignore lint/a11y/useMediaCaption: raw API response preview */}
+        <audio controls src={url} onLoadedData={revoke} style={{ width: "min(420px, 100%)" }} />
+        <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+          {label} · {(responseSize / 1024).toFixed(1)} KB
+        </p>
+      </div>
+    );
+  }
+
+  if (kind === "video") {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+          padding: 16,
+          height: "100%",
+        }}
+      >
+        {/* biome-ignore lint/a11y/useMediaCaption: raw API response preview */}
+        <video
+          controls
+          src={url}
+          onLoadedData={revoke}
+          style={{ maxWidth: "100%", maxHeight: "70%", borderRadius: "var(--radius)" }}
+        />
+        <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+          {label} · {(responseSize / 1024).toFixed(1)} KB
+        </p>
+      </div>
+    );
+  }
+
+  if (kind === "pdf") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 240 }}>
+        <iframe
+          title="PDF response"
+          src={url}
+          onLoad={revoke}
+          style={{ flex: 1, border: "none", width: "100%", minHeight: 280 }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        padding: "48px 24px",
+        color: "var(--text-secondary)",
+      }}
+    >
+      <FileCode size={32} />
+      <p style={{ fontSize: "var(--text-code)", margin: 0 }}>
+        {label} ({contentType || "unknown"})
+      </p>
+      <p style={{ fontSize: "var(--text-xs)", margin: 0 }}>{(responseSize / 1024).toFixed(1)} KB</p>
+      <Button variant="ghost" size="sm" onClick={onDownload} style={{ gap: 6 }}>
+        <Download size={13} /> Download File
+      </Button>
+    </div>
+  );
+}
+
+const MEDIA_KINDS = new Set<ResponseKind>([
+  "image",
+  "svg",
+  "audio",
+  "video",
+  "pdf",
+  "zip",
+  "protobuf",
+  "msgpack",
+  "binary",
+]);
+
+const TEXT_PRETTY_KINDS = new Set<ResponseKind>([
+  "json",
+  "ndjson",
+  "xml",
+  "html",
+  "csv",
+  "yaml",
+  "graphql",
+  "text",
+  "form",
+  "other",
+]);
+
+type BodyViewMode = "preview" | "pretty" | "raw";
+
+/** Sandboxed HTML preview — Content-Type text/html only. */
+function HtmlPreview({ html }: { html: string }) {
+  return (
+    <iframe
+      data-testid="response-html-preview"
+      title="HTML preview"
+      srcDoc={html}
+      sandbox=""
+      style={{
+        display: "block",
+        width: "100%",
+        height: "100%",
+        minHeight: 280,
+        border: "none",
+        background: "#fff",
+      }}
+    />
+  );
 }
 
 /* ── Line-numbered code block ── */
@@ -236,14 +389,12 @@ function ResponseContent({
   statusColor,
   bodyBytes,
   bodyStr,
-  respType,
-  isBinary,
-  isImage,
+  respKind,
   responseSize,
   activeTab,
   setActiveTab,
-  pretty,
-  setPretty,
+  bodyView,
+  setBodyView,
   wordWrap,
   setWordWrap,
   toast,
@@ -252,19 +403,19 @@ function ResponseContent({
   downloadBlob,
   codeLanguage,
   request,
+  sseActive,
+  onStopSse,
 }: {
   response: NonNullable<ReturnType<typeof useTabStore.getState>["tabs"][number]["response"]>;
   statusColor: string;
   bodyBytes: number[];
   bodyStr: string;
-  respType: ResponseType;
-  isBinary: boolean;
-  isImage: boolean;
+  respKind: ResponseKind;
   responseSize: number;
   activeTab: "body" | "headers";
   setActiveTab: (tab: "body" | "headers") => void;
-  pretty: boolean;
-  setPretty: (v: boolean) => void;
+  bodyView: BodyViewMode;
+  setBodyView: (v: BodyViewMode) => void;
   wordWrap: boolean;
   setWordWrap: (v: boolean) => void;
   toast: boolean;
@@ -273,7 +424,21 @@ function ResponseContent({
   downloadBlob: (filename: string) => void;
   codeLanguage: string;
   request?: ReturnType<typeof useTabStore.getState>["tabs"][number]["request"];
+  sseActive: boolean;
+  onStopSse?: () => void;
 }) {
+  const isHtml = respKind === "html";
+  const viewModes: { val: BodyViewMode; label: string }[] = isHtml
+    ? [
+        { val: "preview", label: "Preview" },
+        { val: "pretty", label: "Pretty" },
+        { val: "raw", label: "Raw" },
+      ]
+    : [
+        { val: "pretty", label: "Pretty" },
+        { val: "raw", label: "Raw" },
+      ];
+  const effectiveView: BodyViewMode = bodyView === "preview" && !isHtml ? "pretty" : bodyView;
   const showToast = () => {
     setToast(true);
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -281,13 +446,38 @@ function ResponseContent({
   };
 
   const getFormattedCode = () => {
-    if (respType === "json") {
+    if (respKind === "json" || respKind === "ndjson") {
+      if (respKind === "ndjson") {
+        // Pretty each JSON line independently when possible.
+        return bodyStr
+          .split("\n")
+          .map((line) => {
+            const t = line.trim();
+            if (!t) return line;
+            try {
+              return JSON.stringify(JSON.parse(t), null, 2);
+            } catch {
+              return line;
+            }
+          })
+          .join("\n\n");
+      }
       try {
         return JSON.stringify(JSON.parse(bodyStr), null, 2);
       } catch {}
     }
     return bodyStr;
   };
+
+  const isSse =
+    response.sse ||
+    isEventStreamContentType(response.contentType) ||
+    (response.sseEvents?.length ?? 0) > 0 ||
+    respKind === "sse";
+
+  const showMedia = !isSse && bodyBytes.length > 0 && MEDIA_KINDS.has(respKind);
+
+  const showText = !(isSse || showMedia) && bodyBytes.length > 0 && TEXT_PRETTY_KINDS.has(respKind);
 
   return (
     <>
@@ -357,36 +547,38 @@ function ResponseContent({
           )}
         </Tab>
         <div className="mx-2 h-4 w-px bg-border" />
-        <div className="flex rounded border border-border bg-card p-0.5">
-          {[
-            { val: true, label: "Pretty" },
-            { val: false, label: "Raw" },
-          ].map(({ val, label }) => (
-            <button
-              type="button"
-              key={label}
-              onClick={() => setPretty(val)}
-              className={`h-6 cursor-pointer rounded px-3 text-xs transition-all ${
-                pretty === val
-                  ? "bg-accent font-semibold text-foreground"
-                  : "font-medium text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          data-testid="response-wrap-toggle"
-          onClick={() => setWordWrap(!wordWrap)}
-          aria-pressed={wordWrap}
-          title={wordWrap ? "Word wrap: on" : "Word wrap: off"}
-          className={wordWrap ? "text-primary" : undefined}
-        >
-          <WrapText className="h-3.5 w-3.5" />
-        </Button>
+        {!isSse && showText && (
+          <div className="flex rounded border border-border bg-card p-0.5">
+            {viewModes.map(({ val, label }) => (
+              <button
+                type="button"
+                key={label}
+                data-testid={`response-view-${val}`}
+                onClick={() => setBodyView(val)}
+                className={`h-6 cursor-pointer rounded px-3 text-xs transition-all ${
+                  effectiveView === val
+                    ? "bg-accent font-semibold text-foreground"
+                    : "font-medium text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {!isSse && showText && effectiveView !== "preview" && (
+          <Button
+            variant="ghost"
+            size="icon"
+            data-testid="response-wrap-toggle"
+            onClick={() => setWordWrap(!wordWrap)}
+            aria-pressed={wordWrap}
+            title={wordWrap ? "Word wrap: on" : "Word wrap: off"}
+            className={wordWrap ? "text-primary" : undefined}
+          >
+            <WrapText className="h-3.5 w-3.5" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -498,69 +690,34 @@ function ResponseContent({
 
         {activeTab === "body" && (
           <>
-            {isImage &&
-              bodyBytes.length > 0 &&
-              (() => {
-                const blob = new Blob([new Uint8Array(bodyBytes)], { type: response.contentType });
-                const url = URL.createObjectURL(blob);
-                return (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: 16,
-                      height: "100%",
-                    }}
-                  >
-                    <img
-                      src={url}
-                      alt="Response"
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "100%",
-                        objectFit: "contain",
-                        borderRadius: "var(--radius)",
-                      }}
-                      onLoad={() => setTimeout(() => URL.revokeObjectURL(url), 1000)}
-                    />
-                  </div>
-                );
-              })()}
+            {isSse && (
+              <SseEventList
+                events={response.sseEvents ?? []}
+                active={sseActive}
+                onStop={onStopSse}
+                wordWrap={wordWrap}
+              />
+            )}
 
-            {(isBinary || respType === "octet") && !isImage && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 12,
-                  padding: "48px 24px",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                <FileCode size={32} />
-                <p style={{ fontSize: "var(--text-code)", margin: 0 }}>
-                  Binary Response ({response.contentType})
-                </p>
-                <p style={{ fontSize: "var(--text-xs)", margin: 0 }}>
-                  {(responseSize / 1024).toFixed(1)} KB
-                </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => downloadBlob(`response-${Date.now()}`)}
-                  style={{ gap: 6 }}
-                >
-                  <Download size={13} /> Download File
-                </Button>
+            {!isSse && showMedia && (
+              <MediaPane
+                kind={MEDIA_KINDS.has(respKind) ? respKind : "binary"}
+                contentType={response.contentType}
+                bodyBytes={bodyBytes}
+                responseSize={responseSize}
+                onDownload={() => downloadBlob(`response-${Date.now()}`)}
+              />
+            )}
+
+            {!isSse && showText && effectiveView === "preview" && isHtml && (
+              <div data-testid="response-body" style={{ height: "100%", minHeight: 280 }}>
+                <HtmlPreview html={bodyStr} />
               </div>
             )}
 
-            {!(isImage || isBinary) && bodyBytes.length > 0 && (
+            {!isSse && showText && effectiveView !== "preview" && (
               <div data-testid="response-body" style={{ padding: "12px 0 12px 16px" }}>
-                {pretty ? (
+                {effectiveView === "pretty" ? (
                   <CodeBlock code={getFormattedCode()} language={codeLanguage} wrap={wordWrap} />
                 ) : (
                   <div
@@ -580,19 +737,8 @@ function ResponseContent({
               </div>
             )}
 
-            {bodyBytes.length === 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "48px 24px",
-                  color: "var(--text-secondary)",
-                  fontSize: "var(--text-code)",
-                }}
-              >
-                Empty response body
-              </div>
+            {!isSse && bodyBytes.length === 0 && (
+              <StatusEmptyBody status={response.status} statusText={response.statusText} />
             )}
           </>
         )}
@@ -697,23 +843,38 @@ export function ResponsePanel({
   const request = tab?.request;
 
   const [activeTab, setActiveTab] = useState<"body" | "headers">("body");
-  const [pretty, setPretty] = useState(true);
-  const [wordWrap, setWordWrapState] = useState(getWordWrap);
-  const setWordWrap = (v: boolean) => {
-    setWordWrapState(v);
-    setStoredWordWrap(v);
-  };
+  const [bodyView, setBodyView] = useState<BodyViewMode>("pretty");
+  const { wordWrap, setWordWrap } = useWordWrap();
   const [toast, setToast] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const bodyBytes = response?.body ?? [];
   const bodyStr = useMemo(() => formatBody(bodyBytes), [bodyBytes]);
-  const respType = response ? detectType(response.contentType) : "text";
-  const isBinary = bodyBytes.length > 0 && isBinaryBody(bodyBytes);
-  const isImage = respType === "image";
+  const respKind = response ? classifyResponse(response.contentType) : "other";
   const responseSize = bodyBytes.length;
 
-  const hasResponse = response && !(response.status === 0 && bodyBytes.length === 0);
+  // text/html → Preview by default when a new HTML response arrives.
+  useEffect(() => {
+    if (!response) return;
+    setBodyView(classifyResponse(response.contentType) === "html" ? "preview" : "pretty");
+  }, [response]);
+
+  // Any response object counts — including status 0 errors and empty bodies.
+  const hasResponse = response != null;
+  const sseLive =
+    isLoading &&
+    Boolean(
+      response?.sse ||
+        isEventStreamContentType(response?.contentType) ||
+        (response?.sseEvents?.length ?? 0) > 0 ||
+        respKind === "sse",
+    );
+
+  const stopSse = () => {
+    const sid = getTabStreamId(tabId);
+    cancelTabStream(tabId);
+    if (sid) void cancelSseStream(sid);
+  };
 
   const downloadBlob = (filename: string) => {
     const blob = new Blob([new Uint8Array(bodyBytes)], { type: response?.contentType ?? "" });
@@ -725,8 +886,7 @@ export function ResponsePanel({
     URL.revokeObjectURL(url);
   };
 
-  const codeLanguage =
-    respType === "json" ? "json" : respType === "html" ? "html" : respType === "xml" ? "xml" : "";
+  const codeLanguage = highlightLanguageFor(response?.contentType ?? "");
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" style={{ overflow: "hidden" }}>
@@ -737,7 +897,7 @@ export function ResponsePanel({
       >
         <div className="h-0.5 w-8 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100" />
       </div>
-      {isLoading ? (
+      {isLoading && !sseLive ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <div
             style={{
@@ -769,14 +929,12 @@ export function ResponsePanel({
           statusColor={getStatusColor(response.status)}
           bodyBytes={bodyBytes}
           bodyStr={bodyStr}
-          respType={respType}
-          isBinary={isBinary}
-          isImage={isImage}
+          respKind={respKind}
           responseSize={responseSize}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          pretty={pretty}
-          setPretty={setPretty}
+          bodyView={bodyView}
+          setBodyView={setBodyView}
           wordWrap={wordWrap}
           setWordWrap={setWordWrap}
           toast={toast}
@@ -785,6 +943,8 @@ export function ResponsePanel({
           downloadBlob={downloadBlob}
           codeLanguage={codeLanguage}
           request={request}
+          sseActive={sseLive}
+          onStopSse={stopSse}
         />
       )}
     </div>

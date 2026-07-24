@@ -14,6 +14,11 @@ describe("parseUrl", () => {
   it("defaults to http for a bare host", () => {
     expect(parseUrl("api.example.com")).toBe("http://api.example.com");
   });
+
+  it("preserves OPTIONS asterisk request-target", () => {
+    expect(parseUrl("*")).toBe("*");
+    expect(parseUrl(" * ")).toBe("*");
+  });
 });
 
 describe("stripQuery", () => {

@@ -27,6 +27,7 @@ const METHOD_TEXT: Record<string, string> = {
   DELETE: "text-method-delete",
   HEAD: "text-method-head",
   OPTIONS: "text-method-options",
+  QUERY: "text-method-query",
 };
 
 export function ImportModal({ onClose }: ImportModalProps) {

@@ -67,6 +67,9 @@ export function applyParamsToUrl(
 export function parseUrl(input: string): string {
   input = input.trim();
 
+  // RFC 9110 §9.3.7 — OPTIONS request-target may be a bare asterisk.
+  if (input === "*") return "*";
+
   // Port shortcut: :3000, :3000/api, :3000?query=1
   if (input.startsWith(":")) {
     return `http://localhost${input}`;
@@ -94,6 +97,7 @@ export function extractMainDomain(hostname: string): string {
  * Extract endpoint name from URL for auto-naming tabs
  */
 export function extractEndpoint(url: string): string {
+  if (url.trim() === "*") return "*";
   try {
     const parsed = new URL(url);
     const path = parsed.pathname;

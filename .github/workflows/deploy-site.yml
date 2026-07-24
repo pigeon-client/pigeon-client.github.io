@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'apps/site/**'
+      - 'scripts/install.sh'
   # release.yml dispatches this on `main` after publishing (a `release`-event run
   # would execute on the tag ref, which the github-pages environment blocks).
   workflow_dispatch:
@@ -44,6 +45,11 @@ jobs:
             -o src/release.json \
             https://api.github.com/repos/${{ github.repository }}/releases/latest || true
         working-directory: apps/site
+
+      - name: Sync install.sh into site public/
+        run: |
+          mkdir -p apps/site/public
+          cp scripts/install.sh apps/site/public/install.sh
 
       - name: Build
         run: pnpm --filter pigeon-site build

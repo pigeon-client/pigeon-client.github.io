@@ -21,7 +21,8 @@ export function useScrollReveal() {
           }
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+      // Generous margins so jump-scroll / hash links still reveal.
+      { threshold: 0.01, rootMargin: "0px 0px -4% 0px" },
     );
 
     const seen = new WeakSet<Element>();
@@ -35,10 +36,13 @@ export function useScrollReveal() {
     };
     scan();
 
-    // Catch anything mounted a tick later.
     const raf = requestAnimationFrame(scan);
+    // Re-scan after layout settles (fonts, images, late mounts).
+    const t = window.setTimeout(scan, 400);
+
     return () => {
       cancelAnimationFrame(raf);
+      window.clearTimeout(t);
       observer.disconnect();
     };
   }, []);

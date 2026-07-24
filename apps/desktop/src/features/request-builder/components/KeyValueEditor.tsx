@@ -103,7 +103,10 @@ export function KeyValueEditor({
   const va = useVarAutocomplete();
   const [acRow, setAcRow] = useState<number | null>(null);
   const valueRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const cols = secret ? "grid-cols-[28px_1fr_1.4fr_52px_28px]" : "grid-cols-[28px_1fr_1.4fr_28px]";
+  // minmax(0,…) so long keys/values shrink inside the panel instead of expanding it
+  const cols = secret
+    ? "grid-cols-[28px_minmax(0,1fr)_minmax(0,1.4fr)_52px_28px]"
+    : "grid-cols-[28px_minmax(0,1fr)_minmax(0,1.4fr)_28px]";
 
   useEffect(() => {
     if (items.length === 0) onChange([{ key: "", value: "", enabled: true }]);
@@ -161,11 +164,11 @@ export function KeyValueEditor({
   };
 
   return (
-    <div>
+    <div className="min-w-0">
       {/* Column headers */}
       <div
         className={cn(
-          "grid gap-0 border-b border-border pb-2 text-2xs font-semibold uppercase tracking-wide text-muted-foreground",
+          "grid min-w-0 gap-0 border-b border-border pb-2 text-2xs font-semibold uppercase tracking-wide text-muted-foreground",
           cols,
         )}
       >
@@ -179,13 +182,13 @@ export function KeyValueEditor({
       {itemsWithKeys.map((item, index) => (
         <div
           key={item._rowKey}
-          className={cn("grid min-h-9 items-center border-b border-border", cols)}
+          className={cn("grid min-h-9 min-w-0 items-center border-b border-border", cols)}
         >
           <span className="flex items-center justify-center">
             <Checkbox on={item.enabled} onClick={() => update(index, "enabled", !item.enabled)} />
           </span>
 
-          <div className="relative">
+          <div className="relative min-w-0">
             <input
               ref={(el) => {
                 if (inputRefs) inputRefs.current[index] = el;
@@ -202,7 +205,7 @@ export function KeyValueEditor({
               onKeyDown={(e) => onKeyDown?.(e, index)}
               onFocus={() => onKeyFocus?.(index)}
               className={cn(
-                "w-full bg-transparent font-mono text-code outline-none",
+                "w-full min-w-0 bg-transparent font-mono text-code outline-none",
                 rowError?.(index) ? "text-destructive" : "text-method-get",
                 !item.enabled && "opacity-50",
               )}
@@ -232,7 +235,7 @@ export function KeyValueEditor({
             )}
           </div>
 
-          <div className="relative">
+          <div className="relative min-w-0">
             {showFilePicker && item.isFile && item.file ? (
               <button
                 type="button"
@@ -283,7 +286,7 @@ export function KeyValueEditor({
                         }
                       }}
                       className={cn(
-                        "relative z-[var(--z-raised)] w-full truncate bg-transparent font-mono text-code outline-none",
+                        "relative z-[var(--z-raised)] w-full min-w-0 truncate bg-transparent font-mono text-code outline-none",
                         overlay ? "text-transparent caret-foreground" : "text-foreground",
                         !item.enabled && "opacity-50",
                       )}
@@ -292,7 +295,7 @@ export function KeyValueEditor({
                       <div
                         aria-hidden
                         className={cn(
-                          "pointer-events-none absolute inset-0 flex items-center overflow-hidden font-mono text-code",
+                          "pointer-events-none absolute inset-0 flex min-w-0 items-center overflow-hidden font-mono text-code",
                           !item.enabled && "opacity-50",
                         )}
                       >

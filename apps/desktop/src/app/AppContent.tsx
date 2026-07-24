@@ -179,7 +179,7 @@ export function AppContent() {
       />
 
       {/* Body */}
-      <div className="relative flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 min-w-0 flex-1">
         {sidebarCollapsed ? (
           /* Fully hidden — a floating button to reopen the sidebar */
           <button
@@ -244,7 +244,7 @@ export function AppContent() {
             return (
               <div
                 key={tab.id}
-                className="flex min-h-0 flex-1 flex-col"
+                className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
                 style={{ display: isActive ? "flex" : "none" }}
               >
                 <UrlBar />
@@ -252,7 +252,11 @@ export function AppContent() {
                   <>
                     <div
                       style={editorHeight ? { height: editorHeight, flexShrink: 0 } : undefined}
-                      className="flex flex-col overflow-hidden"
+                      className={
+                        editorHeight
+                          ? "flex min-w-0 flex-col overflow-hidden"
+                          : "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                      }
                     >
                       <RequestEditor tabId={tab.id} />
                     </div>
