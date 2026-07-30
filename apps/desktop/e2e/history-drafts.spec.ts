@@ -1,5 +1,13 @@
 import { expect, test } from "@playwright/test";
-import { clickSend, mockJson, openApp, responseStatus, sidebarTab, typeUrl } from "./helpers";
+import {
+  clickSend,
+  mockJson,
+  openApp,
+  responseBody,
+  responseStatus,
+  sidebarTab,
+  typeUrl,
+} from "./helpers";
 
 test.describe("history & drafts", () => {
   test("a sent request shows up in Draft and History", async ({ page }) => {

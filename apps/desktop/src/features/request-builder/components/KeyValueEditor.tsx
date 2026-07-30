@@ -103,14 +103,33 @@ export function KeyValueEditor({
   const va = useVarAutocomplete();
   const [acRow, setAcRow] = useState<number | null>(null);
   const valueRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const valueOverlayRefs = useRef<(HTMLDivElement | null)[]>([]);
   // minmax(0,…) so long keys/values shrink inside the panel instead of expanding it
   const cols = secret
     ? "grid-cols-[28px_minmax(0,1fr)_minmax(0,1.4fr)_52px_28px]"
     : "grid-cols-[28px_minmax(0,1fr)_minmax(0,1.4fr)_28px]";
 
+  const syncValueOverlayScroll = (index: number) => {
+    const input = valueRefs.current[index];
+    const overlay = valueOverlayRefs.current[index];
+    if (!(input && overlay)) return;
+    if (overlay.scrollLeft !== input.scrollLeft) {
+      overlay.scrollLeft = input.scrollLeft;
+    }
+  };
+
   useEffect(() => {
     if (items.length === 0) onChange([{ key: "", value: "", enabled: true }]);
   }, [onChange, items.length]);
+
+  // Re-sync overlays after value text changes (paste / store write) — caret scroll
+  // may land before the overlay's content width updates.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional sync on values
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      for (let i = 0; i < items.length; i++) syncValueOverlayScroll(i);
+    });
+  }, [items]);
 
   const itemsWithKeys = useMemo(
     () => items.map((item, i) => ({ ...item, _rowKey: `row-${i}` })),
@@ -214,7 +233,7 @@ export function KeyValueEditor({
               <span className="text-2xs text-destructive">{rowError(index)}</span>
             )}
             {showForIndex === index && suggestions && suggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-[var(--z-popover)] overflow-hidden rounded border border-border bg-popover shadow-lg">
+              <div className="absolute left-0 right-0 top-full z-[var(--z-popover)] max-h-[220px] overflow-y-auto rounded border border-border bg-popover shadow-lg">
                 {suggestions.map((s, i) => (
                   <button
                     type="button"
@@ -266,11 +285,34 @@ export function KeyValueEditor({
                         setAcRow(index);
                         va.detect(e.target.value, e.target.selectionStart ?? e.target.value.length);
                       }}
+                      onScroll={() => syncValueOverlayScroll(index)}
+                      onSelect={() => syncValueOverlayScroll(index)}
+                      onWheel={(e) => {
+                        // Text inputs often ignore trackpad/wheel; scroll horizontally so
+                        // the caret (and synced overlay) can reach the end of long values.
+                        const el = e.currentTarget;
+                        if (el.scrollWidth <= el.clientWidth) return;
+                        const dx =
+                          Math.abs(e.deltaX) >= Math.abs(e.deltaY)
+                            ? e.deltaX
+                            : e.shiftKey
+                              ? e.deltaY
+                              : 0;
+                        if (dx === 0) return;
+                        const max = el.scrollWidth - el.clientWidth;
+                        const next = Math.max(0, Math.min(max, el.scrollLeft + dx));
+                        if (next === el.scrollLeft) return;
+                        e.preventDefault();
+                        el.scrollLeft = next;
+                        syncValueOverlayScroll(index);
+                      }}
                       onKeyUp={(e) => {
+                        syncValueOverlayScroll(index);
                         setAcRow(index);
                         va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0);
                       }}
                       onClick={(e) => {
+                        syncValueOverlayScroll(index);
                         setAcRow(index);
                         va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0);
                       }}
@@ -286,20 +328,23 @@ export function KeyValueEditor({
                         }
                       }}
                       className={cn(
-                        "relative z-[var(--z-raised)] w-full min-w-0 truncate bg-transparent font-mono text-code outline-none",
+                        "relative z-[var(--z-raised)] w-full min-w-0 bg-transparent font-mono text-code outline-none",
                         overlay ? "text-transparent caret-foreground" : "text-foreground",
                         !item.enabled && "opacity-50",
                       )}
                     />
                     {overlay && (
                       <div
+                        ref={(el) => {
+                          valueOverlayRefs.current[index] = el;
+                        }}
                         aria-hidden
                         className={cn(
-                          "pointer-events-none absolute inset-0 flex min-w-0 items-center overflow-hidden font-mono text-code",
+                          "pointer-events-none absolute inset-0 overflow-hidden font-mono text-code",
                           !item.enabled && "opacity-50",
                         )}
                       >
-                        <span className="truncate">
+                        <div className="flex h-full min-w-max items-center whitespace-nowrap">
                           {item.value ? (
                             renderTokenText(item.value)
                           ) : (
@@ -307,7 +352,7 @@ export function KeyValueEditor({
                               {valuePlaceholder}
                             </span>
                           )}
-                        </span>
+                        </div>
                       </div>
                     )}
                   </>

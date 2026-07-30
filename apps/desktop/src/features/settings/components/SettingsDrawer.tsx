@@ -4,6 +4,12 @@ import pigeonLogo from "@/assets/pigeon-mark.svg";
 import { useCollectionStore } from "@/features/collections";
 import { useEnvStore } from "@/features/environments";
 import { useHistoryStore } from "@/features/history";
+import {
+  getRetentionDays,
+  RETENTION_OPTIONS,
+  type RetentionDays,
+  setRetentionDays,
+} from "@/features/history/lib/retention";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { Modal, ModalHeader } from "@/shared/ui/Modal";
@@ -340,7 +346,12 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
                     )}
                   >
                     <span className="text-code text-muted-foreground">{label}</span>
-                    <span className="font-mono text-code text-foreground">{val}</span>
+                    <span
+                      data-testid={`data-count-${String(label).toLowerCase()}`}
+                      className="font-mono text-code text-foreground"
+                    >
+                      {val}
+                    </span>
                   </div>
                 ))}
               </div>

@@ -1,22 +1,11 @@
 # Feature Docs
 
-In-depth UX/UI reference for each Pigeon feature. Code-level architecture lives in each
-feature's `src/features/<name>/README.md`; these docs describe **what the user sees and does**,
-the states a screen can be in, keyboard flows, edge cases, and the `data-testid` hooks used by
-the E2E suite.
+PM-style product reference for each Pigeon feature. Describes **what the user sees and does**,
+acceptance criteria, edge cases, manual QA checklists, and `data-testid` hooks.
 
-| Doc | Feature | Code |
-|-----|---------|------|
-| [request-builder.md](./request-builder.md) | Tabs, URL bar, request editors (Params/Auth/Headers/Body) | `src/features/request-builder` |
-| [content-types.md](./content-types.md) | Request/response body formats (JSON…media) + curl CT parity | `src/shared/lib/contentType.ts` |
-| [execution.md](./execution.md) | Sending requests, transport (Rust vs browser) | `src/features/execution` |
-| [response-viewer.md](./response-viewer.md) | Response status, body, headers, empty/loading states | `src/features/response-viewer` |
-| [collections.md](./collections.md) | Saved request tree, folders, save-to-collection | `src/features/collections` |
-| [history-drafts.md](./history-drafts.md) | Auto-saved history + drafts, sidebar tree | `src/features/history` |
-| [environments.md](./environments.md) | `{{var}}` environments + interpolation | `src/features/environments` |
-| [import-export.md](./import-export.md) | cURL import (paste/modal) + copy-as-cURL | `src/features/import-export` |
-| [settings.md](./settings.md) | Theme, request options, updates, shortcuts | `src/features/settings` |
-| [sidebar.md](./sidebar.md) | Left navigation shell tying it together | `src/app/layout/Sidebar.tsx` |
+Code-level architecture notes may also live under `apps/desktop/src/features/<name>/`. Prefer
+updating these docs when behavior changes — the `feature-qa` Claude Code agent
+(`.claude/agents/feature-qa.md`) is responsible for keeping them honest after deep QA passes.
 
 | Doc | Feature | Code (under `apps/desktop/`) |
 |-----|---------|------------------------------|
@@ -57,16 +46,23 @@ Every feature doc follows:
 ## Conventions
 
 - **UI** — layout, structure, visual states.
-- **UX / interactions** — what actions do, feedback, real-time behaviors.
-- **Keyboard** — shortcuts relevant to the feature.
-- **States & edge cases** — empty/loading/error, boundaries, gotchas.
-- **Test ids** — stable `data-testid` selectors (see [../testing.md](../testing.md)).
-- **Key files** — where the behavior lives.
+- **UX / interactions** — actions, feedback, real-time behaviors.
+- **Keyboard** — shortcuts for the feature.
+- **States & edge cases** — empty/loading/error, overflow, boundaries.
+- **Manual test checklist** — human / exploratory steps (used by `feature-qa`).
+- **Automation coverage** — Vitest + Playwright pointers.
+- **Test ids** — stable selectors (see [../testing.md](../testing.md)).
 
 ## Test ids
 
-Stable, semantic `data-testid`s (not random UUIDs — those change per render and can't be
-selected). Naming: `<area>-<element>` and `<area>-<element>-<key>` for list rows
-(e.g. `sidebar-tab-draft`, `editor-tab-params`, `param-key-0`, `method-option-DELETE`).
+Stable, semantic `data-testid`s (never random UUIDs). Naming: `<area>-<element>`,
+`<area>-tab-<name>`, `<area>-<element>-<key>` for list rows (e.g. `sidebar-tab-draft`,
+`editor-tab-params`, `param-key-0`, `method-option-DELETE`).
+
 Inactive workspace tabs stay mounted (`display:none`), so interactive testids that repeat per tab
 (`url-input`, `method-trigger`, `response-status`, `response-body`) must be scoped to `:visible`.
+
+## QA agent
+
+`.claude/agents/feature-qa.md` is the sole project agent. It owns Vitest, Playwright, manual
+user-like testing, bug reports, and feature documentation updates.

@@ -191,6 +191,22 @@ describe("generateCurl — standard form", () => {
     expect(curl).not.toMatch(/(?:^|\s)-d\s/);
   });
 
+  it("exports a binary body with --data-binary @file", () => {
+    const curl = generateCurl(
+      baseConfig({
+        method: "POST",
+        bodyType: "application/pdf",
+        file: new File([], "report.pdf"),
+      }),
+    );
+    expect(curl).toContain("--data-binary '@report.pdf'");
+  });
+
+  it("falls back to a generic filename when --data-binary has no file", () => {
+    const curl = generateCurl(baseConfig({ method: "POST", bodyType: "application/octet-stream" }));
+    expect(curl).toContain("--data-binary '@file.bin'");
+  });
+
   it("never exports a body for GET (RFC 9110) so re-import stays GET", () => {
     const curl = generateCurl(
       baseConfig({

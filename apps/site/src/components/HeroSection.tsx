@@ -276,11 +276,12 @@ export function HeroSection() {
           <span className="dot" aria-hidden="true" /> free &amp; open source · MIT licensed
         </span>
         <h1>
-          The API client that <span className="accent">organizes itself</span>
+          Never <span className="accent">save a request</span> again
           <span className="cursor" aria-hidden="true" />
         </h1>
         <p className="sub">
-          Send a request. Pigeon names the tab, files it by domain, saves the history.
+          Pigeon names, files, and remembers every request automatically — and finds any of them in
+          3 keystrokes. Local, private, no account.
         </p>
         <div className="hero-ctas">
           <a

@@ -1,6 +1,8 @@
 import { create } from "zustand";
+import { isTauri } from "@/shared/lib/platform";
 import { normalizeUrlForMatch, parseUrl } from "@/shared/lib/url";
 import type { RequestConfig } from "@/shared/types";
+import { getRetentionDays, partitionByRetention } from "./lib/retention";
 import {
   deleteDraft as dbDeleteDraft,
   saveDraft as dbSaveDraft,
@@ -12,6 +14,34 @@ import {
   saveHistory,
 } from "./services/db";
 import type { HistoryItem } from "./types";
+
+// Browser build only — quota safety net, not a product limit (desktop relies on
+// time-based retention pruned at app start instead, see partitionByRetention).
+const BROWSER_HISTORY_CAP = 1000;
+const BROWSER_DRAFT_CAP = 300;
+const historyCapWarned = { current: false };
+const draftCapWarned = { current: false };
+
+/** Trim to the browser-only cap, oldest first, deleting the dropped rows from
+ *  localStorage too (they were already persisted by the caller's insert) and
+ *  logging once. No-op on desktop — Pigeon never silently drops history/drafts there. */
+function trimForBrowser<T extends { id?: number }>(
+  rows: T[],
+  cap: number,
+  warned: { current: boolean },
+  _label: string,
+  del: (id: number) => Promise<void>,
+): T[] {
+  if (isTauri() || rows.length <= cap) return rows;
+  if (!warned.current) {
+    warned.current = true;
+  }
+  const dropped = rows.slice(cap);
+  for (const row of dropped) {
+    if (row.id !== undefined) del(row.id);
+  }
+  return rows.slice(0, cap);
+}
 
 /** Normalize a draft URL to ensure it has a protocol for consistent matching */
 function normalizeDraftUrl(url: string): string {
@@ -50,7 +80,14 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const draftRows = await getDrafts();
     const historyRows = await getHistory();
     const drafts = draftRows.map((r) => ({ ...r.data, id: r.id }));
-    const history = historyRows.map((r) => ({ ...r.data, id: r.id }));
+    const historyAll = historyRows.map((r) => ({ ...r.data, id: r.id }));
+
+    // Time-based retention, pruned once on app start only — never mid-session.
+    const { kept: history, pruned } = partitionByRetention(historyAll, getRetentionDays());
+    await Promise.all(
+      pruned.filter((h) => h.id !== undefined).map((h) => deleteHistoryEntry(h.id as number)),
+    );
+
     const draftDbIds = new Map<number, number>();
     const historyDbIds = new Map<number, number>();
     drafts.forEach((d, i) => {
@@ -95,7 +132,13 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const dbId = await saveHistory(clean);
     const itemWithId = { ...item, id: dbId };
     set((state) => {
-      const newHistory = [itemWithId, ...state.history].slice(0, 100);
+      const newHistory = trimForBrowser(
+        [itemWithId, ...state.history],
+        BROWSER_HISTORY_CAP,
+        historyCapWarned,
+        "history",
+        deleteHistoryEntry,
+      );
       const newIds = new Map(state.historyDbIds);
       if (dbId > 0) newIds.set(0, dbId);
       return { history: newHistory, historyDbIds: newIds };
@@ -107,7 +150,13 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const dbId = await dbSaveDraft(clean);
     const draftWithId = { ...draft, id: dbId };
     set((state) => {
-      const newDrafts = [draftWithId, ...state.drafts].slice(0, 50);
+      const newDrafts = trimForBrowser(
+        [draftWithId, ...state.drafts],
+        BROWSER_DRAFT_CAP,
+        draftCapWarned,
+        "drafts",
+        dbDeleteDraft,
+      );
       const newIds = new Map(state.draftDbIds);
       // Shift existing indices by 1 since new draft is prepended
       for (const [idx, id] of state.draftDbIds) {
@@ -196,7 +245,13 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
       const dbId = await dbSaveDraft(clean);
       const draftWithId = { ...draft, id: dbId };
       set((s) => {
-        const newDrafts = [draftWithId, ...s.drafts].slice(0, 50);
+        const newDrafts = trimForBrowser(
+          [draftWithId, ...s.drafts],
+          BROWSER_DRAFT_CAP,
+          draftCapWarned,
+          "drafts",
+          dbDeleteDraft,
+        );
         const newIds = new Map(s.draftDbIds);
         // Shift existing indices by 1
         for (const [idx, id] of s.draftDbIds) {

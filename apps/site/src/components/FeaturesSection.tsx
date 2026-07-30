@@ -84,7 +84,8 @@ const FEATURES: Feature[] = [
     title: "Environments",
     body: (
       <>
-        <code>{"{{var}}"}</code> for dev, staging, prod — with secret masking.
+        <code>{"{{var}}"}</code> for dev, staging, prod — secret masking, plus a red confirm
+        guardrail before destructive methods hit production.
       </>
     ),
     story: "Flip env → vars swap → secrets stay blurred",
@@ -187,6 +188,32 @@ const FEATURES: Feature[] = [
           <span className="sc-cap c0">Paste curl</span>
           <span className="sc-cap c1">Parse</span>
           <span className="sc-cap c2">Request ready</span>
+        </div>
+      </div>
+    ),
+  },
+  {
+    icon: <path d="M12 4v4M12 20a8 8 0 100-16 8 8 0 000 16zM12 12l3 1.5" />,
+    title: "SSE streaming",
+    body: "Live event streams render as they arrive — newest on top, Stop anytime.",
+    story: "Open stream → events land live → Stop",
+    demo: (
+      <div className="sc-story sc-sse-demo">
+        <div className="sc-curl">
+          <div className="line">
+            <span className="kw">GET</span> /events <span className="str">text/event-stream</span>
+          </div>
+          <div className="line">
+            <span className="kw">event</span> tick <span className="str">{"{...}"}</span>
+          </div>
+          <div className="line">
+            <span className="kw">event</span> tick <span className="str">{"{...}"}</span>
+          </div>
+        </div>
+        <div className="sc-caps" aria-hidden="true">
+          <span className="sc-cap c0">Open stream</span>
+          <span className="sc-cap c1">Events arrive live</span>
+          <span className="sc-cap c2">Stop anytime</span>
         </div>
       </div>
     ),

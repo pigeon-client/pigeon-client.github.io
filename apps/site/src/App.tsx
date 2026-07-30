@@ -3,6 +3,7 @@ import { FeaturesSection } from "./components/FeaturesSection";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
+import { McpSection } from "./components/McpSection";
 import { OpenSourceSection } from "./components/OpenSourceSection";
 import { OrganizeSection } from "./components/OrganizeSection";
 import { StatsBand } from "./components/StatsBand";
@@ -22,6 +23,7 @@ function App() {
       <main>
         <StatsBand />
         <OrganizeSection />
+        <McpSection />
         <FeaturesSection />
         <WhySection />
         <OpenSourceSection />

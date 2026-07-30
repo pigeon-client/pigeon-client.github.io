@@ -81,10 +81,16 @@ save destination picking.
 
 ## Test ids
 
-`sidebar-tab-collections`; collection/tree rows are currently selected by text/name in E2E. The
-name modal input is `#collection-name-modal-input`; confirm button label "Create".
+`sidebar-tab-collections`; name modal `#collection-name-modal-input`; confirm "Create".
+Tree rows often selected by text in E2E.
 
 ## Key files
 
-`store.ts` (tree CRUD/move/reorder), `components/SaveToCollectionModal.tsx`,
-`services/db.ts` (Tauri + localStorage), tree rendering in `src/app/layout/Sidebar.tsx`.
+`store.ts`, `types.ts` (`MAX_NESTING_DEPTH`), `lib/tree.ts`,
+`components/SaveToCollectionModal.tsx`, `services/db.ts`, tree UI in
+`src/app/layout/Sidebar.tsx`.
+
+## Open risks
+
+- Deep trees + search filter edge cases.
+- Move/reorder UX must keep immutability — regressions show as stale UI.

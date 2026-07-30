@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { contentTypeForBody } from "@/shared/lib/contentType";
 import { methodAllowsRequestBody } from "@/shared/lib/httpMethod";
 import { isTauri } from "@/shared/lib/platform";
 import {
@@ -164,6 +165,15 @@ async function sendBrowserMaybeSse(
 
   const method = request.method.toUpperCase();
   const hasBody = request.body != null && methodAllowsRequestBody(method);
+
+  // Mirror BrowserHttpClient / the Rust desktop transport: set Content-Type from
+  // bodyType when the user didn't already set one. Every send goes through this
+  // streamId-aware path (see requestService.ts), not BrowserHttpClient directly.
+  const hasCt = Object.keys(headers).some((k) => k.toLowerCase() === "content-type");
+  const autoCt = contentTypeForBody(request.bodyType);
+  if (!hasCt && autoCt && hasBody) {
+    headers["Content-Type"] = autoCt;
+  }
 
   const res = await fetch(request.url, {
     method,

@@ -18,4 +18,8 @@ export interface ApiResponse {
   sse?: boolean;
   /** Parsed SSE events when streamed; empty while waiting for the first event. */
   sseEvents?: SseEvent[];
+  /** Set when this is a history snapshot rendered without re-sending (history-drafts.md). */
+  snapshotTimestamp?: number;
+  /** True when the snapshot body was cut at the 256KB cap. */
+  snapshotTruncated?: boolean;
 }

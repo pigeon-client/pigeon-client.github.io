@@ -30,6 +30,10 @@ export const numTable = {
   all<T>(key: string): { id: number; data: T }[] {
     return read<number, T>(key);
   },
+  /** Overwrite every row (same ids) — used to drop fields under quota pressure. */
+  replaceAll<T>(key: string, rows: { id: number; data: T }[]): void {
+    write(key, rows);
+  },
   insert<T>(key: string, data: T): number {
     const rows = read<number, T>(key);
     const id = rows.reduce((m, r) => Math.max(m, r.id), 0) + 1;

@@ -48,18 +48,15 @@ resizable (or collapsible) beside the workspace without crushing the URL bar.
 
 ```
 ┌──────────────────────────────┐
-│ [ + New Request ]      [ ⬆ ]  │   ← create + import cURL
+│ [ + New Request ]      [ ⬆ ]  │
 ├──────────────────────────────┤
-│ History │ Draft │ Collections│   ← 3-way tab switch
+│ History │ Draft │ Collections│
 ├──────────────────────────────┤
 │  …tab content (list/tree)…   │
 └──────────────────────────────┘
 ```
 
-- **New Request** (primary) opens a fresh tab; **Import** (outline) opens the cURL import modal.
-- **Three tabs** switch the content pane between History, Draft, and Collections.
-- A search box in the header (`⌘F`) filters the active pane.
-- The sidebar is horizontally **resizable** (drag handle between it and the main panel; 180–480px).
+Search field is in the app **header**, not inside the sidebar body.
 
 ## UX / interactions
 
@@ -74,15 +71,36 @@ chord).
 
 ## States & edge cases
 
-- Each pane has its own empty state (see the History/Drafts and Collections docs).
-- Tab content and trees respect the header search filter.
+- Each pane empty state documented in history-drafts / collections docs.
+- Inactive workspace tabs elsewhere must not steal sidebar testids.
+
+## Manual test checklist
+
+- [ ] New Request; Import flow.
+- [ ] Switch three sidebar tabs; open items from each.
+- [ ] Search across history and drafts.
+- [ ] Drag resize to 180px and 480px; URL bar long-string still OK.
+- [ ] Collapse sidebar → expand; layout aligned.
+- [ ] Light + Dark icon contrast check.
+
+## Automation coverage
+
+- Playwright: `e2e/smoke.spec.ts` plus feature specs using sidebar testids; `e2e/sidebar-search.spec.ts`
+  — `⌘F` filters both History (flat list) and Draft (auto-tree, filtered leaf count) by name/URL
+  (2026-07-26 QA pass).
+- Not driven in the 2026-07-26 QA pass: sidebar drag-resize to 180/480px bounds, light/dark icon
+  contrast (visual-only, no automated check planned).
 
 ## Test ids
 
-`sidebar-new-request`, `sidebar-import`, `sidebar-tab-history|draft|collections`. Header search is
-`data-header-search` (attribute).
+`sidebar-new-request`, `sidebar-import`, `sidebar-tab-history|draft|collections`,
+`sidebar-collapse`, `sidebar-expand`. Header search: `data-header-search` (attribute).
 
 ## Key files
 
-`src/app/layout/Sidebar.tsx`, `src/app/layout/Header.tsx`, `src/app/AppContent.tsx` (resize +
-shortcut wiring).
+`src/app/layout/Sidebar.tsx`, `Header.tsx`, `AppContent.tsx` (resize + shortcuts).
+Tree helpers: `src/features/collections/lib/tree.ts`.
+
+## Open risks
+
+- Resize + long URL + many tabs is a compound layout risk (mandatory with request-builder QA).

@@ -13,6 +13,7 @@ import {
   responseKindLabel,
 } from "@/shared/lib/contentType";
 import { findMatches } from "@/shared/lib/textFind";
+import { relativeTime } from "@/shared/lib/time";
 import { Button } from "@/shared/ui/button";
 import { FindBar } from "@/shared/ui/FindBar";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
@@ -680,21 +681,30 @@ function ResponseContent({
         </div>
         <div className="h-4 w-px bg-border" />
         <div className="flex items-center gap-1.5 text-muted-foreground">
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-          <span className="font-mono text-code">{response.responseTime} ms</span>
+          {response.snapshotTimestamp !== undefined ? (
+            <span data-testid="response-snapshot-label" className="font-mono text-code">
+              snapshot · {relativeTime(response.snapshotTimestamp)}
+              {response.snapshotTruncated ? " · truncated" : ""}
+            </span>
+          ) : (
+            <>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span className="font-mono text-code">{response.responseTime} ms</span>
+            </>
+          )}
         </div>
         <span style={{ width: 1, height: 16, background: "var(--border)", margin: "0 16px" }} />
         <div
@@ -1060,9 +1070,11 @@ function ResponseContent({
 export function ResponsePanel({
   tabId,
   onResizeStart,
+  onResizeReset,
 }: {
   tabId: string;
   onResizeStart?: (e: React.MouseEvent) => void;
+  onResizeReset?: () => void;
 }) {
   const tabs = useTabStore((s) => s.tabs);
   const tab = tabs.find((t) => t.id === tabId);
@@ -1118,13 +1130,22 @@ export function ResponsePanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" style={{ overflow: "hidden" }}>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-driven resize handle */}
-      <div
+      <button
+        type="button"
+        aria-label="Resize request and response panels"
+        data-testid="response-resize-handle"
+        title="Drag to resize; double-click to reset"
         className="group flex h-1 flex-shrink-0 cursor-row-resize items-center justify-center border-t border-border bg-transparent transition-colors hover:bg-accent/40 active:bg-accent/60 select-none"
         onMouseDown={onResizeStart}
+        onDoubleClick={onResizeReset}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          onResizeReset?.();
+        }}
       >
         <div className="h-0.5 w-8 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100" />
-      </div>
+      </button>
       {isLoading && !sseLive ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <div

@@ -1,6 +1,6 @@
 import { makeResolver, selectActiveEnv, useEnvStore } from "@/features/environments";
 import type { HistoryItem } from "@/features/history";
-import { useHistoryStore } from "@/features/history";
+import { buildSnapshot, useHistoryStore } from "@/features/history";
 import { extractEndpoint } from "@/shared/lib/url";
 import type { RequestConfig } from "@/shared/types";
 import type { SseEvent, SseMeta } from "../lib/sse";

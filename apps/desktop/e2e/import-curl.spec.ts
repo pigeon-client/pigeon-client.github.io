@@ -21,4 +21,18 @@ test.describe("cURL import", () => {
     await expect(methodTrigger(page)).toContainText("PUT");
     await expect(urlInput(page)).toHaveValue(/items\/7/);
   });
+
+  test("an invalid curl command in the Import modal shows an error, not a crash", async ({
+    page,
+  }) => {
+    await openApp(page);
+    await page.getByTestId("sidebar-import").click();
+
+    await page.getByTestId("import-curl-textarea").fill("curl this is not a valid command ---");
+    await page.getByTestId("import-curl-submit").click();
+
+    await expect(page.getByText(/Could not parse this cURL/)).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(urlInput(page)).toBeVisible(); // app didn't crash, still usable
+  });
 });

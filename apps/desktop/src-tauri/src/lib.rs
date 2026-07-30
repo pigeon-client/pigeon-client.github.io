@@ -81,6 +81,16 @@ pub struct ApiResponse {
     pub truncated: bool,
 }
 
+/// Raw HTTP response for the MCP transport — the frontend owns all JSON-RPC
+/// framing (mirrors the `HttpClient` port pattern in `features/execution`).
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct McpHttpResponse {
+    pub status: u16,
+    pub headers: HashMap<String, String>,
+    pub body_text: String,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct RequestHeader {
     pub key: String,
@@ -803,6 +813,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             send_api_request,
             cancel_sse_stream,
+            send_mcp_request,
             save_draft,
             get_drafts,
             delete_draft,

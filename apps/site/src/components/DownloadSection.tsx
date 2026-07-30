@@ -30,6 +30,10 @@ export function DownloadSection() {
             <h3>macOS</h3>
             <p className="meta">Apple Silicon &amp; Intel · terminal install</p>
             <InstallBox command={installCmd} />
+            <p className="meta" style={{ marginTop: 14 }}>
+              or via Homebrew
+            </p>
+            <InstallBox command="brew install --cask pigeon-client/pigeon/pigeon" />
           </div>
         </div>
       </div>

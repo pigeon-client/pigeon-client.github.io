@@ -20,7 +20,7 @@ import {
   useCollectionStore,
 } from "@/features/collections";
 import type { HistoryItem } from "@/features/history";
-import { useHistoryStore } from "@/features/history";
+import { snapshotToApiResponse, useHistoryStore } from "@/features/history";
 import { useTabStore } from "@/features/request-builder";
 import type { RequestConfig } from "@/shared/types";
 import { METHOD_COLORS, MethodBadge } from "@/shared/ui/badge";
@@ -713,6 +713,7 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
   const addTab = useTabStore((s) => s.addTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
+  const updateTabResponse = useTabStore((s) => s.updateTabResponse);
   const activeTabId = useTabStore((s) => s.activeTabId);
   const tabs = useTabStore((s) => s.tabs);
 
@@ -743,15 +744,22 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
     return tab?.request.url ? tab.request : null;
   }, [activeTabId, tabs]);
 
-  const loadRequest = (req: RequestConfig) => {
+  const loadRequest = (req: RequestConfig): string => {
     if (tabs.length === 1 && !tabs[0].request.url) {
       updateTabRequest(tabs[0].id, req);
       setActiveTab(tabs[0].id);
-    } else {
-      const id = addTab();
-      updateTabRequest(id, req);
-      setActiveTab(id);
+      return tabs[0].id;
     }
+    const id = addTab();
+    updateTabRequest(id, req);
+    setActiveTab(id);
+    return id;
+  };
+
+  /* History rows carry a response snapshot — render it immediately, no re-send. */
+  const loadHistoryItem = (item: HistoryItem) => {
+    const id = loadRequest(item.request);
+    updateTabResponse(id, snapshotToApiResponse(item));
   };
 
   const handleNewRequest = () => {
@@ -963,7 +971,7 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
                   <HistoryRow
                     key={item.timestamp}
                     item={item}
-                    onLoad={() => loadRequest(item.request)}
+                    onLoad={() => loadHistoryItem(item)}
                     onDelete={() => removeHistory(history.indexOf(item))}
                   />
                 ))}

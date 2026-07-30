@@ -99,6 +99,8 @@ export function HeadersEditor({ headers, onHeadersChange }: HeadersEditorProps) 
         onChange={onHeadersChange}
         keyPlaceholder="Key"
         valuePlaceholder="Value"
+        testId="header"
+        addLabel="Add header"
         inputRefs={inputRefs}
         onKeyChange={handleKeyChange}
         onKeyDown={handleKeyDown}

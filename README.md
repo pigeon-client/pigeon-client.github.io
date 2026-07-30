@@ -3,8 +3,9 @@
 
   <h1>Pigeon</h1>
 
-  <p><strong>The API client that organizes itself.</strong><br/>
-  Free, open-source, and native. No account, no cloud, no busywork.</p>
+  <p><strong>Never save a request again.</strong><br/>
+  Pigeon names, files, and remembers every request automatically — and finds any of them in
+  3 keystrokes. Local, private, no account.</p>
 
   <p>
     <img src="https://img.shields.io/badge/license-MIT-c96442?style=flat-square" alt="MIT License" />
@@ -50,6 +51,8 @@ anyone's cloud.
 | **Environments** | `{{variable}}` sets for dev / staging / prod, with secret masking and red production guardrails |
 | **Collections** | Curate requests into nested folders when you want deliberate structure — stored locally |
 | **cURL in & out** | Paste any `curl` command to build a request instantly; copy any request back out as cURL |
+| **SSE streaming** | Live event streams render as they arrive, newest on top, with a Stop control |
+| **MCP bench** | Connect to an MCP server, list its tools/resources, call one, inspect the result — no separate client |
 | **Native speed** | A Rust engine sends the request — no CORS limits, full control over redirects, SSL, and proxies |
 | **Syntax-highlighted responses** | Pretty-printed JSON/XML/HTML with per-theme colors; Raw mode for plain text |
 | **Keyboard-first** | Send, search, save, switch tabs, and manage environments without touching the mouse |
@@ -68,8 +71,16 @@ curl -fsSL https://pigeon-client.github.io/install.sh | sh
 
 Or grab the `.dmg` from the [latest release](https://github.com/pigeon-client/pigeon/releases/latest).
 
-> **Linux & Windows** are on the roadmap.
-> [Watch the releases](https://github.com/pigeon-client/pigeon/releases) to be notified.
+Or via Homebrew, once the tap is published (see `docs/release.md`):
+
+```bash
+brew tap pigeon-client/pigeon
+brew install --cask pigeon
+```
+
+> **Linux & Windows** builds (`.AppImage`/`.deb`, `.exe`) are produced by CI on every release —
+> see [Releases](https://github.com/pigeon-client/pigeon/releases) — but macOS is the primary,
+> most-tested target today.
 
 ---
 
@@ -80,6 +91,7 @@ Or grab the `.dmg` from the [latest release](https://github.com/pigeon-client/pi
 | `⌘ N` | New tab |
 | `⌘ W` | Close tab |
 | `⌘ Enter` | Send request |
+| `⌘ K` | Open command palette |
 | `⌘ F` | Focus sidebar search |
 | `⌘ S` | Save to collection |
 | `⌘ ,` | Open settings |
@@ -88,6 +100,24 @@ Or grab the `.dmg` from the [latest release](https://github.com/pigeon-client/pi
 | `?` | Show all shortcuts |
 
 ---
+
+## How it's built
+
+Pigeon is a Tauri v2 (Rust) + React 19 desktop app — no Electron, no cloud backend. A few notes
+for the curious:
+
+- **PM-style feature docs.** Every feature — request builder, environments, command palette, MCP
+  bench, and more — has a written spec in [`docs/features/`](docs/features/README.md): problem,
+  functional requirements, acceptance criteria, edge cases, and the exact `data-testid`s used to
+  test it. It's the same shape a PM/eng pair would use to scope real work, kept honest against the
+  actual code as it changes.
+- **A dedicated QA agent.** [`.claude/agents/feature-qa.md`](.claude/agents/feature-qa.md) runs
+  Vitest + Playwright, does manual exploratory passes against the feature docs' checklists, files
+  bugs with repro steps, and updates the docs when behavior drifts from what's written.
+- **Real transport ports, real tests.** HTTP (`features/execution`) and MCP
+  (`features/mcp`) both go through a small transport interface — Tauri's Rust `reqwest` on
+  desktop, `fetch` in the browser build — so the same request/response and JSON-RPC logic is unit
+  tested without a live server, and Playwright can stub the network deterministically in CI.
 
 ## Contributing
 

@@ -72,33 +72,25 @@ and Params.
 └────────────────────────────────────────────────────────┘
 ```
 
-- **Tab strip** — each tab shows its method (colored) + name, an ✕ close, and a trailing `+` to
-  add a tab. The active tab is highlighted; inactive tabs stay mounted but hidden.
-- **URL bar** — method dropdown (color-coded: GET, POST, PUT, PATCH, DELETE, HEAD,
-  OPTIONS, QUERY), URL field with syntax tint (scheme muted, host normal, path in accent,
-  query muted), and the Send button. GET/HEAD never send a body. `*` is preserved as an
-  OPTIONS request-target (requires a `Host` header on send in the desktop app).
-- **Editor tabs** — Params, Auth, Headers, Body. Each shows a count badge or dot when it has
-  content (`Params²`, `Headers¹`, `Body●`). Body supports JSON, Raw (HTML/CSV/XML/YAML/NDJSON/
-  Problem Details/GraphQL/SSE/text), Form Data, URL Encoded, and Binary (PDF/ZIP/protobuf/
-  msgpack/image/audio/video). See `docs/features/content-types.md`.
+- **Tab strip** — method (colored) + name, ✕ close, trailing `+`. Active highlighted; inactive
+  tabs stay mounted but hidden (`display:none`).
+- **URL bar** — method dropdown, syntax-tinted URL (scheme muted, host normal, path accent, query
+  muted), Send. `*` preserved as OPTIONS request-target (needs `Host` on desktop send).
+- **Editor tabs** — count badge / body dot when content present.
+- **Empty state** (`EmptyRequestState`) — headline "No request open"; single CTA **Try an example**;
+  keyboard hints. Shown when the **active tab has no URL** (tabs still exist).
 
 ## UX / interactions
 
-- **Tab name — auto vs manual.** A new tab's name is auto-derived from the URL path and follows it
-  as you type (`/users` → `/user`). Double-click a tab to rename; a manual name **locks** and no
-  longer tracks the path. Clearing the rename input reverts to auto. The lock (`nameLocked`) is
-  persisted with the request, so it survives save/reload.
-- **URL ↔ Params real-time sync.** Typing a query string (`?a=1&b=2`) populates the Params editor
-  live, on every keystroke; editing a param rewrites the URL's query. The query stays visible in
-  the URL. On send, params are authoritative (the URL's own query is dropped to avoid duplication),
-  but a raw query with no params is still sent as typed.
-- **cURL paste/type.** Pasting or typing a `curl …` command into the URL bar parses method,
-  headers, auth, body, and params and applies them (a toast confirms). Import via the modal opens
-  the result in a **new** tab.
-- **Method dropdown.** Click to open; pick a method; the trigger + tab color update.
-- **Key/value rows.** Params/Headers use a checkbox (enabled), key, value, and a trash button. A
-  blank trailing row auto-appears so there's always somewhere to type.
+- **Tab name — auto vs manual.** Auto name tracks URL path until double-click rename locks
+  (`nameLocked`). Clearing rename input reverts to auto. Lock persists with the request.
+- **URL ↔ Params.** Query in URL ↔ Params live; send drops URL query when params exist to avoid
+  duplication; raw query with empty params still sends as typed.
+- **cURL paste/type.** `curl …` → parse apply + toast. Import modal opens result in a **new** tab.
+- **Key/value rows.** Checkbox enable, key, value, trash; blank trailing row + Add button.
+- **Long values.** Transparent input + tint overlay; `scrollLeft` synced (same pattern as URL bar).
+  Wheel / shift+wheel scrolls horizontally when content overflows.
+- **Body wrap.** `body-wrap-toggle` shares preference with response viewer.
 
 ## Keyboard
 
@@ -107,24 +99,62 @@ and Params.
 - `⌘F` contextual find: in the Body editor / response panel it opens an in-panel find bar;
   anywhere else it focuses the header search
 - Double-click tab label → rename (Enter commit, Esc cancel)
-- Right-click tab → New Request / Duplicate Request / Close Tab / Close Other / Close All
+- Right-click tab → New / Duplicate / Close / Close Other / Close All
 
 ## States & edge cases
 
-- **No URL** → the panel shows the empty-request state ("No request open", New Request / Try an
-  example) instead of the editor + response.
-- Auto-close pairs (`"`, `{`, …) in the Body editor write through React's native setter so the
-  highlight overlay updates immediately.
-- Disabled params are excluded from both the URL query and the sent request.
+- **No URL on active tab** → empty-request state ("No request open" + Try an example).
+- Auto-close pairs in Body write through React's native setter so highlight updates.
+- Disabled params excluded from URL query and sent request.
+- Suggestion dropdowns for header keys must not trap vertical scroll of the list.
+- Unresolved env vars surface via `send-error` under the URL bar.
+- Inactive tab panels remain in DOM — testids need `:visible`.
+
+## Manual test checklist
+
+- [ ] Create 3 tabs; switch with click and `⌘⇧1–3`; close middle tab.
+- [ ] Rename tab; change URL path — name stays locked; clear rename — unlocks.
+- [ ] Clear URL → empty state shows Try an example only.
+- [ ] Paste long URL (~3KB); End key + horizontal scroll; overlay matches caret.
+- [ ] Paste URL with query → Params filled; edit value → URL updates.
+- [ ] Headers: add 25 rows; scroll vertically to last row.
+- [ ] Headers: paste long Bearer token; scroll horizontally; `{{token}}` tint tracks scroll.
+- [ ] Disable a param; confirm removed from URL; re-enable.
+- [ ] Auth: bearer / basic / api-key (header + query).
+- [ ] Body wrap toggle; preference matches Settings / response wrap.
+- [ ] Switch method through all options including QUERY; Send on GET with body text — body not sent.
+- [ ] Paste `curl -X POST …` into URL bar — method/headers/body applied + toast.
+- [ ] Right-click tab → Duplicate / Close Other / Close All.
+
+## Automation coverage
+
+- Vitest: `src/features/request-builder/store.test.ts`, `src/shared/lib/url.test.ts`,
+  `src/shared/lib/httpMethod.test.ts`.
+- Playwright: `e2e/tabs.spec.ts`, `e2e/url-params.spec.ts`, `e2e/method-and-actions.spec.ts`,
+  `e2e/body-editor.spec.ts`.
+- `e2e/long-values.spec.ts` — ~3KB URL End-key + horizontal scroll, 600+ char header value
+  End-key + horizontal scroll, 25 header rows scroll-to-last-row (all no-layout-break asserted).
 
 ## Test ids
 
-`url-input`, `method-trigger`, `method-option-<METHOD>` (e.g. `method-option-POST`),
-`data-send-btn` (attribute), `editor-tab-params|auth|headers|body`, `param-key-<i>`,
-`param-value-<i>`. Workspace tabs expose `role="tab"`; scope `url-input` / `method-trigger` to
-`:visible`.
+`url-input`, `method-trigger`, `method-option-<METHOD>`, `data-send-btn` (attribute),
+`send-error`, `env-token`, `editor-tab-params|auth|headers|body`, `param-key-<i>`,
+`param-value-<i>`, `header-key-<i>`, `header-value-<i>`, `body-wrap-toggle`.
+Workspace tabs: `role="tab"`. Scope `url-input` / `method-trigger` to `:visible`.
 
 ## Key files
 
 `components/TabStrip.tsx`, `components/UrlBar.tsx`, `components/RequestEditor.tsx`,
-`components/KeyValueEditor.tsx`, `components/BodyEditor.tsx`, `store.ts`, `hooks/useAutoClose.ts`.
+`components/KeyValueEditor.tsx`, `components/BodyEditor.tsx`, `components/HeadersEditor.tsx`,
+`components/AuthEditor.tsx`, `components/EmptyRequestState.tsx`, `store.ts`,
+`hooks/useAutoClose.ts`.
+
+## Open risks
+
+- Overlay `scrollLeft` sync can desync if rAF missed after huge paste — re-check after paste.
+- **Fixed (2026-07-26):** header key suggestion dropdown now caps at `max-h-[220px]` with internal
+  `overflow-y-auto` (was unbounded `overflow-hidden`) — safe if the `COMMON_HEADERS` catalog grows.
+- **Fixed (2026-07-26):** the URL bar's `{{token}}` hover-preview regression from commit `9af2269`
+  is closed — see `docs/features/environments.md` Open risks for detail.
+- Long-URL / long-value overflow historically regressed; now covered by `e2e/long-values.spec.ts`
+  as a permanent regression guard.

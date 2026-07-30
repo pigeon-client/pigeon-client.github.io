@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openApp } from "./helpers";
+import { clickSend, mockJson, openApp, sidebarTab, typeUrl } from "./helpers";
 
 test.describe("settings & theme", () => {
   test("switches theme between dark and light", async ({ page }) => {

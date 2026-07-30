@@ -1,10 +1,12 @@
 import { PanelLeftOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SaveToCollectionModal, useCollectionStore } from "@/features/collections";
+import { CommandPalette } from "@/features/command-palette";
 import { EnvModal, selectActiveEnv, useEnvStore } from "@/features/environments";
 import { GraphqlComingSoon } from "@/features/graphql";
 import { useHistoryStore } from "@/features/history";
 import { generateCurl, ImportModal } from "@/features/import-export";
+import { McpPanel } from "@/features/mcp";
 import {
   EmptyRequestState,
   RequestEditor,
@@ -23,6 +25,9 @@ import {
 import { Header } from "./layout/Header";
 import { Sidebar } from "./layout/Sidebar";
 import { UpdateToast } from "./layout/UpdateToast";
+
+const MIN_EDITOR_HEIGHT = 150;
+const MIN_RESPONSE_HEIGHT = 160;
 
 /* ── Empty state when no URL has been typed yet ── */
 export function AppContent() {
@@ -323,15 +328,36 @@ export function AppContent() {
                     </div>
                     <ResponsePanel
                       tabId={tab.id}
+                      onResizeReset={() => {
+                        setEditorHeights((prev) => {
+                          const next = { ...prev };
+                          delete next[tab.id];
+                          return next;
+                        });
+                      }}
                       onResizeStart={(e) => {
                         e.preventDefault();
                         const startY = e.clientY;
-                        const startHeight = editorHeight || 200;
+                        const handle = e.currentTarget as HTMLElement;
+                        const responsePanel = handle.parentElement;
+                        const editorPanel =
+                          responsePanel?.previousElementSibling as HTMLElement | null;
+                        const startHeight =
+                          editorPanel?.getBoundingClientRect().height ?? editorHeight ?? 200;
+                        const splitHeight =
+                          startHeight + (responsePanel?.getBoundingClientRect().height ?? 0);
+                        const maxEditorHeight = Math.max(
+                          MIN_EDITOR_HEIGHT,
+                          splitHeight - MIN_RESPONSE_HEIGHT,
+                        );
                         const onMove = (ev: MouseEvent) => {
                           const delta = ev.clientY - startY;
                           setEditorHeights((prev) => ({
                             ...prev,
-                            [tab.id]: Math.max(150, startHeight + delta),
+                            [tab.id]: Math.min(
+                              maxEditorHeight,
+                              Math.max(MIN_EDITOR_HEIGHT, startHeight + delta),
+                            ),
                           }));
                         };
                         const onUp = () => {

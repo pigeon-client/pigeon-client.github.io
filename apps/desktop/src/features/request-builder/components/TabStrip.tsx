@@ -1,5 +1,5 @@
 import type React from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { METHOD_COLORS } from "@/shared/ui/badge";
 import { useTabStore } from "../store";
 
@@ -10,6 +10,7 @@ interface TabCtxMenu {
 }
 
 function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => void }) {
+  const menuRef = useRef<HTMLDivElement>(null);
   const addTab = useTabStore((s) => s.addTab);
   const duplicateTab = useTabStore((s) => s.duplicateTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
@@ -17,6 +18,18 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
   const closeOther = useTabStore((s) => s.closeOtherTabs);
   const closeAll = useTabStore((s) => s.closeAllTabs);
   const tabs = useTabStore((s) => s.tabs);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    menuRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   const menuItems: {
     label: string;
@@ -143,13 +156,8 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
       <button
         type="button"
         aria-label="Close menu"
+        tabIndex={-1}
         onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onClose();
-          }
-        }}
         onContextMenu={(e) => {
           e.preventDefault();
           onClose();
@@ -165,6 +173,8 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
       />
       {/* Menu */}
       <div
+        ref={menuRef}
+        role="menu"
         style={{
           position: "fixed",
           left: menu.x,
@@ -182,6 +192,7 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
         {menuItems.map((item) => (
           <button
             type="button"
+            role="menuitem"
             key={item.label}
             disabled={item.disabled}
             onClick={() => {

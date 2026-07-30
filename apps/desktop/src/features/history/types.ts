@@ -1,5 +1,17 @@
 import type { HttpMethod, RequestConfig } from "@/shared/types";
 
+/** Response body captured at send time — text only, capped, never re-fetched. */
+export interface ResponseSnapshot {
+  status: number;
+  statusText: string;
+  contentType: string;
+  /** Original response size in bytes (pre-truncation). */
+  size: number;
+  /** Absent for binary/media responses — those store metadata (content-type + size) only. */
+  bodyText?: string;
+  truncated: boolean;
+}
+
 export interface HistoryItem {
   id?: number;
   name: string;
@@ -9,6 +21,7 @@ export interface HistoryItem {
   responseTime: number;
   timestamp: number;
   request: RequestConfig;
+  snapshot?: ResponseSnapshot;
 }
 
 /** Draft auto-folder hierarchy: domain → subdomain → path folders */

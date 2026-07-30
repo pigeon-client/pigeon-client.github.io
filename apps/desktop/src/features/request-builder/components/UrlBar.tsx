@@ -188,9 +188,12 @@ export function UrlBar() {
   };
 
   /* Split text into plain spans + hoverable {{token}} chips. */
-  const renderTokens = (text: string, className: string) => {
+  const renderTokens = (text: string, className: string, startOffset = 0) => {
     if (!text) return null;
+    let offset = startOffset;
     return text.split(/(\{\{[^}]+\}\})/g).map((part, i) => {
+      const partStart = offset;
+      offset += part.length;
       const m = part.match(/^\{\{([^}]+)\}\}$/);
       if (!m) {
         return (
@@ -209,6 +212,11 @@ export function UrlBar() {
           missing={!info.random && info.value === null}
           onEnter={() => setHoveredToken(info)}
           onLeave={() => setHoveredToken((h) => (h?.name === info.name ? null : h))}
+          onMouseDown={() => {
+            const input = urlInputRef.current;
+            input?.focus();
+            input?.setSelectionRange(partStart + part.length, partStart + part.length);
+          }}
         />
       );
     });
@@ -233,9 +241,9 @@ export function UrlBar() {
     return (
       <>
         {renderTokens(scheme, "text-muted-foreground")}
-        {renderTokens(host, "font-medium text-foreground")}
-        {renderTokens(path, "font-medium text-primary")}
-        {renderTokens(query, "text-muted-foreground")}
+        {renderTokens(host, "font-medium text-foreground", scheme.length)}
+        {renderTokens(path, "font-medium text-primary", scheme.length + host.length)}
+        {renderTokens(query, "text-muted-foreground", scheme.length + host.length + path.length)}
       </>
     );
   };
@@ -382,7 +390,7 @@ export function UrlBar() {
             <div
               ref={urlOverlayRef}
               aria-hidden
-              className="pointer-events-none absolute inset-0 z-0 overflow-hidden px-3"
+              className="pointer-events-none absolute inset-0 z-[var(--z-raised)] overflow-hidden px-3"
             >
               <div className="flex h-full min-w-max items-center whitespace-nowrap font-mono text-code">
                 {renderUrlSegments(request.url)}
@@ -522,11 +530,13 @@ function TokenChip({
   missing,
   onEnter,
   onLeave,
+  onMouseDown,
 }: {
   token: string;
   missing: boolean;
   onEnter: () => void;
   onLeave: () => void;
+  onMouseDown: () => void;
 }) {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: hover-only preview enhancement inside a display overlay; the resolved value is non-essential (also shown in the URL preview line) and needs no keyboard path
@@ -534,6 +544,10 @@ function TokenChip({
       data-testid="env-token"
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
+      onMouseDown={(event) => {
+        event.preventDefault();
+        onMouseDown();
+      }}
       className={cn(
         "pointer-events-auto cursor-help font-medium",
         missing

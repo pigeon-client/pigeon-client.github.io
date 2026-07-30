@@ -10,6 +10,7 @@ export function Header() {
         </a>
         <nav className="links" aria-label="Main">
           <a href="#organize">organize</a>
+          <a href="#mcp">mcp</a>
           <a href="#features">features</a>
           <a href="#open-source">open-source</a>
           <a href="#download">download</a>

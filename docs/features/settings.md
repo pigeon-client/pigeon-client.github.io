@@ -50,27 +50,12 @@ destructive data wipes — without a settings store coupled into every feature (
 
 ## UI
 
-- **Settings** modal (gear icon, `⌘,`) — a centered modal with a left nav (General / Requests /
-  Data / About), pop-in animation.
-  - **General** — theme swatches (Dark / Light).
-  - **Requests** — Follow Redirects, SSL Verification toggles, Proxy URL field.
-  - **Data** — counts (History / Drafts / Collections) + Clear History / Clear Drafts / Clear All.
-  - **About** — current version, update status, Check Update / Install actions.
-- **Keyboard Shortcuts** modal — reference list (`⌘/`).
+Centered modal, left nav, pop-in animation. Theme swatches; word-wrap toggle; request toggles;
+About with logo/version.
 
 ## UX / interactions
 
-- **Theme** — Dark applies the `.dark` class on `<html>`; Light is the CSS default (class removed).
-  Choice persists to `localStorage` (`pg_theme`) and is applied on startup. Syntax highlight colors
-  are theme-aware CSS vars.
-- **Request options** persist to `localStorage` (`pg_follow_redirects`, `pg_ssl_verify`,
-  `pg_proxy_url`); execution reads them at send time.
-- **Updates** (desktop) — Tauri updater. Startup runs a silent check; a badge dot appears on the
-  gear **and on the About tab** when an update is available, and an in-app **toast** (`UpdateToast`,
-  bottom-right) shows on app launch — "Update" opens Settings, dismissible. No OS notification. The
-  About tab shows the app name/logo, current + latest version, status, and a manual Check/Install
-  flow.
-- **Data** — clear actions wipe history/drafts (and collections for "Clear All").
+Update toast: "Update" opens Settings; dismissible. No OS notification required.
 
 ## Keyboard
 
@@ -78,9 +63,21 @@ destructive data wipes — without a settings store coupled into every feature (
 
 ## States & edge cases
 
-- The update flow only functions in the packaged app (Tauri updater); the browser build shows
-  version/UI but can't install.
-- Settings and Execution are coupled only through `localStorage` keys, not a shared store.
+- Updater only in packaged Tauri app.
+- Legacy `.theme-pink` / `.theme-light` may exist in CSS but UI only exposes Dark / Light.
+
+## Manual test checklist
+
+- [ ] Dark ↔ Light; reload persistence.
+- [ ] Word wrap on/off in General; body + response reflect it.
+- [ ] Set proxy URL; confirm stored (desktop send optional).
+- [ ] Clear History / Drafts / All — confirm counts; collections still present after Clear All.
+- [ ] Open Shortcuts; verify listed chords match real behavior.
+- [ ] Desktop: Check Update flow (or graceful "up to date").
+
+## Automation coverage
+
+- Playwright: `e2e/settings-theme.spec.ts`.
 
 ## Test ids
 
@@ -91,4 +88,10 @@ Opened via `title="Settings (⌘⇧,)"`. `settings-word-wrap`, `settings-retenti
 ## Key files
 
 `components/SettingsDrawer.tsx`, `components/KeyboardShortcutsModal.tsx`, `lib/theme.ts`,
-`lib/updater.ts`.
+`lib/wordWrap.ts`, `hooks/useWordWrap.ts`, `lib/updater.ts`,
+`src/app/layout/UpdateToast.tsx`.
+
+## Open risks
+
+- SSL/proxy not testable in browser CI.
+- Clear All is destructive — confirm copy must stay unambiguous; collections survive intentionally.

@@ -38,4 +38,32 @@ test.describe("smoke", () => {
     await page.getByTestId("sidebar-expand").click();
     await expect(page.getByTestId("sidebar-new-request")).toBeVisible();
   });
+
+  test("response resize keeps the panel reachable and double-click resets the split", async ({
+    page,
+  }) => {
+    await openApp(page);
+    await typeUrl(page, "https://api.example.com/users");
+
+    const handle = page.getByTestId("response-resize-handle");
+    const emptyResponse = page.getByTestId("response-empty");
+    const startBox = await emptyResponse.boundingBox();
+    expect(startBox).not.toBeNull();
+
+    const handleBox = await handle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handleBox!.x + handleBox!.width / 2, page.viewportSize()!.height - 1);
+    await page.mouse.up();
+
+    const clampedBox = await emptyResponse.boundingBox();
+    expect(clampedBox).not.toBeNull();
+    expect(clampedBox!.height).toBeGreaterThanOrEqual(150);
+
+    await handle.dblclick();
+    const resetBox = await emptyResponse.boundingBox();
+    expect(resetBox).not.toBeNull();
+    expect(resetBox!.height).toBeGreaterThan(clampedBox!.height);
+  });
 });

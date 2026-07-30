@@ -18,7 +18,10 @@ test.describe("method selector & header actions", () => {
 
     // Grant clipboard so the copy path succeeds.
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => {});
-    await page.locator('[aria-label="Copy as cURL"]').click();
-    await expect(page.locator('[title="Copied!"]')).toBeVisible();
+    const copyButton = page.locator('[aria-label="Copy as cURL"]');
+    await copyButton.click();
+    // Confirmation is the check icon swap; the tooltip text also flips to "Copied!"
+    // but only renders while hovered/focused, so assert on the icon instead.
+    await expect(copyButton.locator("svg.lucide-check")).toBeVisible();
   });
 });
