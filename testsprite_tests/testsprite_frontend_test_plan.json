@@ -1,0 +1,1712 @@
+[
+  {
+    "id": "TC001",
+    "title": "Create a request and send it from the main workspace",
+    "description": "This verifies that a user can compose a request in the main workspace and inspect the resulting response.",
+    "category": "Request composition + Send flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Choose a request method"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid request URL"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response status is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response body is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Compose and send a request",
+    "description": "A user can build a request with method, URL, parameters, headers, auth, and body, then send it and see the response details.",
+    "category": "Request Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Select an HTTP method"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid request URL"
+      },
+      {
+        "type": "action",
+        "description": "Add a query parameter"
+      },
+      {
+        "type": "action",
+        "description": "Add a request header"
+      },
+      {
+        "type": "action",
+        "description": "Enter request body content"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response status is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response body and timing are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Set query parameters, headers, auth, and body before sending",
+    "description": "This verifies that a user can fully configure a request in the main workspace and send it successfully.",
+    "category": "Request composition + Send flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Choose a request method"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid request URL"
+      },
+      {
+        "type": "action",
+        "description": "Add a query parameter"
+      },
+      {
+        "type": "action",
+        "description": "Add a request header"
+      },
+      {
+        "type": "action",
+        "description": "Configure request auth"
+      },
+      {
+        "type": "action",
+        "description": "Enter a request body"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request details were included in the sent request"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Inspect a JSON response in different views",
+    "description": "A user can send a request that returns JSON and switch between formatted and raw response views.",
+    "category": "Send and Response Viewing",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Compose a request that returns JSON"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "action",
+        "description": "Switch the response view to formatted mode"
+      },
+      {
+        "type": "action",
+        "description": "Switch the response view to raw mode"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the JSON response body is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response metadata is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Use environment variables in a request",
+    "description": "This verifies that a user can insert environment variables into a request and have the selected environment values applied.",
+    "category": "Environments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open the environment manager"
+      },
+      {
+        "type": "action",
+        "description": "Create a new environment"
+      },
+      {
+        "type": "action",
+        "description": "Add a variable to the environment"
+      },
+      {
+        "type": "action",
+        "description": "Select the environment as active"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Enter the variable token in the URL field"
+      },
+      {
+        "type": "action",
+        "description": "Enter the variable token in a header field"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request is sent using the active environment values"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Inspect response timing and size after a request completes",
+    "description": "This verifies that a user can see response performance details after sending a request.",
+    "category": "Request composition + Send flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Choose a request method"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid request URL"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response timing is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response size is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Import a cURL command into a request",
+    "description": "A user can paste a cURL command and have the request populate with the imported method, URL, headers, and body.",
+    "category": "Request Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Paste a valid cURL command into the URL field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request method and URL are populated from the imported command"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the imported headers and body are populated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Keep request state intact across multiple tabs",
+    "description": "This verifies that a user can switch between tabs without losing the request state in each tab.",
+    "category": "Tabbed request workspace and reuse flows",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create two new request tabs"
+      },
+      {
+        "type": "action",
+        "description": "Enter different request details in each tab"
+      },
+      {
+        "type": "action",
+        "description": "Switch between the tabs"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each tab retains its own request state"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the active tab shows the expected request content"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Keep query parameters in sync with the URL",
+    "description": "A user can edit query parameters and see the request URL update to reflect the current parameter values.",
+    "category": "Request Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a URL that includes query parameters"
+      },
+      {
+        "type": "action",
+        "description": "Switch to the params editor"
+      },
+      {
+        "type": "action",
+        "description": "Edit an existing parameter value"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request URL reflects the updated parameter value"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Preserve separate request state across tabs",
+    "description": "A user can work in multiple request tabs and switch between them without losing each tab's request state.",
+    "category": "Tabbed Request Workspace",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Set up the first request with a unique URL"
+      },
+      {
+        "type": "action",
+        "description": "Open another request tab"
+      },
+      {
+        "type": "action",
+        "description": "Set up the second request with a different URL"
+      },
+      {
+        "type": "action",
+        "description": "Switch back to the first tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the first tab's request state is preserved"
+      },
+      {
+        "type": "action",
+        "description": "Switch back to the second tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the second tab's request state is preserved"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Persist multiple request tabs while switching workspaces",
+    "description": "This test verifies that a user can keep separate request state in multiple tabs while moving between them.",
+    "category": "History and Drafts",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Set one request method and URL"
+      },
+      {
+        "type": "action",
+        "description": "Open another request tab"
+      },
+      {
+        "type": "action",
+        "description": "Set a different request method and URL"
+      },
+      {
+        "type": "action",
+        "description": "Switch back to the first tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the first tab still shows its original request state"
+      },
+      {
+        "type": "action",
+        "description": "Switch to the second tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the second tab still shows its original request state"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Switch environments and send with updated values",
+    "description": "This verifies that changing the active environment updates the values used by subsequent requests.",
+    "category": "Environments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open the environment manager"
+      },
+      {
+        "type": "action",
+        "description": "Create two environments"
+      },
+      {
+        "type": "action",
+        "description": "Add a variable with different values in each environment"
+      },
+      {
+        "type": "action",
+        "description": "Select the first environment as active"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Enter the variable token in the URL field"
+      },
+      {
+        "type": "action",
+        "description": "Switch to the second environment"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request uses the second environment value"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "View an HTML response preview",
+    "description": "This verifies that a user can inspect an HTML response in the preview view after sending a request.",
+    "category": "Request composition + Send flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Choose a request method"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid request URL that returns HTML"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an HTML response preview is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response body is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Reopen a draft or history entry into the workspace",
+    "description": "This verifies that a user can reopen a previous draft or history item and continue editing it.",
+    "category": "Tabbed request workspace and reuse flows",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Enter request details"
+      },
+      {
+        "type": "action",
+        "description": "Open the history or drafts section"
+      },
+      {
+        "type": "action",
+        "description": "Reopen the saved entry"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the entry opens in the workspace"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request details are restored"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Reopen a past request from history",
+    "description": "This test verifies that a user can open a history entry in a tab and continue working from the recorded request.",
+    "category": "History and Drafts",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Send a request to create a history entry"
+      },
+      {
+        "type": "action",
+        "description": "Open the History tab"
+      },
+      {
+        "type": "action",
+        "description": "Open the saved history entry"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request opens in a tab"
+      },
+      {
+        "type": "action",
+        "description": "Edit the reopened request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request remains editable"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Import a request from cURL into a new tab",
+    "description": "This verifies that a user can paste a cURL command into the import drawer and open the imported request in a new tab.",
+    "category": "Import / Export cURL",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open the import drawer"
+      },
+      {
+        "type": "action",
+        "description": "Paste a valid cURL command into the import field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the import"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a new request tab opens for the imported request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the imported request details are populated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Render an HTML response in preview",
+    "description": "A user can send a request that returns HTML and inspect the rendered preview and text views.",
+    "category": "Send and Response Viewing",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Compose a request that returns HTML"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "action",
+        "description": "Switch the response view to preview mode"
+      },
+      {
+        "type": "action",
+        "description": "Switch the response view to text mode"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the HTML response is displayed in preview"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response body is displayed as text"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Resume an auto-saved draft",
+    "description": "This test verifies that a user can recover an auto-saved working draft from the Drafts tab and continue editing it.",
+    "category": "History and Drafts",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Enter a request URL"
+      },
+      {
+        "type": "action",
+        "description": "Modify the request without sending it"
+      },
+      {
+        "type": "action",
+        "description": "Open the Drafts tab"
+      },
+      {
+        "type": "action",
+        "description": "Open the draft entry"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the draft opens in a tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the unsent request content is available for editing"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Save a request into a collection and reopen it later",
+    "description": "This verifies that a user can save the current request into a collection and open it again from the tree later.",
+    "category": "Collections",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid request URL"
+      },
+      {
+        "type": "action",
+        "description": "Save the active request to a collection"
+      },
+      {
+        "type": "action",
+        "description": "Open the saved request from the collections tree"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved request is reopened in the workspace"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request content is preserved"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "Persist and restore a request draft after closing and reopening it",
+    "description": "This verifies that a user can resume an auto-saved draft from the drafts section after closing the working tab.",
+    "category": "Tabbed request workspace and reuse flows",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Enter request details for a draft"
+      },
+      {
+        "type": "action",
+        "description": "Close the tab"
+      },
+      {
+        "type": "action",
+        "description": "Open the drafts section"
+      },
+      {
+        "type": "action",
+        "description": "Reopen the draft"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the draft reopens in the workspace"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the draft content is preserved"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Edit a pasted cURL request in place",
+    "description": "This verifies that a user can paste a cURL command into the request builder and continue editing the populated request.",
+    "category": "Import / Export cURL",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Paste a valid cURL command into the URL bar"
+      },
+      {
+        "type": "action",
+        "description": "Edit the populated request method or fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request fields are populated from the pasted cURL"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request remains editable"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC022",
+    "title": "Duplicate a request tab and edit the copy independently",
+    "description": "A user can duplicate a tab and change the copy without affecting the original request.",
+    "category": "Tabbed Request Workspace",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Set up a request in the original tab"
+      },
+      {
+        "type": "action",
+        "description": "Open the tab context menu"
+      },
+      {
+        "type": "action",
+        "description": "Duplicate the current tab"
+      },
+      {
+        "type": "action",
+        "description": "Modify the duplicated request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the duplicated tab is created"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the original request remains unchanged"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC023",
+    "title": "Create and activate an environment with variables",
+    "description": "This verifies that a user can create an environment, add variables, and select it as the active environment.",
+    "category": "Environments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open the environment manager"
+      },
+      {
+        "type": "action",
+        "description": "Create a new environment"
+      },
+      {
+        "type": "action",
+        "description": "Add a variable to the environment"
+      },
+      {
+        "type": "action",
+        "description": "Select the environment as active"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the environment is shown as the active selection"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the variable is available in the environment manager"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC024",
+    "title": "Update request preferences and send with them applied",
+    "description": "This test verifies that a user can change request behavior settings and send a request using the updated preferences.",
+    "category": "Settings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open Settings"
+      },
+      {
+        "type": "action",
+        "description": "Set follow redirects to enabled"
+      },
+      {
+        "type": "action",
+        "description": "Set SSL verification to enabled"
+      },
+      {
+        "type": "action",
+        "description": "Set the proxy option"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Set the request method"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid request URL"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request completes and a response is shown"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC025",
+    "title": "Duplicate a request tab",
+    "description": "This verifies that a user can duplicate a tab and get a separate copy of the current request state.",
+    "category": "Tabbed request workspace and reuse flows",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Enter request details in the tab"
+      },
+      {
+        "type": "action",
+        "description": "Duplicate the tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a duplicate tab appears"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the duplicated tab contains the same request state"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC026",
+    "title": "Stop a live SSE stream after events appear",
+    "description": "A user can start an SSE request, see live events arrive, and stop the stream when finished.",
+    "category": "Send and Response Viewing",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Compose an SSE request"
+      },
+      {
+        "type": "action",
+        "description": "Start the live stream"
+      },
+      {
+        "type": "action",
+        "description": "Wait for events to appear"
+      },
+      {
+        "type": "action",
+        "description": "Stop the stream"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify live events are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the stream is stopped"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC027",
+    "title": "Export the current request as cURL",
+    "description": "This verifies that a user can export the current request to a cURL command for reuse elsewhere.",
+    "category": "Import / Export cURL",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid request URL"
+      },
+      {
+        "type": "action",
+        "description": "Open the cURL export action"
+      },
+      {
+        "type": "action",
+        "description": "Copy the generated cURL command"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a generated cURL command is available"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exported command reflects the current request"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC028",
+    "title": "Close a request tab without losing other work",
+    "description": "This verifies that a user can close one tab while keeping other open tabs intact.",
+    "category": "Tabbed request workspace and reuse flows",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create two new request tabs"
+      },
+      {
+        "type": "action",
+        "description": "Close one tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the remaining tab is still open"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the remaining tab's request state is preserved"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC029",
+    "title": "Start and stop a streaming response",
+    "description": "This verifies that a user can start a streaming request and stop it from the main workspace.",
+    "category": "Request composition + Send flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Choose a streaming-capable request method"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid request URL for a streaming response"
+      },
+      {
+        "type": "action",
+        "description": "Start the request"
+      },
+      {
+        "type": "action",
+        "description": "Stop the stream"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the stream control state updates"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify streamed response content is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC030",
+    "title": "Create nested folders and requests inside a collection",
+    "description": "This verifies that a user can organize saved requests into nested folders and browse the resulting tree structure.",
+    "category": "Collections",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new collection"
+      },
+      {
+        "type": "action",
+        "description": "Create a folder inside the collection"
+      },
+      {
+        "type": "action",
+        "description": "Create and save a request inside the folder"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the nested tree structure is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved request appears inside the folder"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC031",
+    "title": "Rename a request tab",
+    "description": "A user can rename a tab and keep editing the request with the custom name preserved.",
+    "category": "Tabbed Request Workspace",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Rename the active tab inline"
+      },
+      {
+        "type": "action",
+        "description": "Continue editing the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the custom tab name is preserved"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request remains editable in the renamed tab"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC032",
+    "title": "Switch theme and keep the interface updated",
+    "description": "This test verifies that a user can change the app theme in Settings and see the interface switch between dark and light mode.",
+    "category": "Settings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open Settings"
+      },
+      {
+        "type": "action",
+        "description": "Switch to the light theme"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the interface updates to the light theme"
+      },
+      {
+        "type": "action",
+        "description": "Switch back to the dark theme"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the interface updates to the dark theme"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC033",
+    "title": "Create a collection from the sidebar",
+    "description": "This verifies that a user can create a new collection and see it appear in the collections tree.",
+    "category": "Collections",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open the collections area in the sidebar"
+      },
+      {
+        "type": "action",
+        "description": "Create a new collection"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new collection appears in the collections tree"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC034",
+    "title": "Wrap and unwrap editor text from settings",
+    "description": "This test verifies that a user can toggle word wrap and see long request or response text wrap consistently in the editors.",
+    "category": "Settings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open Settings"
+      },
+      {
+        "type": "action",
+        "description": "Toggle word wrap on"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify long text wraps in the editors"
+      },
+      {
+        "type": "action",
+        "description": "Toggle word wrap off"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify long text no longer wraps in the editors"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC035",
+    "title": "Close tabs while keeping remaining work available",
+    "description": "A user can close the active tab or other tabs and continue working in the remaining request tabs.",
+    "category": "Tabbed Request Workspace",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open two request tabs"
+      },
+      {
+        "type": "action",
+        "description": "Enter unique content in each tab"
+      },
+      {
+        "type": "action",
+        "description": "Open the tab context menu"
+      },
+      {
+        "type": "action",
+        "description": "Close the current tab or close other tabs"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the remaining tab stays open"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the remaining request state is still available"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC036",
+    "title": "Change the response display preferences",
+    "description": "This verifies that a user can update response display preferences such as word wrap and see the change applied.",
+    "category": "settings and preferences",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open settings or preferences"
+      },
+      {
+        "type": "action",
+        "description": "Change the response word wrap preference"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated response display preference is applied"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC037",
+    "title": "Clear history and drafts from settings",
+    "description": "This test verifies that a user can clear stored history and drafts from Settings and see the selected data removed.",
+    "category": "Settings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Send a request to create history"
+      },
+      {
+        "type": "action",
+        "description": "Edit a request to create a draft"
+      },
+      {
+        "type": "action",
+        "description": "Open Settings"
+      },
+      {
+        "type": "action",
+        "description": "Clear history and drafts"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the action"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify history and drafts are removed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC038",
+    "title": "Rename a saved item in the collections tree",
+    "description": "This verifies that a user can rename a saved collection item and see the updated name in the tree.",
+    "category": "Collections",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a collection"
+      },
+      {
+        "type": "action",
+        "description": "Rename the collection"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated collection name appears in the tree"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC039",
+    "title": "Delete a saved item from the collections tree",
+    "description": "This verifies that a user can delete a saved collection item and see it removed from the tree.",
+    "category": "Collections",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a collection"
+      },
+      {
+        "type": "action",
+        "description": "Delete the collection"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the collection no longer appears in the tree"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC040",
+    "title": "Wrap long response text",
+    "description": "A user can toggle response word wrap and see long response content reflow in the panel.",
+    "category": "Send and Response Viewing",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Send a request with a long response body"
+      },
+      {
+        "type": "action",
+        "description": "Toggle response word wrap"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response body is displayed with wrapped text"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response panel remains readable with the setting applied"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC041",
+    "title": "Keep history and drafts searchable",
+    "description": "This test verifies that a user can search within History or Drafts and filter entries, then clear the search to restore the full list.",
+    "category": "History and Drafts",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Send a request to create history entries"
+      },
+      {
+        "type": "action",
+        "description": "Edit a request to create a draft entry"
+      },
+      {
+        "type": "action",
+        "description": "Open the History tab"
+      },
+      {
+        "type": "action",
+        "description": "Search for a saved request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the visible entries are filtered"
+      },
+      {
+        "type": "action",
+        "description": "Clear the search"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the full list is restored"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC042",
+    "title": "Adjust request settings for redirects, SSL, and proxy",
+    "description": "This verifies that a user can change request-related preferences from settings and see the updated controls reflected in the UI.",
+    "category": "settings and preferences",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open settings or preferences"
+      },
+      {
+        "type": "action",
+        "description": "Change the follow redirects setting"
+      },
+      {
+        "type": "action",
+        "description": "Change the SSL verification setting"
+      },
+      {
+        "type": "action",
+        "description": "Change the proxy setting"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated request settings are shown as enabled or disabled"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC043",
+    "title": "Confirm the production warning before sending a mutating request",
+    "description": "This verifies that a user sees a production warning before proceeding with a mutating request in a production environment.",
+    "category": "Environments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open the environment manager"
+      },
+      {
+        "type": "action",
+        "description": "Create a new environment"
+      },
+      {
+        "type": "action",
+        "description": "Mark the environment as production"
+      },
+      {
+        "type": "action",
+        "description": "Select the environment as active"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Choose a mutating request method"
+      },
+      {
+        "type": "action",
+        "description": "Send the request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a production warning is shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request is paused until the warning is confirmed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC044",
+    "title": "Use history search to find a previous request",
+    "description": "This verifies that a user can search within request history and find a matching entry.",
+    "category": "settings and preferences",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open the history section"
+      },
+      {
+        "type": "action",
+        "description": "Search for a previous request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify matching history entries are shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify non-matching entries are filtered out"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC045",
+    "title": "Reject invalid cURL import text",
+    "description": "This verifies that a user gets a parse error when importing invalid cURL text and the current workspace stays unchanged.",
+    "category": "Import / Export cURL",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Create a new request tab"
+      },
+      {
+        "type": "action",
+        "description": "Open the import drawer"
+      },
+      {
+        "type": "action",
+        "description": "Paste invalid cURL text into the import field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the import"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a parse error is shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the current request workspace remains unchanged"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC046",
+    "title": "Clear history or drafts and see an empty state",
+    "description": "This verifies that a user can clear stored history or drafts and see the corresponding empty state afterward.",
+    "category": "settings and preferences",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Open the history or drafts section"
+      },
+      {
+        "type": "action",
+        "description": "Clear the stored items"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state message is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the cleared items are no longer listed"
+      }
+    ],
+    "priority": "Low"
+  }
+]

@@ -19,10 +19,10 @@ export function EmptyRequestState() {
   };
 
   const hints = [
-    { keys: ["⌘", "N"], label: "New tab" },
+    { keys: ["⌘", "⇧", "N"], label: "New tab" },
     { keys: ["⌘", "Enter"], label: "Send request" },
-    { keys: ["⌘", "F"], label: "Search sidebar" },
-    { keys: ["⌘", ","], label: "Settings" },
+    { keys: ["⌘", "F"], label: "Find / search" },
+    { keys: ["⌘", "⇧", ","], label: "Settings" },
   ];
 
   return (

@@ -12,7 +12,9 @@ import {
   type ResponseKind,
   responseKindLabel,
 } from "@/shared/lib/contentType";
+import { findMatches } from "@/shared/lib/textFind";
 import { Button } from "@/shared/ui/button";
+import { FindBar } from "@/shared/ui/FindBar";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { Tab } from "@/shared/ui/tabs-shim";
 import { SseEventList } from "./SseEventList";
@@ -139,6 +141,7 @@ function MediaPane({
         <iframe
           title="PDF response"
           src={url}
+          sandbox=""
           onLoad={revoke}
           style={{ flex: 1, border: "none", width: "100%", minHeight: 280 }}
         />
@@ -214,6 +217,165 @@ function HtmlPreview({ html }: { html: string }) {
         background: "#fff",
       }}
     />
+  );
+}
+
+/**
+ * Insert `<mark>` wrappers into already syntax-highlighted (hljs) HTML at plain-text
+ * match offsets. Walks the HTML tracking a "plain text consumed" counter that skips
+ * tags entirely and counts each HTML entity (`&amp;`, `&lt;`, …) as the single
+ * character it represents, so offsets computed against the original plain text
+ * (via `findMatches`) land in the right place without corrupting existing tags.
+ */
+function markHighlightedHtml(
+  html: string,
+  matches: number[],
+  queryLen: number,
+  current: number,
+): string {
+  if (matches.length === 0 || queryLen === 0) return html;
+  const startAt = new Map<number, number[]>();
+  const endAt = new Map<number, number[]>();
+  matches.forEach((start, idx) => {
+    const end = start + queryLen;
+    (startAt.get(start) ?? startAt.set(start, []).get(start))?.push(idx);
+    (endAt.get(end) ?? endAt.set(end, []).get(end))?.push(idx);
+  });
+
+  const openTag = (idx: number) => {
+    const isCurrent = idx === current;
+    const bg = isCurrent
+      ? "var(--primary)"
+      : "color-mix(in oklch, var(--primary) 30%, transparent)";
+    const fg = isCurrent ? "var(--primary-foreground)" : "inherit";
+    const testId = isCurrent ? ' data-find-current="1" data-testid="response-find-current"' : "";
+    return `<mark${testId} style="background:${bg};color:${fg};border-radius:2px">`;
+  };
+
+  let out = "";
+  let plain = 0;
+  let i = 0;
+  const n = html.length;
+  while (i < n) {
+    const ends = endAt.get(plain);
+    if (ends) for (let k = 0; k < ends.length; k++) out += "</mark>";
+    const starts = startAt.get(plain);
+    if (starts) for (let k = 0; k < starts.length; k++) out += openTag(starts[k]);
+
+    const ch = html[i];
+    if (ch === "<") {
+      const tagEnd = html.indexOf(">", i);
+      const safeEnd = tagEnd === -1 ? n - 1 : tagEnd;
+      out += html.slice(i, safeEnd + 1);
+      i = safeEnd + 1;
+      continue;
+    }
+    if (ch === "&") {
+      const entEnd = html.indexOf(";", i);
+      if (entEnd !== -1 && entEnd - i <= 9) {
+        out += html.slice(i, entEnd + 1);
+        i = entEnd + 1;
+        plain += 1;
+        continue;
+      }
+    }
+    out += ch;
+    i += 1;
+    plain += 1;
+  }
+  const endsAtFinal = endAt.get(plain);
+  if (endsAtFinal) for (let k = 0; k < endsAtFinal.length; k++) out += "</mark>";
+  return out;
+}
+
+/** ⌘F find view — same line-numbered, syntax-highlighted layout as CodeBlock, with
+ *  match offsets (from the plain text) re-projected onto the highlighted HTML. */
+function MarkedCodeBlock({
+  code,
+  language,
+  wrap,
+  matches,
+  queryLen,
+  current,
+}: {
+  code: string;
+  language: string;
+  wrap: boolean;
+  matches: number[];
+  queryLen: number;
+  current: number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lineNums = useMemo(() => code.split("\n").map((_, i) => i + 1), [code]);
+  const markedHtml = useMemo(() => {
+    const highlighted = hljsHighlight(code, language);
+    return markHighlightedHtml(highlighted, matches, queryLen, current);
+  }, [code, language, matches, queryLen, current]);
+
+  // Re-center the active match every time it moves (Enter / arrows / retyping the
+  // query) — `current` is the real trigger; `markedHtml` just needs to have committed
+  // to the DOM first, which it has by the time this effect runs.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: current is the intentional trigger
+  useEffect(() => {
+    containerRef.current
+      ?.querySelector('[data-find-current="1"]')
+      ?.scrollIntoView({ block: "center" });
+  }, [current, markedHtml]);
+
+  return (
+    <div
+      ref={containerRef}
+      data-testid="response-find-text"
+      style={{
+        display: "flex",
+        fontFamily: "var(--font-mono)",
+        fontSize: "var(--text-code)",
+        lineHeight: "21px",
+        minWidth: wrap ? undefined : "max-content",
+        padding: "12px 0 12px 16px",
+      }}
+    >
+      <div
+        style={{
+          flexShrink: 0,
+          width: 46,
+          textAlign: "right",
+          paddingRight: 18,
+          color: "var(--text-placeholder)",
+          userSelect: "none",
+          fontSize: "var(--text-xs)",
+          lineHeight: "21px",
+        }}
+      >
+        {lineNums.map((num) => (
+          <div key={num} style={{ height: 21 }}>
+            {num}
+          </div>
+        ))}
+      </div>
+      <pre
+        style={{
+          flex: 1,
+          margin: 0,
+          padding: "0 18px 6px 0",
+          overflow: "visible",
+          whiteSpace: wrap ? "pre-wrap" : "pre",
+          wordBreak: wrap ? "break-word" : "normal",
+          background: "transparent",
+        }}
+      >
+        <HighlightedHtml
+          html={markedHtml}
+          className={language ? `language-${language} hljs` : "hljs"}
+          style={{
+            fontSize: "var(--text-code)",
+            lineHeight: "21px",
+            fontFamily: "var(--font-mono)",
+            background: "transparent",
+          }}
+        />
+      </pre>
+    </div>
   );
 }
 
@@ -479,6 +641,27 @@ function ResponseContent({
 
   const showText = !(isSse || showMedia) && bodyBytes.length > 0 && TEXT_PRETTY_KINDS.has(respKind);
 
+  // ⌘F find-in-response — searches whatever text is currently displayed (pretty-printed
+  // for JSON/NDJSON, as-is for HTML/XML/CSV/YAML/text/etc.) so results keep the same
+  // formatting the user is looking at instead of collapsing to the raw single-line body.
+  const [findOpen, setFindOpen] = useState(false);
+  const [findQuery, setFindQuery] = useState("");
+  const [findIndex, setFindIndex] = useState(0);
+  const findSourceText = effectiveView === "raw" ? bodyStr : getFormattedCode();
+  const responseMatches = useMemo(
+    () => findMatches(findSourceText, findQuery),
+    [findSourceText, findQuery],
+  );
+  const clampedFindIndex = responseMatches.length
+    ? Math.min(findIndex, responseMatches.length - 1)
+    : 0;
+  const findActive = findOpen && findQuery.length > 0 && showText && activeTab === "body";
+  const closeFind = () => {
+    setFindOpen(false);
+    setFindQuery("");
+    setFindIndex(0);
+  };
+
   return (
     <>
       <div className="flex h-11 flex-shrink-0 items-center gap-3 border-b border-border px-4">
@@ -532,6 +715,7 @@ function ResponseContent({
           </svg>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-code)" }}>
             {responseSize < 1024 ? `${responseSize} B` : `${(responseSize / 1024).toFixed(1)} KB`}
+            {response.truncated ? " · truncated" : ""}
           </span>
         </div>
         <div style={{ flex: 1 }} />
@@ -627,121 +811,165 @@ function ResponseContent({
         </Button>
       </div>
 
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: scroll container captures Cmd/Ctrl+A to scope select-all to the response body */}
-      <div
-        className="flex-1 min-h-0 overflow-auto bg-background"
-        onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === "a") {
-            e.preventDefault();
-            const sel = window.getSelection();
-            const pre = e.currentTarget.querySelector("pre");
-            const target = pre ?? e.currentTarget;
-            if (sel) {
-              const range = document.createRange();
-              range.selectNodeContents(target);
-              sel.removeAllRanges();
-              sel.addRange(range);
-            }
-          }
-        }}
-        tabIndex={-1}
-      >
-        {activeTab === "headers" && (
-          <div style={{ padding: "8px 18px" }}>
-            {Object.entries(response.headers).map(([key, value]) => (
-              <div
-                key={key}
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  gap: 14,
-                  padding: "8px 4px",
-                  borderBottom: "1px solid var(--border)",
-                  cursor: "pointer",
-                }}
-                className="hover:bg-[var(--bg-elevated)]"
-              >
-                <span
-                  style={{
-                    flexShrink: 0,
-                    width: 200,
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--text-xs)",
-                    color: "var(--method-get)",
-                  }}
-                >
-                  {key}
-                </span>
-                <span
-                  style={{
-                    flex: 1,
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--text-xs)",
-                    color: "var(--text-primary)",
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {value}
-                </span>
-              </div>
-            ))}
+      <div className="relative flex-1 min-h-0" data-find-scope="response">
+        {findOpen && (
+          <div className="absolute right-4 top-2 z-[var(--z-dropdown)]">
+            <FindBar
+              testId="response-find"
+              query={findQuery}
+              onQueryChange={(q) => {
+                setFindQuery(q);
+                setFindIndex(0);
+              }}
+              matchCount={responseMatches.length}
+              index={clampedFindIndex}
+              onNext={() =>
+                responseMatches.length &&
+                setFindIndex((clampedFindIndex + 1) % responseMatches.length)
+              }
+              onPrev={() =>
+                responseMatches.length &&
+                setFindIndex(
+                  (clampedFindIndex - 1 + responseMatches.length) % responseMatches.length,
+                )
+              }
+              onClose={closeFind}
+            />
           </div>
         )}
-
-        {activeTab === "body" && (
-          <>
-            {isSse && (
-              <SseEventList
-                events={response.sseEvents ?? []}
-                active={sseActive}
-                onStop={onStopSse}
-                wordWrap={wordWrap}
-              />
-            )}
-
-            {!isSse && showMedia && (
-              <MediaPane
-                kind={MEDIA_KINDS.has(respKind) ? respKind : "binary"}
-                contentType={response.contentType}
-                bodyBytes={bodyBytes}
-                responseSize={responseSize}
-                onDownload={() => downloadBlob(`response-${Date.now()}`)}
-              />
-            )}
-
-            {!isSse && showText && effectiveView === "preview" && isHtml && (
-              <div data-testid="response-body" style={{ height: "100%", minHeight: 280 }}>
-                <HtmlPreview html={bodyStr} />
-              </div>
-            )}
-
-            {!isSse && showText && effectiveView !== "preview" && (
-              <div data-testid="response-body" style={{ padding: "12px 0 12px 16px" }}>
-                {effectiveView === "pretty" ? (
-                  <CodeBlock code={getFormattedCode()} language={codeLanguage} wrap={wordWrap} />
-                ) : (
-                  <div
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: scroll container captures Cmd/Ctrl+A (select-all) and Cmd/Ctrl+F (find) scoped to the response body */}
+        <div
+          className="h-full overflow-auto bg-background"
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.code === "KeyF") {
+              e.preventDefault();
+              e.stopPropagation();
+              setFindOpen(true);
+              return;
+            }
+            if ((e.metaKey || e.ctrlKey) && e.key === "a") {
+              e.preventDefault();
+              const sel = window.getSelection();
+              const pre = e.currentTarget.querySelector("pre");
+              const target = pre ?? e.currentTarget;
+              if (sel) {
+                const range = document.createRange();
+                range.selectNodeContents(target);
+                sel.removeAllRanges();
+                sel.addRange(range);
+              }
+            }
+          }}
+          tabIndex={-1}
+        >
+          {activeTab === "headers" && (
+            <div style={{ padding: "8px 18px" }}>
+              {Object.entries(response.headers).map(([key, value]) => (
+                <div
+                  key={key}
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 14,
+                    padding: "8px 4px",
+                    borderBottom: "1px solid var(--border)",
+                    cursor: "pointer",
+                  }}
+                  className="hover:bg-[var(--bg-elevated)]"
+                >
+                  <span
                     style={{
+                      flexShrink: 0,
+                      width: 200,
                       fontFamily: "var(--font-mono)",
                       fontSize: "var(--text-xs)",
-                      lineHeight: 1.7,
-                      color: "var(--text-secondary)",
-                      whiteSpace: wordWrap ? "pre-wrap" : "pre",
-                      wordBreak: wordWrap ? "break-all" : "normal",
-                      padding: "0 18px",
+                      color: "var(--method-get)",
                     }}
                   >
-                    {bodyStr}
-                  </div>
-                )}
-              </div>
-            )}
+                    {key}
+                  </span>
+                  <span
+                    style={{
+                      flex: 1,
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "var(--text-xs)",
+                      color: "var(--text-primary)",
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
 
-            {!isSse && bodyBytes.length === 0 && (
-              <StatusEmptyBody status={response.status} statusText={response.statusText} />
-            )}
-          </>
-        )}
+          {activeTab === "body" && (
+            <>
+              {isSse && (
+                <SseEventList
+                  events={response.sseEvents ?? []}
+                  active={sseActive}
+                  onStop={onStopSse}
+                  wordWrap={wordWrap}
+                />
+              )}
+
+              {!isSse && showMedia && (
+                <MediaPane
+                  kind={MEDIA_KINDS.has(respKind) ? respKind : "binary"}
+                  contentType={response.contentType}
+                  bodyBytes={bodyBytes}
+                  responseSize={responseSize}
+                  onDownload={() => downloadBlob(`response-${Date.now()}`)}
+                />
+              )}
+
+              {findActive && (
+                <MarkedCodeBlock
+                  code={findSourceText}
+                  language={codeLanguage}
+                  wrap={wordWrap}
+                  matches={responseMatches}
+                  queryLen={findQuery.length}
+                  current={clampedFindIndex}
+                />
+              )}
+
+              {!(findActive || isSse) && showText && effectiveView === "preview" && isHtml && (
+                <div data-testid="response-body" style={{ height: "100%", minHeight: 280 }}>
+                  <HtmlPreview html={bodyStr} />
+                </div>
+              )}
+
+              {!(findActive || isSse) && showText && effectiveView !== "preview" && (
+                <div data-testid="response-body" style={{ padding: "12px 0 12px 16px" }}>
+                  {effectiveView === "pretty" ? (
+                    <CodeBlock code={getFormattedCode()} language={codeLanguage} wrap={wordWrap} />
+                  ) : (
+                    <div
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-xs)",
+                        lineHeight: 1.7,
+                        color: "var(--text-secondary)",
+                        whiteSpace: wordWrap ? "pre-wrap" : "pre",
+                        wordBreak: wordWrap ? "break-all" : "normal",
+                        padding: "0 18px",
+                      }}
+                    >
+                      {bodyStr}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!isSse && bodyBytes.length === 0 && (
+                <StatusEmptyBody status={response.status} statusText={response.statusText} />
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {toast && (

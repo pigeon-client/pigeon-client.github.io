@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # Keep GitHub Actions current — release.yml handles the Tauri signing key and
+  # RELEASE_TOKEN, so stale/compromised actions are a supply-chain risk.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: cargo
+    directory: /apps/desktop/src-tauri
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

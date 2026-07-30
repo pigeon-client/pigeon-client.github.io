@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.8",
   "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20.19.0 <21 || >=22.12.0"
+  },
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter pigeon dev",
@@ -27,5 +30,15 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
     "@evilmartians/lefthook": "^2.1.9"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@<1.1.16": "^1.1.16"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-mh99-v99m-4gvg"
+      ]
+    }
   }
 }

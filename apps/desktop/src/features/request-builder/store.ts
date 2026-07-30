@@ -13,8 +13,19 @@ function pathFromUrl(url: string): string {
   }
 }
 
+/** What a workspace tab hosts: an HTTP request (default), the MCP bench, or the
+ *  GraphQL coming-soon pane. Non-http tabs keep an (unused) default request so
+ *  every consumer of `tab.request` stays total. */
+export type TabKind = "http" | "mcp" | "graphql";
+
+const KIND_NAMES: Record<Exclude<TabKind, "http">, string> = {
+  mcp: "MCP",
+  graphql: "GraphQL",
+};
+
 export interface Tab {
   id: string;
+  kind: TabKind;
   name: string;
   nameLocked: boolean;
   request: RequestConfig;
@@ -27,7 +38,9 @@ interface TabState {
   activeTabId: string | null;
   nextId: number;
 
-  addTab: () => string;
+  addTab: (kind?: TabKind) => string;
+  /** Focus the existing tab of this kind, or open one — singleton per kind. */
+  openKindTab: (kind: Exclude<TabKind, "http">) => string;
   /** Clone a tab's request into a new tab (clears response). Returns new id or null. */
   duplicateTab: (id: string) => string | null;
   closeTab: (id: string) => void;
@@ -84,13 +97,16 @@ export const useTabStore = create<TabState>((set, get) => ({
   activeTabId: null,
   nextId: 1,
 
-  addTab: () => {
+  addTab: (kind = "http") => {
     const id = `tab-${tabCounter++}`;
+    const name = kind === "http" ? "Untitled Request" : KIND_NAMES[kind];
     const tab: Tab = {
       id,
-      name: "Untitled Request",
-      nameLocked: false,
-      request: { ...defaultRequest(), name: "Untitled Request" },
+      kind,
+      name,
+      // Non-http tabs keep a fixed name — URL-derived naming never applies.
+      nameLocked: kind !== "http",
+      request: { ...defaultRequest(), name },
       response: null,
       isLoading: false,
     };
@@ -99,6 +115,15 @@ export const useTabStore = create<TabState>((set, get) => ({
       activeTabId: id,
     }));
     return id;
+  },
+
+  openKindTab: (kind) => {
+    const existing = get().tabs.find((t) => t.kind === kind);
+    if (existing) {
+      set({ activeTabId: existing.id });
+      return existing.id;
+    }
+    return get().addTab(kind);
   },
 
   duplicateTab: (id) => {
@@ -110,6 +135,7 @@ export const useTabStore = create<TabState>((set, get) => ({
     const request = cloneRequest(source.request);
     const tab: Tab = {
       id: newId,
+      kind: source.kind,
       name: source.name,
       nameLocked: source.nameLocked,
       request,
@@ -138,6 +164,7 @@ export const useTabStore = create<TabState>((set, get) => ({
           tabs: [
             {
               id: newId,
+              kind: "http" as const,
               name: "Untitled Request",
               nameLocked: false,
               request: { ...defaultRequest(), name: "Untitled Request" },
@@ -165,6 +192,7 @@ export const useTabStore = create<TabState>((set, get) => ({
       tabs: [
         {
           id: newId,
+          kind: "http" as const,
           name: "Untitled Request",
           nameLocked: false,
           request: { ...defaultRequest(), name: "Untitled Request" },

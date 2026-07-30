@@ -107,6 +107,10 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
     () => localStorage.getItem("pg_ssl_verify") !== "false",
   );
   const [proxyUrl, setProxyUrl] = useState(() => localStorage.getItem("pg_proxy_url") ?? "");
+  const [saveSnapshots, setSaveSnapshots] = useState(
+    () => localStorage.getItem("pg_save_snapshots") !== "false",
+  );
+  const [retentionDays, setRetentionDaysState] = useState<RetentionDays>(() => getRetentionDays());
   const { wordWrap, setWordWrap } = useWordWrap();
   const [currentVersion, setCurrentVersion] = useState("0.1.0");
   const [updateStatus, setUpdateStatus] = useState<UpdateCheckStatus>("idle");
@@ -158,6 +162,11 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
     const n = !sslVerify;
     setSslVerify(n);
     localStorage.setItem("pg_ssl_verify", String(n));
+  };
+  const toggleSaveSnapshots = () => {
+    const n = !saveSnapshots;
+    setSaveSnapshots(n);
+    localStorage.setItem("pg_save_snapshots", String(n));
   };
   const handleCheckUpdate = async () => {
     setUpdateStatus("checking");
@@ -286,6 +295,16 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
                 <span className="text-code text-foreground">SSL Verification</span>
                 <Switch checked={sslVerify} onCheckedChange={toggleSslVerify} />
               </div>
+              {!sslVerify && (
+                <div className="mb-1 flex items-start gap-2 rounded border border-destructive/30 bg-destructive/10 px-2.5 py-2">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" />
+                  <span className="text-2xs text-destructive">
+                    Certificate verification is off for every request — tokens and credentials can
+                    be intercepted on the network. Turn this back on unless you are testing against
+                    a host you control.
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between py-2">
                 <span className="text-code text-foreground">Proxy URL</span>
                 <input
@@ -324,6 +343,45 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
                     <span className="font-mono text-code text-foreground">{val}</span>
                   </div>
                 ))}
+              </div>
+              <div className="mb-2 flex items-center justify-between py-1">
+                <div className="min-w-0 pr-3">
+                  <div className="text-code text-foreground">Save response snapshots</div>
+                  <div className="text-2xs text-muted-foreground">
+                    Store response bodies with history entries; responses may contain sensitive data
+                  </div>
+                </div>
+                <Switch
+                  checked={saveSnapshots}
+                  onCheckedChange={toggleSaveSnapshots}
+                  data-testid="settings-save-snapshots"
+                />
+              </div>
+              <div className="mb-3.5 flex items-center justify-between py-1">
+                <div className="min-w-0 pr-3">
+                  <div className="text-code text-foreground">Keep history for</div>
+                  <div className="text-2xs text-muted-foreground">
+                    Pruned once on app start; drafts and collections are never pruned
+                  </div>
+                </div>
+                <select
+                  data-testid="settings-retention"
+                  value={retentionDays === null ? "forever" : String(retentionDays)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const next: RetentionDays =
+                      raw === "forever" ? null : (Number(raw) as RetentionDays);
+                    setRetentionDaysState(next);
+                    setRetentionDays(next);
+                  }}
+                  className="h-8 rounded border border-border bg-card px-2 font-mono text-xs text-foreground outline-none focus:border-primary"
+                >
+                  {RETENTION_OPTIONS.map((o) => (
+                    <option key={o.label} value={o.value === null ? "forever" : String(o.value)}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex flex-col gap-2">
                 <Button

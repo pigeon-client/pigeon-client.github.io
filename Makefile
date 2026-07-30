@@ -1,6 +1,6 @@
 APP_NAME = Pigeon
 BUNDLE_ID = com.k1n1.pigeon
-export PATH := $(HOME)/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$(PATH)
+export PATH := $(HOME)/.cargo/bin:$(PATH):/opt/homebrew/bin:/usr/local/bin
 
 # pnpm workspace: desktop app = `pigeon`, marketing site = `pigeon-site`.
 # All targets run from the repo root; root scripts delegate via `--filter`.

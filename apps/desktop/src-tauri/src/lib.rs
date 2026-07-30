@@ -8,6 +8,10 @@ use tokio::sync::Mutex;
 
 mod db;
 
+/// Hard cap on how much response body is buffered and sent to the webview.
+/// Protects against OOM from hostile/huge endpoints; the UI flags truncation.
+const MAX_RESPONSE_BYTES: usize = 50 * 1024 * 1024;
+
 /// Per-stream cancel flags for long-lived SSE body reads.
 struct SseCancelState {
     flags: Mutex<HashMap<String, Arc<AtomicBool>>>,
@@ -72,6 +76,9 @@ pub struct ApiResponse {
     pub content_type: String,
     pub response_time: u64,
     pub size: usize,
+    /// Body exceeded MAX_RESPONSE_BYTES and was cut off.
+    #[serde(default)]
+    pub truncated: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -522,7 +529,12 @@ async fn stream_sse_response(
         }
         match item {
             Ok(bytes) => {
-                body_acc.extend_from_slice(&bytes);
+                // Cap the raw-transcript accumulator; events keep streaming to the
+                // UI regardless — only the final buffered body stops growing.
+                let remaining = MAX_RESPONSE_BYTES.saturating_sub(body_acc.len());
+                if remaining > 0 {
+                    body_acc.extend_from_slice(&bytes[..bytes.len().min(remaining)]);
+                }
                 let chunk = String::from_utf8_lossy(&bytes);
                 for mut ev in parser.push(&chunk) {
                     ev.stream_id = stream_id.clone();
@@ -556,6 +568,7 @@ async fn stream_sse_response(
 
     let elapsed = start.elapsed().as_millis() as u64;
     let size = body_acc.len();
+    let truncated = size >= MAX_RESPONSE_BYTES;
     Ok(ApiResponse {
         status,
         status_text,
@@ -564,6 +577,7 @@ async fn stream_sse_response(
         content_type,
         response_time: elapsed,
         size,
+        truncated,
     })
 }
 
@@ -610,23 +624,89 @@ async fn finalize_response(
         }
     }
 
+    // Stream the body with a hard size cap instead of buffering unbounded.
+    let mut body_acc = Vec::<u8>::new();
+    let mut truncated = false;
+    let mut stream = response.bytes_stream();
+    while let Some(item) = stream.next().await {
+        let bytes = item.map_err(|e| format!("Failed to read response body: {}", e))?;
+        let remaining = MAX_RESPONSE_BYTES.saturating_sub(body_acc.len());
+        if bytes.len() > remaining {
+            body_acc.extend_from_slice(&bytes[..remaining]);
+            truncated = true;
+            break;
+        }
+        body_acc.extend_from_slice(&bytes);
+    }
+
     let elapsed = start.elapsed().as_millis() as u64;
-
-    let body_bytes = response
-        .bytes()
-        .await
-        .map_err(|e| format!("Failed to read response body: {}", e))?;
-
-    let size = body_bytes.len();
+    let size = body_acc.len();
 
     Ok(ApiResponse {
         status,
         status_text,
         headers: resp_headers,
-        body: body_bytes.to_vec(),
+        body: body_acc,
         content_type,
         response_time: elapsed,
         size,
+        truncated,
+    })
+}
+
+// --- MCP transport ---
+// Deliberately dumb: POST one JSON-RPC message, return status/headers/body text.
+// The frontend (`features/mcp`) owns initialize/session-id/tool-call framing.
+#[tauri::command]
+async fn send_mcp_request(
+    url: String,
+    headers: Vec<RequestHeader>,
+    body: String,
+    follow_redirects: Option<bool>,
+    proxy_url: Option<String>,
+) -> Result<McpHttpResponse, String> {
+    let follow = follow_redirects.unwrap_or(true);
+    let proxy_trim = proxy_url
+        .as_deref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty());
+    // Same client options as send_api_request, except TLS verification is
+    // always on for MCP — there is no legitimate self-signed-MCP use case yet.
+    let client = if follow && proxy_trim.is_none() {
+        get_http_client().clone()
+    } else {
+        build_custom_client(follow, true, proxy_trim)?
+    };
+    let mut builder = client
+        .post(&url)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json, text/event-stream")
+        .body(body);
+    for h in &headers {
+        builder = builder.header(&h.key, &h.value);
+    }
+
+    let response = builder
+        .send()
+        .await
+        .map_err(|e| format!("MCP request failed: {}", e))?;
+
+    let status = response.status().as_u16();
+    let mut resp_headers = HashMap::new();
+    for (name, value) in response.headers() {
+        if let Ok(v) = value.to_str() {
+            resp_headers.insert(name.as_str().to_string(), v.to_string());
+        }
+    }
+    let body_text = response
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read MCP response body: {}", e))?;
+
+    Ok(McpHttpResponse {
+        status,
+        headers: resp_headers,
+        body_text,
     })
 }
 
@@ -714,7 +794,6 @@ pub fn run() {
     };
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(db_state)

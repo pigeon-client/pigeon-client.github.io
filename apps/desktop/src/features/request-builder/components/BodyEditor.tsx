@@ -10,9 +10,11 @@ import {
   highlightLanguageFor,
   RAW_BODY_FORMATS,
 } from "@/shared/lib/contentType";
+import { findMatches } from "@/shared/lib/textFind";
 import { cn } from "@/shared/lib/utils";
 import type { BodyType, KeyValue } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
+import { FindBar } from "@/shared/ui/FindBar";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { useAutoClose } from "../hooks/useAutoClose";
 import { KeyValueEditor } from "./KeyValueEditor";
@@ -181,6 +183,42 @@ export function BodyEditor({
   const va = useVarAutocomplete();
   const { wordWrap, setWordWrap } = useWordWrap();
   const [lineHeights, setLineHeights] = useState<number[] | undefined>();
+
+  // ⌘F find-in-body — navigation selects the match in the textarea and scrolls to it.
+  const [findOpen, setFindOpen] = useState(false);
+  const [findQuery, setFindQuery] = useState("");
+  const [findIndex, setFindIndex] = useState(0);
+  const bodyMatches = useMemo(() => findMatches(body, findQuery), [body, findQuery]);
+  const clampedFindIndex = bodyMatches.length ? Math.min(findIndex, bodyMatches.length - 1) : 0;
+  const revealMatch = (idx: number) => {
+    const ta = textareaRef.current;
+    const start = bodyMatches[idx];
+    if (!ta || start === undefined) return;
+    ta.focus();
+    ta.setSelectionRange(start, start + findQuery.length);
+    const line = body.slice(0, start).split("\n").length;
+    // Center the match line in the visible textarea height, not a fixed line offset.
+    const visibleLines = Math.max(1, ta.clientHeight / LINE_HEIGHT);
+    ta.scrollTop = Math.max(0, (line - 1 - visibleLines / 2) * LINE_HEIGHT);
+    // Keep gutter + highlight layer in sync (same as handleScroll).
+    if (lineNumRef.current) lineNumRef.current.scrollTop = ta.scrollTop;
+    if (highlightRef.current) {
+      highlightRef.current.scrollTop = ta.scrollTop;
+      highlightRef.current.scrollLeft = ta.scrollLeft;
+    }
+  };
+  const findNext = () => {
+    if (!bodyMatches.length) return;
+    const n = (clampedFindIndex + 1) % bodyMatches.length;
+    setFindIndex(n);
+    revealMatch(n);
+  };
+  const findPrev = () => {
+    if (!bodyMatches.length) return;
+    const n = (clampedFindIndex - 1 + bodyMatches.length) % bodyMatches.length;
+    setFindIndex(n);
+    revealMatch(n);
+  };
   const applyBody = (next: string, caret: number) => {
     onBodyChange(next);
     requestAnimationFrame(() => {
@@ -285,7 +323,18 @@ export function BodyEditor({
   }, []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    // biome-ignore lint/a11y/noStaticElementInteractions: container-level ⌘F interception scopes find to the body editor
+    <div
+      className="flex min-h-0 flex-1 flex-col"
+      data-find-scope="body"
+      onKeyDown={(e) => {
+        if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.code === "KeyF" && isCodeEditor) {
+          e.preventDefault();
+          e.stopPropagation();
+          setFindOpen(true);
+        }
+      }}
+    >
       {/* Type selector row */}
       <div className="flex flex-shrink-0 items-center justify-between gap-1.5 border-b border-border px-4 py-2">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -436,6 +485,24 @@ export function BodyEditor({
 
         {isCodeEditor && (
           <div className="relative flex min-h-0 flex-1">
+            {findOpen && (
+              <div className="absolute right-3 top-1 z-[var(--z-dropdown)]">
+                <FindBar
+                  testId="body-find"
+                  query={findQuery}
+                  onQueryChange={setFindQuery}
+                  matchCount={bodyMatches.length}
+                  index={clampedFindIndex}
+                  onNext={findNext}
+                  onPrev={findPrev}
+                  onClose={() => {
+                    setFindOpen(false);
+                    setFindQuery("");
+                    textareaRef.current?.focus();
+                  }}
+                />
+              </div>
+            )}
             <LineNumbers count={lineCount} heights={lineHeights} scrollRef={lineNumRef} />
             {va.open && (
               <VarSuggestions

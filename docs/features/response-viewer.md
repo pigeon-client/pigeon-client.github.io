@@ -31,15 +31,20 @@ image/binary handling, download, copy, status-specific empty bodies, and SSE str
 
 ## UX / interactions
 
-- **Empty state (context-aware).** With no response yet: if a URL is present → "Ready to send" +
-  a **Send request** button (⌘↵); if no URL → "No response yet / Enter a URL above".
-- **Pretty ↔ Raw** toggles formatting; JSON is re-indented in pretty mode.
-- **HTML Preview.** When `Content-Type` is `text/html`, the body toolbar offers
-  **Preview | Pretty | Raw** (Preview default). Preview renders the HTML in a sandboxed
-  iframe (`sandbox=""` — no scripts/forms). Pretty shows highlighted source; Raw is plain text.
-- **Download** saves the raw body; **Copy** copies the body text.
-- Long/wide bodies scroll inside their own container; the panel is vertically resizable against the
-  editor via the drag handle.
+- Empty state: URL present → **Send request**; no URL → enter URL hint.
+- **Download** saves raw body.
+- **Copy as cURL** generates curl from the active request (same as header export) and toasts
+  "Copied cURL to clipboard".
+- Word-wrap toggle (`response-wrap-toggle`) shares `pg_word_wrap` with the body editor.
+
+## Keyboard
+
+- Response-focused `⌘A` selects body content only (when handler active).
+- Response-focused `⌘F` opens an in-panel find bar (`response-find`): case-insensitive substring
+  over the raw body text, match count (`n/m`), Enter/Shift+Enter (or arrows) cycles matches,
+  current match highlighted and scrolled into view (`response-find-current`), Esc closes and
+  restores the normal Pretty/Raw/Preview view. While the query is non-empty the body renders as a
+  marked raw-text view (`response-find-text`).
 
 ## States & edge cases
 
@@ -51,10 +56,11 @@ image/binary handling, download, copy, status-specific empty bodies, and SSE str
 
 ## Test ids
 
-`response-empty` (pre-send empty), `response-empty-body` (status placeholder), `response-status`,
-`response-body`, `response-html-preview`, `response-view-preview|pretty|raw`, `response-sse`,
-`response-sse-stop`, `response-sse-event-<i>`. Scope to `:visible` since inactive tabs keep their
-panel mounted.
+`response-empty`, `response-empty-body`, `response-status`, `response-body`,
+`response-html-preview`, `response-view-preview|pretty|raw`, `response-wrap-toggle`,
+`response-sse`, `response-sse-stop`, `response-sse-event-<i>`, `response-snapshot-label`,
+`response-find` (+ `-input`, `-count`, `-next`, `-prev`, `-close`), `response-find-text`,
+`response-find-current`. Scope `:visible`.
 
 ## Key files
 

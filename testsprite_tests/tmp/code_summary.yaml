@@ -1,0 +1,122 @@
+version: "2"
+type: frontend
+tech_stack:
+  - TypeScript
+  - React 19
+  - Vite 7
+  - TailwindCSS 4
+  - Zustand
+  - Tauri v2
+  - Lucide icons
+routes:
+  - path: /
+    file: src/app/AppContent.tsx
+    auth_required: false
+    description: Single-view API client workspace (tab strip, sidebar, request builder, response viewer). No client-side router; all features render in one view.
+features:
+  - name: Request Builder
+    description: Compose an HTTP request - method, URL, query params, headers, auth, and body.
+    files:
+      - src/features/request-builder/components/UrlBar.tsx
+      - src/features/request-builder/components/HeadersEditor.tsx
+      - src/features/request-builder/components/KeyValueEditor.tsx
+      - src/features/request-builder/store.ts
+    entry_route: /
+    user_interactions:
+      - Select HTTP method via method-trigger dropdown
+      - Type request URL into url-input
+      - Switch editor tabs (params, headers, auth, body)
+      - Add/edit key-value rows for params and headers
+      - Paste a curl command into the URL bar to auto-import
+    api_calls:
+      - method: ANY
+        endpoint: user-supplied URL (sent via Rust reqwest in desktop, fetch in browser)
+    auth_required: false
+  - name: Send / Execution
+    description: Send the composed request and view the HTTP response.
+    files:
+      - src/features/execution/hooks/useApiRequest.ts
+      - src/features/response-viewer/components/ResponsePanel.tsx
+    entry_route: /
+    user_interactions:
+      - Click Send to execute request
+      - View response status, body, HTML preview
+      - Toggle response word-wrap
+      - Stop an in-progress SSE stream
+    api_calls:
+      - method: ANY
+        endpoint: user-supplied URL
+    auth_required: false
+  - name: Tabs
+    description: Multiple request tabs with rename, duplicate, and close variants.
+    files:
+      - src/features/request-builder/components/TabStrip.tsx
+    entry_route: /
+    user_interactions:
+      - Open new request tab
+      - Double-click tab label to rename inline
+      - Right-click tab for context menu (new/duplicate/close/close others/close all)
+    api_calls: []
+    auth_required: false
+  - name: Collections
+    description: Save requests into a folder/request tree; create/rename/delete collections and folders.
+    files:
+      - src/features/collections/store.ts
+      - src/features/import-export/components
+    entry_route: /
+    user_interactions:
+      - Create collection/folder from sidebar
+      - Save active request via Cmd+S to a collection destination
+      - Rename/delete saved requests and folders
+    api_calls: []
+    auth_required: false
+  - name: Environments
+    description: Environment variables with interpolation into URL/headers/body.
+    files:
+      - src/features/environments/store.ts
+    entry_route: /
+    user_interactions:
+      - Select active environment via env-selector
+      - Define variables and reference them with var-suggestion autocomplete
+    api_calls: []
+    auth_required: false
+  - name: Import / Export
+    description: Import a request from a curl command, export request as curl.
+    files:
+      - src/features/import-export
+    entry_route: /
+    user_interactions:
+      - Open import drawer from sidebar (sidebar-import)
+      - Paste curl into import-curl-textarea and submit
+      - Export current request as curl
+    api_calls: []
+    auth_required: false
+  - name: History and Drafts
+    description: Persisted request history and auto-saved drafts.
+    files:
+      - src/features/history/store.ts
+    entry_route: /
+    user_interactions:
+      - Reopen a past request from history
+      - Resume an auto-saved draft
+    api_calls: []
+    auth_required: false
+  - name: Settings
+    description: Theme (dark/light), word-wrap, and request options (follow redirects, SSL verify, proxy).
+    files:
+      - src/features/settings
+    entry_route: /
+    user_interactions:
+      - Toggle theme
+      - Toggle response word-wrap (settings-word-wrap)
+      - Set follow-redirects / SSL-verify / proxy options
+      - Check for app updates
+    api_calls: []
+    auth_required: false
+known_limitations:
+  - issue: In the browser/dev build, the Tauri Rust backend is unavailable; persistence falls back to localStorage and HTTP send uses browser fetch (subject to CORS).
+    location: src/shared/lib/platform.ts
+    impact: Real SQLite persistence and CORS-free reqwest sending are only exercised in the packaged desktop app, not under browser-based testing.
+  - issue: No authentication/login exists in the app.
+    location: n/a
+    impact: All features are reachable without login.

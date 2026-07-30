@@ -12,6 +12,8 @@ export interface ApiResponse {
   size: number;
   resolvedUrl?: string;
   sentHeaders?: Record<string, string>;
+  /** Body exceeded the backend's 50MB buffer cap and was cut off. */
+  truncated?: boolean;
   /** True when the response was (or is) an SSE stream. */
   sse?: boolean;
   /** Parsed SSE events when streamed; empty while waiting for the first event. */

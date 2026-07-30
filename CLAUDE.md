@@ -41,8 +41,10 @@ Config in `vitest.config.ts` (happy-dom env, `@`→`src` alias, setup `src/test/
 Tests sit beside the code as `*.test.ts(x)`. The Tauri backend (`invoke()`) is unavailable
 under test — `db.ts` wrappers no-op via `isTauri()` and `setup.ts` mocks `@tauri-apps/api/core`.
 Test the pure logic and Zustand stores (URL parsing, `resolveRequest`, tab/name-lock, collection
-tree, cURL round-trip); don't try to run real HTTP/SQLite. The `tester` subagent
-(`.claude/agents/tester.md`) codifies this — use it to add/run tests.
+tree, cURL round-trip); don't try to run real HTTP/SQLite. The sole project agent,
+`feature-qa` (`.claude/agents/feature-qa.md`), owns Vitest unit/store tests, Playwright E2E,
+manual user-like checks (including long-URL / header scroll), bug reports, and keeping
+`docs/features/*.md` honest.
 
 ### E2E (Playwright, browser build)
 ```bash
@@ -237,8 +239,17 @@ so `highlight.js` output adapts automatically.
 - **Import/Export cURL**: Right-side slide-in drawer panels. Header export button is icon-only.
 - **Collections CRUD**: Create/rename/delete collections use modals; create collection disables modal
   animation. Folders/requests support nested save paths.
-- **Save request shortcut**: `Cmd+S` / `Ctrl+S` opens `SaveToCollectionModal` for the active request
-  when it has a URL.
+- **Save request shortcut**: `Cmd+Shift+S` / `Ctrl+Shift+S` opens `SaveToCollectionModal` for the
+  active request when it has a URL.
+- **Shortcut scheme**: every app-global chord is `Cmd+Shift+<key>` (`⇧N` new tab, `⇧W` close,
+  `⇧K` palette, `⇧E` envs, `⇧M` MCP, `⇧G` GraphQL, `⇧,` settings, `⇧/` shortcuts, `⇧1–9` tabs).
+  Two exceptions: `Cmd+Enter` sends, and plain `Cmd+F` is contextual find — the body editor and
+  response panel intercept it for an in-panel `FindBar` (`shared/ui/FindBar.tsx` +
+  `shared/lib/textFind.ts`); anywhere else it focuses the header search. Handlers match on
+  `e.code` (Shift changes `e.key`).
+- **Tab kinds**: `Tab.kind = "http" | "mcp" | "graphql"` in the tab store. MCP bench and the
+  GraphQL coming-soon pane are singleton workspace tabs (`openKindTab`), not modals — non-http
+  tabs render full-pane with no URL bar and show a kind badge (`MCP` / `GQL`) in the tab strip.
 - **Modal keyboard behaviour**: Shared `Modal` only closes on backdrop keyboard events when the
   backdrop itself is focused. Space inside inputs/selects must not close modals.
 
@@ -317,6 +328,14 @@ ico, pngs, iOS, Android): `pnpm --filter pigeon exec tauri icon logo/icon-source
 
 ## AI Workflow
 
-When asked to implement a new feature:
-1. Feature workflow docs live in `.opencode/workflow/features/<feature-name>/`
-2. The Workflow Manager orchestrates: PM → Designer → EM → Dev → QA
+Project uses one custom agent: `.claude/agents/feature-qa.md`.
+
+Use it for full-app or per-feature QA after implementation:
+1. Run Vitest and relevant Playwright specs.
+2. Perform manual user-like checks from `docs/features/*.md`.
+3. Record bugs with reproducible steps and severity.
+4. Update feature docs when observed behavior differs.
+5. End with a go / no-go recommendation.
+
+Existing `.opencode/workflow/features/<feature-name>/` folders are historical artifacts, not an
+active multi-agent workflow.

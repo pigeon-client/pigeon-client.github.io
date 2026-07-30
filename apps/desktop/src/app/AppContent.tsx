@@ -2,6 +2,7 @@ import { PanelLeftOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SaveToCollectionModal, useCollectionStore } from "@/features/collections";
 import { EnvModal, selectActiveEnv, useEnvStore } from "@/features/environments";
+import { GraphqlComingSoon } from "@/features/graphql";
 import { useHistoryStore } from "@/features/history";
 import { generateCurl, ImportModal } from "@/features/import-export";
 import {
@@ -45,13 +46,17 @@ export function AppContent() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPalette, setShowPalette] = useState(false);
 
   const tabs = useTabStore((s) => s.tabs);
   const activeTabId = useTabStore((s) => s.activeTabId);
   const addTab = useTabStore((s) => s.addTab);
   const closeTab = useTabStore((s) => s.closeTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const activeRequest = tabs.find((tab) => tab.id === activeTabId)?.request ?? null;
+  const openKindTab = useTabStore((s) => s.openKindTab);
+  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
+  // Only http tabs have an exportable/saveable request.
+  const activeRequest = activeTab && activeTab.kind === "http" ? activeTab.request : null;
   const prodActive = useEnvStore((s) => selectActiveEnv(s)?.isProduction ?? false);
 
   const handleExportCurl = async () => {
@@ -61,18 +66,36 @@ export function AppContent() {
     setTimeout(() => setCurlCopied(false), 2000);
   };
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts. Every app-global chord is ⌘⇧+key; the two exceptions are
+  // ⌘↵ (Send) and ⌘F (contextual find — body/response panels intercept it before
+  // this window listener, so reaching here means "focus the header search").
+  // Matching uses e.code because Shift changes e.key ("," → "<", "/" → "?").
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
-      if (meta && e.key === "Enter") {
+      const metaShift = meta && e.shiftKey;
+      if (metaShift && e.code === "KeyK") {
+        e.preventDefault();
+        setShowPalette((o) => !o);
+        return;
+      }
+      // Palette owns its own arrow/Enter/Escape handling on its input; don't let
+      // other shortcuts (⌘F, ⌘⇧N, ...) fire underneath it while it's open.
+      if (showPalette) {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setShowPalette(false);
+        }
+        return;
+      }
+      if (meta && !e.shiftKey && e.key === "Enter") {
         e.preventDefault();
         const sendBtn = document.querySelector("[data-send-btn]") as HTMLButtonElement;
         sendBtn?.click();
         return;
       }
-      // Cmd/Ctrl + / opens the shortcuts help (leaves plain `?` free to type).
-      if (meta && e.key === "/") {
+      // ⌘⇧/ opens the shortcuts help (leaves plain `?` free to type).
+      if (metaShift && e.code === "Slash") {
         e.preventDefault();
         setShowShortcutsModal(true);
         return;
@@ -101,18 +124,18 @@ export function AppContent() {
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
         return;
       }
-      if (meta && e.key === "n") {
+      if (metaShift && e.code === "KeyN") {
         e.preventDefault();
         const id = addTab();
         setActiveTab(id);
         return;
       }
-      if (meta && e.key === "w") {
+      if (metaShift && e.code === "KeyW") {
         e.preventDefault();
         if (activeTabId) closeTab(activeTabId);
         return;
       }
-      if (meta && e.key === "f") {
+      if (meta && !e.shiftKey && e.code === "KeyF") {
         e.preventDefault();
         const input = searchInputRef.current;
         if (input) {
@@ -121,27 +144,37 @@ export function AppContent() {
         }
         return;
       }
-      if (meta && e.key === "s") {
+      if (metaShift && e.code === "KeyS") {
         e.preventDefault();
         if (activeRequest?.url.trim()) {
           setShowSaveModal(true);
         }
         return;
       }
-      if (meta && e.shiftKey && /^[1-9]$/.test(e.key)) {
+      if (metaShift && /^Digit[1-9]$/.test(e.code)) {
         e.preventDefault();
-        const tab = tabs[parseInt(e.key, 10) - 1];
+        const tab = tabs[parseInt(e.code.slice(5), 10) - 1];
         if (tab) setActiveTab(tab.id);
         return;
       }
-      if (meta && e.key === ",") {
+      if (metaShift && e.code === "Comma") {
         e.preventDefault();
         setShowSettings(true);
         return;
       }
-      if (meta && e.shiftKey && (e.key === "E" || e.key === "e")) {
+      if (metaShift && e.code === "KeyE") {
         e.preventDefault();
         setShowEnvModal(true);
+        return;
+      }
+      if (metaShift && e.code === "KeyM") {
+        e.preventDefault();
+        openKindTab("mcp");
+        return;
+      }
+      if (metaShift && e.code === "KeyG") {
+        e.preventDefault();
+        openKindTab("graphql");
         return;
       }
     };
@@ -153,11 +186,13 @@ export function AppContent() {
     addTab,
     closeTab,
     setActiveTab,
+    openKindTab,
     showShortcutsModal,
     showEnvModal,
     showImportModal,
     showSaveModal,
     showSettings,
+    showPalette,
     activeRequest,
   ]);
 
@@ -168,6 +203,8 @@ export function AppContent() {
         onOpenSettings={() => setShowSettings(true)}
         onExportCurl={handleExportCurl}
         onManageEnv={() => setShowEnvModal(true)}
+        onOpenMcp={() => openKindTab("mcp")}
+        onOpenGraphql={() => openKindTab("graphql")}
         curlCopied={curlCopied}
         exportDisabled={!activeRequest}
         search={search}
@@ -241,6 +278,30 @@ export function AppContent() {
             const isActive = tab.id === activeTabId;
             const hasUrl = tab.request.url.trim().length > 0;
             const editorHeight = editorHeights[tab.id];
+            // Non-http tab kinds get their own full-pane surface — no URL bar,
+            // no request editor, no response panel.
+            if (tab.kind === "mcp") {
+              return (
+                <div
+                  key={tab.id}
+                  className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                  style={{ display: isActive ? "flex" : "none" }}
+                >
+                  <McpPanel />
+                </div>
+              );
+            }
+            if (tab.kind === "graphql") {
+              return (
+                <div
+                  key={tab.id}
+                  className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                  style={{ display: isActive ? "flex" : "none" }}
+                >
+                  <GraphqlComingSoon />
+                </div>
+              );
+            }
             return (
               <div
                 key={tab.id}
@@ -307,6 +368,7 @@ export function AppContent() {
         <KeyboardShortcutsModal onClose={() => setShowShortcutsModal(false)} />
       )}
       {showSettings && <SettingsDrawer onClose={() => setShowSettings(false)} />}
+      {showPalette && <CommandPalette onClose={() => setShowPalette(false)} />}
 
       <UpdateToast onOpenSettings={() => setShowSettings(true)} />
     </div>

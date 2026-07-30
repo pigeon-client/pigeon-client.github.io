@@ -1,33 +1,83 @@
 # Collections
 
-Saved requests organized as a folder/request tree, plus the save-to-collection flow.
+## Overview
+
+Saved requests as a folder/request tree, plus save-to-collection (`⌘⇧S`). Persistence: SQLite on
+desktop, `localStorage` in browser.
+
+## Problem / job to be done
+
+Users need durable, nested organization of requests (beyond history/drafts) with clear CRUD and
+save destination picking.
+
+## User stories
+
+- As a developer, I want collections and folders so I can group API areas.
+- As a developer, I want `⌘⇧S` to save the active request into a chosen folder/root.
+- As a developer, I want rename/delete with confirm so I do not lose work accidentally.
+
+## Functional requirements
+
+1. Create / rename / delete collections via modals.
+2. Nested folders up to `MAX_NESTING_DEPTH` (**10**); add request/folder from collection row actions.
+3. Save modal: pick collection + destination, edit name; sets `nameLocked` when renamed.
+4. Tree updates rebuild nodes immutably (never mutate in place).
+5. Strip live `File` objects before persist — names/metadata only.
+6. Desktop: `collections` SQLite table (text UUIDs; legacy int migrated). Browser:
+   `pg_browser_collections`.
+
+## Non-functional requirements
+
+- Create-collection modal disables open animation for snappiness.
+- Folders start collapsed; user expands as needed (no auto-expand-by-size rule).
+
+## Acceptance criteria
+
+- [ ] Create collection → appears in sidebar Collections tab.
+- [ ] Add folder + nested request within depth 10; deeper add blocked.
+- [ ] `⌘⇧S` with URL opens save modal; save places request at chosen path.
+- [ ] Delete collection confirms and removes tree.
+- [ ] Reload app — collections persist (desktop SQLite / browser localStorage).
+- [ ] Binary/file metadata survives save without `File` blob.
 
 ## UI
 
-- **Collections sidebar tab** — a top **New Collection** button (dashed, full-width), then each
-  collection as a top-level folder row showing name, request count badge, and (on hover) add-request
-  / add-folder / rename / delete icon buttons. Expanding reveals nested folders and saved requests
-  (method-colored).
-- **Save modal** (`⌘S`) — pick a collection + destination folder (or root), edit the request name,
-  Save.
+- **Collections sidebar tab** — New Collection (dashed), then collection rows (name, count, hover
+  actions: add request / folder / rename / delete). Expand → nested folders + method-colored requests.
+- **Save modal (`⌘⇧S`)** — collection + folder/root destination, name field, Save.
 
 ## UX / interactions
 
-- **CRUD via modals.** Create/rename use a shared name modal ("Create"/"Rename"); create-collection
-  disables the modal open animation for snappiness. Delete confirms.
-- **Nested saves.** Folders can nest up to `MAX_NESTING_DEPTH`. Requests save into the chosen
-  folder or root; `⌘S` opens the save modal for the active request when it has a URL.
-- **Name lock on save.** Renaming in the save dialog marks the request name manual (`nameLocked`),
-  so reopening it as a tab keeps the chosen name; leaving it as the auto name keeps it auto.
-- **Auto-expand.** Small folders (≤3 requests) open by default so a lone request isn't buried.
-- **Persistence.** Stored as JSON per collection. In the desktop app → SQLite (`collections` table,
-  legacy int IDs migrated to text). In the browser build → `localStorage` (`pg_browser_collections`).
+- CRUD via shared name modal ("Create"/"Rename"); delete confirms.
+- Opening a saved request loads into a tab (reuse empty or new).
+- Name lock on save rename keeps chosen tab name later.
+
+## Keyboard
+
+`⌘⇧S` opens save modal when active request has a URL (was `⌘S` before the 2026-07-29
+⌘⇧-prefix shortcut scheme).
 
 ## States & edge cases
 
-- **Empty** → "No collections yet" with a "+ Create Collection" CTA.
-- Tree updates rebuild nodes immutably (never mutate in place) so React re-renders correctly.
-- Live `File` objects are stripped before persisting — only file names/metadata are saved.
+- Empty → "No collections yet" + Create CTA.
+- Immutable tree updates required for React change detection.
+- Modal: Space in inputs must not close backdrop.
+
+## Manual test checklist
+
+- [ ] Create / rename / delete collection.
+- [ ] Nest folders to depth 10; attempt beyond — blocked.
+- [ ] Save request via `⌘⇧S` into nested folder; reopen from tree.
+- [ ] Delete folder with children — confirm expected behavior.
+- [ ] Reload persistence check.
+- [ ] Save request with multipart file — only metadata persisted.
+
+## Automation coverage
+
+- Vitest: `src/features/collections/store.test.ts`.
+- Playwright: `e2e/collections.spec.ts` — create+persist, and rename/nested-folder-save/reopen/
+  delete-folder-with-children/delete-collection (2026-07-26 QA pass; confirmed `stripFiles` drops
+  live `File` handles on save, per `store.ts`).
 
 ## Test ids
 

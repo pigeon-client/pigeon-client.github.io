@@ -7,10 +7,17 @@ pub struct DbState {
 }
 
 fn db_path() -> PathBuf {
+    // Fail hard rather than fall back to a world-visible location like "/".
     let pifeon_dir = dirs::home_dir()
-        .unwrap_or_else(|| PathBuf::from("/"))
+        .expect("Cannot determine home directory for the Pigeon database")
         .join("Pifeon");
     std::fs::create_dir_all(&pifeon_dir).ok();
+    // The DB holds request auth material in plaintext — keep it owner-only.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(&pifeon_dir, std::fs::Permissions::from_mode(0o700));
+    }
     pifeon_dir.join("pigeon.db")
 }
 

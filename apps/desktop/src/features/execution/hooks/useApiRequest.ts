@@ -74,6 +74,12 @@ async function autoSave(config: RequestConfig, result: ApiResponse) {
     responseTime: result.responseTime,
     timestamp: Date.now(),
     request: { ...config, name: config.name || extractEndpoint(config.url) },
+    // SSE responses stream indefinitely — nothing stable to snapshot.
+    // Snapshot persistence is opt-out in Settings (responses may hold sensitive data).
+    snapshot:
+      result.sse || localStorage.getItem("pg_save_snapshots") === "false"
+        ? undefined
+        : buildSnapshot(result),
   };
   await historyStore.addToHistory(historyItem);
 }

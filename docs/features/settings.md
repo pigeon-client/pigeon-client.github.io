@@ -1,6 +1,52 @@
 # Settings
 
-App preferences: theme, request options, update check, and a shortcuts reference.
+## Overview
+
+App preferences: theme, word wrap, request options, data clearing, update check, and keyboard
+shortcuts reference.
+
+## Problem / job to be done
+
+Users need durable preferences (theme, wrap, redirects/SSL/proxy) and a clear place for updates and
+destructive data wipes — without a settings store coupled into every feature (localStorage keys).
+
+## User stories
+
+- As a user, I want Dark/Light theme that persists.
+- As a user, I want word wrap for body/response editors that persists.
+- As a desktop user, I want follow-redirects / SSL verify / proxy for sends.
+- As a user, I want to clear history/drafts/all data deliberately.
+- As a desktop user, I want to check and install updates in-app.
+
+## Functional requirements
+
+1. Settings modal (`⌘⇧,`): General / Requests / Data / About.
+2. Theme → `pg_theme` + `<html>` class `.dark` or light (class removed).
+3. Word wrap (General) → `pg_word_wrap`; shared by body editor + response viewer.
+4. Request options → `pg_follow_redirects`, `pg_ssl_verify`, `pg_proxy_url` (read at send).
+5. Data: live counts (History / Drafts / Collections / Environments) + a "Keep history for"
+   retention selector (30 days / 90 days / 1 year / Forever, default 90, `pg_history_retention_days`
+   via `features/history/lib/retention.ts`) + Clear History / Drafts / All (envs included on Clear
+   All; collections **not** cleared by Clear All). Retention is pruned once on the *next* app start,
+   never mid-session.
+6. About: version, update status, Check / Install (Tauri updater).
+7. Shortcuts modal (`⌘⇧/`).
+8. Startup silent update check; badge on gear + About; `UpdateToast` on launch.
+
+## Non-functional requirements
+
+- Browser build shows update UI but cannot install.
+- Settings ↔ Execution coupled only via localStorage keys for request options.
+- Word wrap is a shared preference, not per-tab.
+
+## Acceptance criteria
+
+- [ ] Toggle theme → UI tokens change; survives reload.
+- [ ] Toggle word wrap in Settings → body + response wrap update; survives reload.
+- [ ] Requests toggles persist; desktop send respects them.
+- [ ] Clear History removes history only; Clear All wipes history/drafts/envs (not collections).
+- [ ] Update available → badge + toast (desktop packaged).
+- [ ] `⌘⇧,` / `⌘⇧/` open correct modals; Space in fields does not dismiss.
 
 ## UI
 
@@ -28,7 +74,7 @@ App preferences: theme, request options, update check, and a shortcuts reference
 
 ## Keyboard
 
-- `⌘,` open Settings · `⌘/` open Keyboard Shortcuts.
+`⌘⇧,` Settings · `⌘⇧/` Shortcuts.
 
 ## States & edge cases
 
@@ -38,8 +84,9 @@ App preferences: theme, request options, update check, and a shortcuts reference
 
 ## Test ids
 
-Opened via `title="Settings (⌘,)"`. Nav + theme swatches are selected by their button labels
-("Light", "Dark", "Requests", "About") in E2E.
+Opened via `title="Settings (⌘⇧,)"`. `settings-word-wrap`, `settings-retention`,
+`data-count-<history|drafts|collections|environments>`. Nav/theme by button labels ("Light",
+"Dark", "Requests", "About") in E2E.
 
 ## Key files
 

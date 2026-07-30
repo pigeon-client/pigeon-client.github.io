@@ -2092,9 +2092,9 @@ section h2 .accent,
   border-color: var(--border);
 }
 .sc-story-line {
-  font-size: 0.68rem !important;
-  color: var(--primary) !important;
-  margin: 0 0 10px !important;
+  font-size: 0.68rem;
+  color: var(--primary);
+  margin: 0 0 10px;
   letter-spacing: 0.01em;
   min-height: 1.2em;
 }
@@ -2625,7 +2625,7 @@ section h2 .accent,
   .card.playing .sc-a-key1,
   .card.playing .sc-a-key2,
   .card.playing .sc-cap {
-    animation: none !important;
+    animation: none;
   }
   .card .sc-a-fast { width: 92%; }
   .card .sc-a-slow { width: 38%; }
@@ -2930,7 +2930,7 @@ section h2 .accent,
   .org-playing .org-a-h1,
   .org-playing .org-cap,
   .org-playing .org-hist .ok::after {
-    animation: none !important;
+    animation: none;
   }
   .org-a-ghost,
   .org-a-live,
@@ -2942,7 +2942,7 @@ section h2 .accent,
   .org-a-h0,
   .org-a-b1,
   .org-a-h1 {
-    opacity: 1 !important;
+    opacity: 1;
   }
   .org-a-arrow { display: none; }
   .org-caps { display: none; }
@@ -3133,7 +3133,7 @@ section h2 .accent,
     padding: 10px;
   }
   .sc-story-line {
-    font-size: 0.64rem !important;
+    font-size: 0.64rem;
   }
 
   /* Open source */

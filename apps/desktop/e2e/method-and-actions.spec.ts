@@ -18,7 +18,7 @@ test.describe("method selector & header actions", () => {
 
     // Grant clipboard so the copy path succeeds.
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => {});
-    await page.locator('[title="Copy as cURL"]').click();
+    await page.locator('[aria-label="Copy as cURL"]').click();
     await expect(page.locator('[title="Copied!"]')).toBeVisible();
   });
 });

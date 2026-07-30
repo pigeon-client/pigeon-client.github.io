@@ -278,8 +278,14 @@ export function TabStrip() {
     >
       {tabs.map((tab) => {
         const active = tab.id === activeTabId;
-        const mc = METHOD_COLORS[tab.request.method] ?? METHOD_COLORS.GET;
         const isEditing = editingId === tab.id;
+        // Non-http tabs show a kind badge where the method usually sits.
+        const badge =
+          tab.kind === "mcp" ? "MCP" : tab.kind === "graphql" ? "GQL" : tab.request.method;
+        const mc =
+          tab.kind === "http"
+            ? (METHOD_COLORS[tab.request.method] ?? METHOD_COLORS.GET)
+            : "var(--primary)";
         return (
           <div
             key={tab.id}
@@ -326,7 +332,7 @@ export function TabStrip() {
                 color: mc,
               }}
             >
-              {tab.request.method}
+              {badge}
             </span>
 
             {isEditing ? (

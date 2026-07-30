@@ -9,25 +9,33 @@ const SECTIONS: { label: string; shortcuts: { keys: string[]; action: string }[]
     label: "Requests",
     shortcuts: [
       { keys: ["⌘", "Enter"], action: "Send request" },
-      { keys: ["⌘", "N"], action: "New tab" },
-      { keys: ["⌘", "W"], action: "Close tab" },
+      { keys: ["⌘", "⇧", "N"], action: "New tab" },
+      { keys: ["⌘", "⇧", "W"], action: "Close tab" },
       { keys: ["⌘", "⇧", "1–9"], action: "Switch to tab" },
     ],
   },
   {
     label: "Navigation",
     shortcuts: [
-      { keys: ["⌘", "F"], action: "Focus sidebar search" },
-      { keys: ["⌘", "S"], action: "Save to collection" },
+      { keys: ["⌘", "⇧", "K"], action: "Open command palette" },
+      { keys: ["⌘", "F"], action: "Find in focused panel / sidebar search" },
+      { keys: ["⌘", "⇧", "S"], action: "Save to collection" },
       { keys: ["Tab"], action: "Navigate between fields" },
       { keys: ["Esc"], action: "Close modal / blur focus" },
     ],
   },
   {
+    label: "Workbenches",
+    shortcuts: [
+      { keys: ["⌘", "⇧", "M"], action: "Open MCP bench tab" },
+      { keys: ["⌘", "⇧", "G"], action: "Open GraphQL tab (coming soon)" },
+    ],
+  },
+  {
     label: "Other",
     shortcuts: [
-      { keys: ["⌘", "/"], action: "Show keyboard shortcuts" },
-      { keys: ["⌘", ","], action: "Open settings" },
+      { keys: ["⌘", "⇧", "/"], action: "Show keyboard shortcuts" },
+      { keys: ["⌘", "⇧", ","], action: "Open settings" },
       { keys: ["⌘", "⇧", "E"], action: "Open environment manager" },
     ],
   },

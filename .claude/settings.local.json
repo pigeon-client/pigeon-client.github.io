@@ -171,7 +171,20 @@
       "Bash(rsvg-convert -w 1024 -h 1024 __TRACKED_VAR__/icon-src.svg -o __TRACKED_VAR__/icon-1024.png)",
       "Bash(sips -g pixelWidth -g pixelHeight -g hasAlpha __TRACKED_VAR__/icon-1024.png)",
       "Bash(pnpm --filter pigeon exec tauri icon \"$\\(pwd\\)/logo/icon-source.png\")",
-      "Bash(sips -g hasAlpha apps/desktop/src-tauri/icons/icon.png)"
+      "Bash(sips -g hasAlpha apps/desktop/src-tauri/icons/icon.png)",
+      "mcp__TestSprite__testsprite_check_account_info",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:1420)",
+      "mcp__TestSprite__testsprite_bootstrap",
+      "mcp__TestSprite__testsprite_generate_code_summary",
+      "mcp__TestSprite__testsprite_generate_standardized_prd",
+      "mcp__TestSprite__testsprite_generate_frontend_test_plan",
+      "mcp__TestSprite__testsprite_generate_code_and_execute",
+      "Bash(lsof -iTCP:1420 -sTCP:LISTEN -n)",
+      "Bash(curl -s -o /dev/null -w \"curl localhost:1420 -> %{http_code}\\\\n\" http://localhost:1420)",
+      "Bash(curl -s -o /dev/null -w \"curl 127.0.0.1:1420 -> %{http_code}\\\\n\" http://127.0.0.1:1420)",
+      "Bash(ps -o command= -p 25227)",
+      "Bash(kill 25227)",
+      "Bash(curl -s -o /dev/null -w \"127.0.0.1:1420 -> %{http_code}\\\\n\" http://127.0.0.1:1420)"
     ]
   }
 }

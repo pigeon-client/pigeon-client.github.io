@@ -1,15 +1,18 @@
-import { Check, Search, Settings, Terminal, X } from "lucide-react";
+import { Braces, Check, Plug, Search, Settings, Terminal, X } from "lucide-react";
 import { type RefObject, useEffect, useState } from "react";
 import pigeonLogo from "@/assets/pigeon-mark.svg";
 import { EnvSelector } from "@/features/environments";
 import { getCachedUpdateResult, onUpdateCacheChange } from "@/features/settings";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
+import { Tooltip } from "@/shared/ui/Tooltip";
 
 interface HeaderProps {
   onOpenSettings: () => void;
   onExportCurl: () => void;
   onManageEnv: () => void;
+  onOpenMcp: () => void;
+  onOpenGraphql: () => void;
   curlCopied: boolean;
   exportDisabled: boolean;
   search: string;
@@ -24,6 +27,8 @@ export function Header({
   onOpenSettings,
   onExportCurl,
   onManageEnv,
+  onOpenMcp,
+  onOpenGraphql,
   curlCopied,
   exportDisabled,
   search,
@@ -89,28 +94,53 @@ export function Header({
       {/* Env selector + Export + Settings */}
       <div className="flex items-center justify-end gap-1.5 justify-self-end">
         <EnvSelector onManage={onManageEnv} />
-        <Button
-          variant="ghost-icon"
-          size="icon"
-          onClick={onExportCurl}
-          disabled={exportDisabled}
-          title={curlCopied ? "Copied!" : "Copy as cURL"}
-          aria-label="Copy as cURL"
-        >
-          {curlCopied ? (
-            <Check className="h-4 w-4 text-status-2xx" />
-          ) : (
-            <Terminal className="h-4 w-4" />
-          )}
-        </Button>
-        <Button variant="ghost-icon" size="icon" onClick={onOpenSettings} title="Settings (⌘,)">
-          <span className="relative">
-            <Settings className="h-4 w-4" />
-            {updateAvailable && (
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
+        <Tooltip label="MCP bench (⌘⇧M)">
+          <Button
+            variant="ghost-icon"
+            size="icon"
+            onClick={onOpenMcp}
+            aria-label="MCP bench"
+            data-testid="header-open-mcp"
+          >
+            <Plug className="h-4 w-4" />
+          </Button>
+        </Tooltip>
+        <Tooltip label="GraphQL — coming soon (⌘⇧G)">
+          <Button
+            variant="ghost-icon"
+            size="icon"
+            onClick={onOpenGraphql}
+            aria-label="GraphQL (coming soon)"
+            data-testid="header-open-graphql"
+          >
+            <Braces className="h-4 w-4" />
+          </Button>
+        </Tooltip>
+        <Tooltip label={curlCopied ? "Copied!" : "Copy as cURL"}>
+          <Button
+            variant="ghost-icon"
+            size="icon"
+            onClick={onExportCurl}
+            disabled={exportDisabled}
+            aria-label="Copy as cURL"
+          >
+            {curlCopied ? (
+              <Check className="h-4 w-4 text-status-2xx" />
+            ) : (
+              <Terminal className="h-4 w-4" />
             )}
-          </span>
-        </Button>
+          </Button>
+        </Tooltip>
+        <Tooltip label="Settings (⌘⇧,)">
+          <Button variant="ghost-icon" size="icon" onClick={onOpenSettings} aria-label="Settings">
+            <span className="relative">
+              <Settings className="h-4 w-4" />
+              {updateAvailable && (
+                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
+              )}
+            </span>
+          </Button>
+        </Tooltip>
       </div>
     </div>
   );

@@ -30,7 +30,10 @@ request, pick a folder, and click "Save." Pigeon does that work for you:
 - **Requests file themselves** — every send is auto-saved and dropped into a tidy tree, one folder
   per domain, grouped by endpoint. No "Save as…" dialog, ever.
 - **History writes itself** — a time-bucketed log (Today, Yesterday, This Week) of everything you
-  sent, with method, name, and status.
+  sent, with method, name, and status — including a snapshot of the response, so reopening an old
+  request shows you what it returned without sending it again.
+- **⌘⇧K finds anything** — one query across history, drafts, and every collection at once. Type a
+  few letters of a URL, name, or even a past response body and jump straight to it.
 
 Everything lives on your machine. There's no sign-up, no workspace invite, and nothing syncs to
 anyone's cloud.
@@ -42,6 +45,7 @@ anyone's cloud.
 | | |
 |---|---|
 | **Self-organizing workspace** | Auto-named tabs, auto-filed drafts, and an auto-written history — zero manual housekeeping |
+| **⌘⇧K command palette** | One query across history, drafts, and every collection — ranked, with response-body search |
 | **Request builder** | Params, headers, body (JSON, form-data, multipart, file), and auth (Bearer, Basic, API Key) |
 | **Environments** | `{{variable}}` sets for dev / staging / prod, with secret masking and red production guardrails |
 | **Collections** | Curate requests into nested folders when you want deliberate structure — stored locally |
