@@ -4,6 +4,7 @@ use std::sync::Mutex;
 
 pub struct DbState {
     pub conn: Mutex<Connection>,
+    pub migration_status: Option<MigrationStatus>,
 }
 
 fn db_path() -> PathBuf {
@@ -21,7 +22,7 @@ fn db_path() -> PathBuf {
     pifeon_dir.join("pigeon.db")
 }
 
-pub fn init_db() -> Connection {
+pub fn init_db() -> (Connection, Option<MigrationStatus>) {
     let path = db_path();
     let conn = Connection::open(&path).expect("Failed to open database");
 
@@ -44,9 +45,76 @@ pub fn init_db() -> Connection {
     )
     .expect("Failed to create tables");
 
-    migrate_collections_id_to_text(&conn).expect("Failed to migrate collections table");
+    let status = run_migrations(&conn).expect("Failed to run schema migrations");
 
-    conn
+    (conn, status)
+}
+
+/// Ordered schema migrations. Each entry runs at most once per DB, in index order,
+/// tracked by `schema_meta.schema_version`. Append new migrations to the end —
+/// never reorder or remove past ones, since older installs may still be mid-list.
+const MIGRATIONS: &[fn(&Connection) -> Result<(), String>] = &[migrate_collections_id_to_text];
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MigrationStatus {
+    pub from_version: i64,
+    pub to_version: i64,
+}
+
+fn schema_version(conn: &Connection) -> Result<i64, String> {
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS schema_meta (
+            key TEXT PRIMARY KEY,
+            value INTEGER NOT NULL
+        );",
+    )
+    .map_err(|e| e.to_string())?;
+
+    conn.query_row(
+        "SELECT value FROM schema_meta WHERE key = 'schema_version'",
+        [],
+        |row| row.get(0),
+    )
+    .or_else(|_| {
+        conn.execute(
+            "INSERT INTO schema_meta (key, value) VALUES ('schema_version', 0)",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+        Ok(0)
+    })
+}
+
+fn set_schema_version(conn: &Connection, version: i64) -> Result<(), String> {
+    conn.execute(
+        "INSERT INTO schema_meta (key, value) VALUES ('schema_version', ?1)
+         ON CONFLICT(key) DO UPDATE SET value = ?1",
+        params![version],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Runs every pending migration in order, bumping `schema_version` one step at a time
+/// so a crash mid-migration resumes from the last completed step on next launch.
+fn run_migrations(conn: &Connection) -> Result<Option<MigrationStatus>, String> {
+    let from_version = schema_version(conn)?;
+    let target_version = MIGRATIONS.len() as i64;
+
+    if from_version >= target_version {
+        return Ok(None);
+    }
+
+    for (i, migration) in MIGRATIONS.iter().enumerate().skip(from_version as usize) {
+        migration(conn)?;
+        set_schema_version(conn, (i + 1) as i64)?;
+    }
+
+    Ok(Some(MigrationStatus {
+        from_version,
+        to_version: target_version,
+    }))
 }
 
 fn migrate_collections_id_to_text(conn: &Connection) -> Result<(), String> {

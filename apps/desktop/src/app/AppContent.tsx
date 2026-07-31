@@ -23,6 +23,7 @@ import {
   SettingsDrawer,
 } from "@/features/settings";
 import { Header } from "./layout/Header";
+import { MigrationToast } from "./layout/MigrationToast";
 import { Sidebar } from "./layout/Sidebar";
 import { UpdateToast } from "./layout/UpdateToast";
 
@@ -396,6 +397,7 @@ export function AppContent() {
       {showSettings && <SettingsDrawer onClose={() => setShowSettings(false)} />}
       {showPalette && <CommandPalette onClose={() => setShowPalette(false)} />}
 
+      <MigrationToast />
       <UpdateToast onOpenSettings={() => setShowSettings(true)} />
     </div>
   );

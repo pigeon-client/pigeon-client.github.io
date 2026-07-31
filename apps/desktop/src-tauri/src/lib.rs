@@ -770,6 +770,13 @@ fn delete_history(state: State<db::DbState>, id: i64) -> Result<(), String> {
     db::delete_history(&conn, id)
 }
 
+// --- Migration status ---
+
+#[tauri::command]
+fn get_migration_status(state: State<db::DbState>) -> Option<db::MigrationStatus> {
+    state.migration_status.clone()
+}
+
 // --- Collection Commands ---
 
 #[tauri::command]
@@ -798,9 +805,10 @@ fn delete_collection(state: State<db::DbState>, id: String) -> Result<(), String
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let db_conn = db::init_db();
+    let (db_conn, migration_status) = db::init_db();
     let db_state = db::DbState {
         conn: std::sync::Mutex::new(db_conn),
+        migration_status,
     };
 
     tauri::Builder::default()
@@ -826,6 +834,7 @@ pub fn run() {
             get_collections,
             update_collection,
             delete_collection,
+            get_migration_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -158,6 +158,18 @@ wrappers. Do not call `invoke()` directly from components. Collections are store
 `collections(id TEXT PRIMARY KEY, data TEXT, created_at INTEGER)`; `src-tauri/src/db.rs` migrates
 legacy integer IDs to text so UUID collection IDs work.
 
+**Schema migrations**: `src-tauri/src/db.rs` tracks an integer `schema_version` in a `schema_meta`
+table. `init_db()` runs every entry in the `MIGRATIONS` array whose index is >= the stored version,
+in order, bumping the version after each step — so a crash mid-migration resumes from the last
+completed step on next launch instead of re-running or skipping steps. This all runs synchronously
+before the window opens, so every launch is auto-migrated with no user action. Append new
+migrations to the end of `MIGRATIONS`; never reorder or remove past ones (older installs may still
+be mid-list). If a migration ran this launch, `get_migration_status` (Tauri command) returns
+`{fromVersion, toVersion}` once; the frontend surfaces it via `MigrationToast`
+(`src/app/layout/MigrationToast.tsx`, wired through `features/settings/lib/migration.ts`) as a
+one-shot dismissible toast — not a real-time progress bar, since local SQLite migrations finish
+before the toast can even mount.
+
 **Environments are the exception**: they persist to `localStorage` for *both* builds
 (`environments/services/db.ts`, keys `pg_browser_environments` / `pg_globals` / `pg_active_env`) —
 the Tauri webview's `localStorage` is durable, so there is no Rust `environments` table. Response

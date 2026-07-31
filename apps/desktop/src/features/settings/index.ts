@@ -1,6 +1,7 @@
 export { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
 export { SettingsDrawer } from "./components/SettingsDrawer";
 export { useWordWrap } from "./hooks/useWordWrap";
+export { getMigrationStatus, type MigrationStatus } from "./lib/migration";
 export { type AppTheme, applyTheme, getStoredTheme } from "./lib/theme";
 export {
   checkForUpdates,
