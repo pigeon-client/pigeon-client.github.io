@@ -14,6 +14,12 @@ const SESSION_HEADER = "mcp-session-id";
 export class McpConnectError extends Error {}
 /** Server reached but responded with a non-2xx or a JSON-RPC error object. */
 export class McpProtocolError extends Error {}
+/** Server responded 401 — carries `WWW-Authenticate` so the caller can run the OAuth flow. */
+export class McpAuthRequiredError extends Error {
+  constructor(public wwwAuthenticate: string | undefined) {
+    super("MCP server requires authorization");
+  }
+}
 
 /**
  * Minimal MCP Streamable-HTTP client: initialize → notifications/initialized →
@@ -41,10 +47,18 @@ export class McpSession {
     }
     const sid = res.headers[SESSION_HEADER];
     if (sid) this.sessionId = sid;
+    if (res.status === 401) {
+      throw new McpAuthRequiredError(res.headers["www-authenticate"]);
+    }
     if (res.status < 200 || res.status >= 300) {
       throw new McpProtocolError(`MCP server responded with HTTP ${res.status}`);
     }
     return res;
+  }
+
+  /** Merges a Bearer token into every subsequent request on this session. */
+  setAuthorizationHeader(accessToken: string): void {
+    this.headers = { ...this.headers, Authorization: `Bearer ${accessToken}` };
   }
 
   private async rpc(method: string, params?: unknown): Promise<unknown> {

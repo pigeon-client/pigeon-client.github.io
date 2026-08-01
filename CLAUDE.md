@@ -154,9 +154,12 @@ State lives in co-located Zustand stores:
 - `src/features/environments/store.ts` — environment variables and interpolation
 
 Drafts, history, and collections persist via Rust SQLite commands through thin `services/db.ts`
-wrappers. Do not call `invoke()` directly from components. Collections are stored as JSON in
-`collections(id TEXT PRIMARY KEY, data TEXT, created_at INTEGER)`; `src-tauri/src/db.rs` migrates
-legacy integer IDs to text so UUID collection IDs work.
+wrappers. Do not call `invoke()` directly from components. Tables are `rest_`/`mcp_`-prefixed by
+feature (`rest_drafts`, `rest_history`, `rest_collections`, `mcp_oauth`) — renamed from the
+unprefixed originals via a schema migration (see below), Rust fn/command names and frontend
+`invoke()` call sites are unaffected by that rename. Collections are stored as JSON in
+`rest_collections(id TEXT PRIMARY KEY, data TEXT, created_at INTEGER)`; `src-tauri/src/db.rs`
+migrates legacy integer IDs to text so UUID collection IDs work.
 
 **Schema migrations**: `src-tauri/src/db.rs` tracks an integer `schema_version` in a `schema_meta`
 table. `init_db()` runs every entry in the `MIGRATIONS` array whose index is >= the stored version,
@@ -254,14 +257,26 @@ so `highlight.js` output adapts automatically.
 - **Save request shortcut**: `Cmd+Shift+S` / `Ctrl+Shift+S` opens `SaveToCollectionModal` for the
   active request when it has a URL.
 - **Shortcut scheme**: every app-global chord is `Cmd+Shift+<key>` (`⇧N` new tab, `⇧W` close,
-  `⇧K` palette, `⇧E` envs, `⇧M` MCP, `⇧G` GraphQL, `⇧,` settings, `⇧/` shortcuts, `⇧1–9` tabs).
-  Two exceptions: `Cmd+Enter` sends, and plain `Cmd+F` is contextual find — the body editor and
-  response panel intercept it for an in-panel `FindBar` (`shared/ui/FindBar.tsx` +
-  `shared/lib/textFind.ts`); anywhere else it focuses the header search. Handlers match on
-  `e.code` (Shift changes `e.key`).
-- **Tab kinds**: `Tab.kind = "http" | "mcp" | "graphql"` in the tab store. MCP bench and the
-  GraphQL coming-soon pane are singleton workspace tabs (`openKindTab`), not modals — non-http
-  tabs render full-pane with no URL bar and show a kind badge (`MCP` / `GQL`) in the tab strip.
+  `⇧K` palette, `⇧E` envs, `⇧R` REST workspace, `⇧M` MCP, `⇧G` GraphQL, `⇧,` settings, `⇧/`
+  shortcuts, `⇧1–9` tabs). Two exceptions: `Cmd+Enter` sends, and plain `Cmd+F` is contextual
+  find — the body editor and response panel intercept it for an in-panel `FindBar`
+  (`shared/ui/FindBar.tsx` + `shared/lib/textFind.ts`); anywhere else it focuses the header
+  search. Handlers match on `e.code` (Shift changes `e.key`).
+- **Tab kinds**: `Tab.kind = "http" | "mcp" | "graphql"` in the tab store. Non-http tabs render
+  full-pane with no URL bar and show a kind badge (`MCP` / `GQL`) in the tab strip.
+- **Workspace windows (desktop app only)**: REST/MCP/GraphQL each open as a separate singleton
+  OS window (`open_workspace_window` in `src-tauri/src/lib.rs` — focuses the existing window for
+  that kind rather than duplicating it; REST is always the app's default `"main"` window). Each
+  window is a separate webview/JS heap, so `useTabStore` (and every other Zustand store) is
+  naturally isolated per window with no extra plumbing — `src/shared/lib/windowKind.ts` resolves
+  which kind a given window is (by its Tauri window label) and is what makes the tab store default
+  to the right kind (`addTab()`'s default, and the "tabs emptied" fallback) in each one. The
+  sidebar is swapped per the *active tab's* kind, not the window's, in `AppContent.tsx` (`Sidebar`
+  for http/graphql, `McpSidebar` for mcp) — see `docs/features/sidebar.md`/`mcp.md`. The plain
+  browser/E2E build has no OS windows at all and keeps the original single-page, mixed-kind-tabs
+  experience (`openKindTab` singleton-within-the-page); `windowKind.ts` always resolves `"rest"`
+  there, and `AppContent.tsx`'s `openWorkspace()` helper branches on `isTauri()` to pick between
+  `invoke("open_workspace_window", ...)` and the legacy `openKindTab()`.
 - **Modal keyboard behaviour**: Shared `Modal` only closes on backdrop keyboard events when the
   backdrop itself is focused. Space inside inputs/selects must not close modals.
 

@@ -1,9 +1,10 @@
-import { Braces, Check, Plug, Search, Settings, Terminal, X } from "lucide-react";
+import { Braces, Check, Globe, Plug, Search, Settings, Terminal, X } from "lucide-react";
 import { type RefObject, useEffect, useState } from "react";
 import pigeonLogo from "@/assets/pigeon-mark.svg";
 import { EnvSelector } from "@/features/environments";
 import { getCachedUpdateResult, onUpdateCacheChange } from "@/features/settings";
 import { cn } from "@/shared/lib/utils";
+import { getWindowKind, type WindowKind } from "@/shared/lib/windowKind";
 import { Button } from "@/shared/ui/button";
 import { Tooltip } from "@/shared/ui/Tooltip";
 
@@ -11,6 +12,7 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onExportCurl: () => void;
   onManageEnv: () => void;
+  onOpenRest: () => void;
   onOpenMcp: () => void;
   onOpenGraphql: () => void;
   curlCopied: boolean;
@@ -27,6 +29,7 @@ export function Header({
   onOpenSettings,
   onExportCurl,
   onManageEnv,
+  onOpenRest,
   onOpenMcp,
   onOpenGraphql,
   curlCopied,
@@ -39,6 +42,7 @@ export function Header({
   onSearchBlur,
 }: HeaderProps) {
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const activeWorkspace = getWindowKind();
 
   useEffect(() => {
     setUpdateAvailable(getCachedUpdateResult()?.status === "available");
@@ -46,6 +50,44 @@ export function Header({
       setUpdateAvailable(getCachedUpdateResult()?.status === "available");
     });
   }, []);
+
+  const workspaceTabs: {
+    kind: WindowKind;
+    label: string;
+    icon: typeof Globe;
+    tooltip: string;
+    ariaLabel: string;
+    testId: string;
+    onClick: () => void;
+  }[] = [
+    {
+      kind: "rest",
+      label: "REST",
+      icon: Globe,
+      tooltip: "REST workspace (⌘⇧R)",
+      ariaLabel: "REST workspace",
+      testId: "header-open-rest",
+      onClick: onOpenRest,
+    },
+    {
+      kind: "mcp",
+      label: "MCP",
+      icon: Plug,
+      tooltip: "MCP bench (⌘⇧M)",
+      ariaLabel: "MCP bench",
+      testId: "header-open-mcp",
+      onClick: onOpenMcp,
+    },
+    {
+      kind: "graphql",
+      label: "GraphQL",
+      icon: Braces,
+      tooltip: "GraphQL — coming soon (⌘⇧G)",
+      ariaLabel: "GraphQL (coming soon)",
+      testId: "header-open-graphql",
+      onClick: onOpenGraphql,
+    },
+  ];
 
   return (
     <div className="relative z-[var(--z-sticky)] grid h-11 flex-none grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-background/95 px-3.5 backdrop-blur">
@@ -91,31 +133,38 @@ export function Header({
         )}
       </div>
 
-      {/* Env selector + Export + Settings */}
-      <div className="flex items-center justify-end gap-1.5 justify-self-end">
+      {/* Env selector + Export + Settings — self-stretch so this whole grid cell fills
+          the header's h-11 row (the outer grid's `items-center` would otherwise shrink-wrap
+          and center it, capping the tab strip's own self-stretch below at that shorter height). */}
+      <div className="flex items-center self-stretch justify-end gap-1.5 justify-self-end">
         <EnvSelector onManage={onManageEnv} />
-        <Tooltip label="MCP bench (⌘⇧M)">
-          <Button
-            variant="ghost-icon"
-            size="icon"
-            onClick={onOpenMcp}
-            aria-label="MCP bench"
-            data-testid="header-open-mcp"
-          >
-            <Plug className="h-4 w-4" />
-          </Button>
-        </Tooltip>
-        <Tooltip label="GraphQL — coming soon (⌘⇧G)">
-          <Button
-            variant="ghost-icon"
-            size="icon"
-            onClick={onOpenGraphql}
-            aria-label="GraphQL (coming soon)"
-            data-testid="header-open-graphql"
-          >
-            <Braces className="h-4 w-4" />
-          </Button>
-        </Tooltip>
+        {/* self-stretch fills the header's own h-11 so each tab's border-bottom lands
+            flush on the header's border-b — a real tab edge, not a floating underline. */}
+        <div className="flex items-stretch self-stretch gap-0.5 border-r border-border pr-1.5 mr-0.5">
+          {workspaceTabs.map(({ kind, label, icon: Icon, tooltip, ariaLabel, testId, onClick }) => {
+            const active = activeWorkspace === kind;
+            return (
+              <Tooltip key={kind} label={tooltip}>
+                <button
+                  type="button"
+                  onClick={onClick}
+                  data-testid={testId}
+                  aria-label={ariaLabel}
+                  data-state={active ? "active" : "inactive"}
+                  className={cn(
+                    "flex items-center gap-1.5 border-b-2 px-2.5 text-xs font-medium transition-colors",
+                    active
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="max-lg:hidden">{label}</span>
+                </button>
+              </Tooltip>
+            );
+          })}
+        </div>
         <Tooltip label={curlCopied ? "Copied!" : "Copy as cURL"}>
           <Button
             variant="ghost-icon"

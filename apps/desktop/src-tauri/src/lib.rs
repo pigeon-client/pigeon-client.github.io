@@ -3,10 +3,11 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 use tokio::sync::Mutex;
 
 mod db;
+mod oauth;
 
 /// Hard cap on how much response body is buffered and sent to the webview.
 /// Protects against OOM from hostile/huge endpoints; the UI flags truncation.
@@ -803,6 +804,53 @@ fn delete_collection(state: State<db::DbState>, id: String) -> Result<(), String
     db::delete_collection(&conn, &id)
 }
 
+// --- MCP OAuth Commands ---
+
+#[tauri::command]
+fn save_mcp_oauth(state: State<db::DbState>, server_url: String, data: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::save_mcp_oauth(&conn, &server_url, &data)
+}
+
+#[tauri::command]
+fn get_mcp_oauth(state: State<db::DbState>, server_url: String) -> Result<Option<String>, String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::get_mcp_oauth(&conn, &server_url)
+}
+
+#[tauri::command]
+fn delete_mcp_oauth(state: State<db::DbState>, server_url: String) -> Result<(), String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    db::delete_mcp_oauth(&conn, &server_url)
+}
+
+// --- Workspace windows ---
+// REST/MCP/GraphQL are separate OS windows, singleton per kind — reopening focuses the
+// existing window instead of duplicating it. REST is always the app's default "main" window
+// (created at startup by tauri.conf.json), never (re)created here.
+#[tauri::command]
+fn open_workspace_window(app: AppHandle, kind: String) -> Result<(), String> {
+    let (label, title, width, height) = match kind.as_str() {
+        "rest" => ("main", "Pigeon - API Tester", 1280.0, 800.0),
+        "mcp" => ("mcp", "Pigeon - MCP Bench", 1100.0, 720.0),
+        "graphql" => ("graphql", "Pigeon - GraphQL", 1100.0, 720.0),
+        other => return Err(format!("Unknown workspace kind: {}", other)),
+    };
+
+    if let Some(w) = app.get_webview_window(label) {
+        w.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    WebviewWindowBuilder::new(&app, label, WebviewUrl::App("index.html".into()))
+        .title(title)
+        .inner_size(width, height)
+        .min_inner_size(900.0, 600.0)
+        .build()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let (db_conn, migration_status) = db::init_db();
@@ -814,10 +862,12 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(db_state)
         .manage(Arc::new(SseCancelState {
             flags: Mutex::new(HashMap::new()),
         }))
+        .manage(Arc::new(oauth::OauthLoopbackState::default()))
         .invoke_handler(tauri::generate_handler![
             send_api_request,
             cancel_sse_stream,
@@ -835,6 +885,14 @@ pub fn run() {
             update_collection,
             delete_collection,
             get_migration_status,
+            oauth::oauth_http_request,
+            oauth::open_external_url,
+            oauth::oauth_loopback_open,
+            oauth::oauth_loopback_wait,
+            save_mcp_oauth,
+            get_mcp_oauth,
+            delete_mcp_oauth,
+            open_workspace_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

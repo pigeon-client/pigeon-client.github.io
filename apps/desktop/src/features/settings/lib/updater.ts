@@ -39,6 +39,20 @@ export async function getCurrentVersion(): Promise<string> {
 export async function checkUpdateVersion(): Promise<UpdateCheckResult> {
   const currentVersion = await getCurrentVersion();
 
+  // `pnpm tauri dev` builds have no update artifacts/signature — never offer an
+  // "update" while running from source.
+  if (import.meta.env.DEV) {
+    return {
+      status: "latest",
+      version: {
+        currentVersion,
+        latestVersion: currentVersion,
+        available: false,
+        checkedAt: Date.now(),
+      },
+    };
+  }
+
   try {
     const update = await check();
     if (!update) {

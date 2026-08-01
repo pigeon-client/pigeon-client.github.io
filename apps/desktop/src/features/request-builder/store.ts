@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ApiResponse } from "@/features/execution";
+import { getWindowKind } from "@/shared/lib/windowKind";
 import type { RequestConfig } from "@/shared/types";
 
 function pathFromUrl(url: string): string {
@@ -92,24 +93,34 @@ function cloneRequest(req: RequestConfig): RequestConfig {
 
 let tabCounter = 1;
 
+/** This window's fixed tab kind — "rest" maps to the default "http" tab kind. */
+function defaultKindForWindow(): TabKind {
+  const kind = getWindowKind();
+  return kind === "rest" ? "http" : kind;
+}
+
+function buildTab(id: string, kind: TabKind): Tab {
+  const name = kind === "http" ? "Untitled Request" : KIND_NAMES[kind];
+  return {
+    id,
+    kind,
+    name,
+    // Non-http tabs keep a fixed name — URL-derived naming never applies.
+    nameLocked: kind !== "http",
+    request: { ...defaultRequest(), name },
+    response: null,
+    isLoading: false,
+  };
+}
+
 export const useTabStore = create<TabState>((set, get) => ({
   tabs: [],
   activeTabId: null,
   nextId: 1,
 
-  addTab: (kind = "http") => {
+  addTab: (kind = defaultKindForWindow()) => {
     const id = `tab-${tabCounter++}`;
-    const name = kind === "http" ? "Untitled Request" : KIND_NAMES[kind];
-    const tab: Tab = {
-      id,
-      kind,
-      name,
-      // Non-http tabs keep a fixed name — URL-derived naming never applies.
-      nameLocked: kind !== "http",
-      request: { ...defaultRequest(), name },
-      response: null,
-      isLoading: false,
-    };
+    const tab = buildTab(id, kind);
     set((s) => ({
       tabs: [...s.tabs, tab],
       activeTabId: id,
@@ -157,21 +168,11 @@ export const useTabStore = create<TabState>((set, get) => ({
         const idx = s.tabs.findIndex((t) => t.id === id);
         newActive = filtered[Math.min(idx, filtered.length - 1)]?.id ?? null;
       }
-      // If no tabs left, create one
+      // If no tabs left, create one of this window's own kind
       if (filtered.length === 0) {
         const newId = `tab-${tabCounter++}`;
         return {
-          tabs: [
-            {
-              id: newId,
-              kind: "http" as const,
-              name: "Untitled Request",
-              nameLocked: false,
-              request: { ...defaultRequest(), name: "Untitled Request" },
-              response: null,
-              isLoading: false,
-            },
-          ],
+          tabs: [buildTab(newId, defaultKindForWindow())],
           activeTabId: newId,
         };
       }
@@ -189,17 +190,7 @@ export const useTabStore = create<TabState>((set, get) => ({
   closeAllTabs: () => {
     const newId = `tab-${tabCounter++}`;
     set({
-      tabs: [
-        {
-          id: newId,
-          kind: "http" as const,
-          name: "Untitled Request",
-          nameLocked: false,
-          request: { ...defaultRequest(), name: "Untitled Request" },
-          response: null,
-          isLoading: false,
-        },
-      ],
+      tabs: [buildTab(newId, defaultKindForWindow())],
       activeTabId: newId,
     });
   },

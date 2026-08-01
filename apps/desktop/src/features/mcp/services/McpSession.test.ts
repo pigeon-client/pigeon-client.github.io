@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { McpHttpResponse, McpTransport } from "../ports/McpTransport";
-import { McpConnectError, McpProtocolError, McpSession } from "./McpSession";
+import { McpAuthRequiredError, McpConnectError, McpProtocolError, McpSession } from "./McpSession";
 
 function fakeTransport(
   handler: (url: string, headers: Record<string, string>, body: string) => McpHttpResponse,
@@ -124,6 +124,49 @@ describe("McpSession", () => {
       {},
     );
     await expect(session.listTools()).rejects.toThrow(McpProtocolError);
+  });
+
+  it("throws McpAuthRequiredError carrying WWW-Authenticate on a 401", async () => {
+    const session = new McpSession(
+      fakeTransport(() => ({
+        status: 401,
+        headers: {
+          "www-authenticate":
+            'Bearer resource_metadata="https://mcp.example.com/.well-known/oauth-protected-resource"',
+        },
+        bodyText: "",
+      })),
+      "https://mcp.example.com",
+      {},
+    );
+    await expect(session.listTools()).rejects.toThrow(McpAuthRequiredError);
+    try {
+      await session.listTools();
+      throw new Error("expected rejection");
+    } catch (e) {
+      expect(e).toBeInstanceOf(McpAuthRequiredError);
+      expect((e as McpAuthRequiredError).wwwAuthenticate).toContain("resource_metadata");
+    }
+  });
+
+  it("merges an Authorization header into subsequent requests via setAuthorizationHeader", async () => {
+    let seenAuth: string | undefined;
+    const session = new McpSession(
+      fakeTransport((_url, headers, body): McpHttpResponse => {
+        const msg = JSON.parse(body);
+        seenAuth = headers.Authorization;
+        return {
+          status: 200,
+          headers: {},
+          bodyText: JSON.stringify({ jsonrpc: "2.0", id: msg.id, result: { tools: [] } }),
+        };
+      }),
+      "https://mcp.example.com",
+      {},
+    );
+    session.setAuthorizationHeader("token-123");
+    await session.listTools();
+    expect(seenAuth).toBe("Bearer token-123");
   });
 
   it("wraps a transport-level failure in McpConnectError", async () => {

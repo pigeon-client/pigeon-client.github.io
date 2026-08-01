@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { PanelLeftOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SaveToCollectionModal, useCollectionStore } from "@/features/collections";
@@ -6,7 +7,7 @@ import { EnvModal, selectActiveEnv, useEnvStore } from "@/features/environments"
 import { GraphqlComingSoon } from "@/features/graphql";
 import { useHistoryStore } from "@/features/history";
 import { generateCurl, ImportModal } from "@/features/import-export";
-import { McpPanel } from "@/features/mcp";
+import { McpPanel, McpSidebar } from "@/features/mcp";
 import {
   EmptyRequestState,
   RequestEditor,
@@ -22,6 +23,8 @@ import {
   KeyboardShortcutsModal,
   SettingsDrawer,
 } from "@/features/settings";
+import { isTauri } from "@/shared/lib/platform";
+import { getWindowKind, type WindowKind } from "@/shared/lib/windowKind";
 import { Header } from "./layout/Header";
 import { MigrationToast } from "./layout/MigrationToast";
 import { Sidebar } from "./layout/Sidebar";
@@ -30,14 +33,35 @@ import { UpdateToast } from "./layout/UpdateToast";
 const MIN_EDITOR_HEIGHT = 150;
 const MIN_RESPONSE_HEIGHT = 160;
 
+/** REST/MCP/GraphQL each open as a separate singleton-per-kind OS window in the desktop
+ *  app (`open_workspace_window` in `src-tauri/src/lib.rs`); the browser/E2E build has no
+ *  windows to open, so it falls back to the legacy in-page tab switch. */
+function openWorkspace(kind: WindowKind, openKindTab: (kind: "mcp" | "graphql") => void) {
+  if (isTauri()) {
+    // GraphQL isn't built yet — no window to open. The header button/shortcut is a
+    // no-op there (its tooltip already says "coming soon"); the browser build still
+    // shows the in-page placeholder pane below, since that's not a real window.
+    if (kind === "graphql") return;
+    invoke("open_workspace_window", { kind }).catch((e) =>
+      console.log(`[Pigeon] Failed to open ${kind} workspace: ${e}`),
+    );
+    return;
+  }
+  if (kind !== "rest") openKindTab(kind);
+}
+
 /* ── Empty state when no URL has been typed yet ── */
 export function AppContent() {
   useEffect(() => {
     applyTheme(getStoredTheme());
-    useHistoryStore.getState().load();
-    useCollectionStore.getState().load();
     useEnvStore.getState().load();
-    checkForUpdates(true);
+    // History/collections and the update check are REST-only concerns — skip them
+    // entirely in the MCP/GraphQL windows so they don't do pointless work 3x over.
+    if (getWindowKind() === "rest") {
+      useHistoryStore.getState().load();
+      useCollectionStore.getState().load();
+      checkForUpdates(true);
+    }
   }, []);
 
   const [editorHeights, setEditorHeights] = useState<Record<string, number>>({});
@@ -173,14 +197,19 @@ export function AppContent() {
         setShowEnvModal(true);
         return;
       }
+      if (metaShift && e.code === "KeyR") {
+        e.preventDefault();
+        openWorkspace("rest", openKindTab);
+        return;
+      }
       if (metaShift && e.code === "KeyM") {
         e.preventDefault();
-        openKindTab("mcp");
+        openWorkspace("mcp", openKindTab);
         return;
       }
       if (metaShift && e.code === "KeyG") {
         e.preventDefault();
-        openKindTab("graphql");
+        openWorkspace("graphql", openKindTab);
         return;
       }
     };
@@ -209,8 +238,9 @@ export function AppContent() {
         onOpenSettings={() => setShowSettings(true)}
         onExportCurl={handleExportCurl}
         onManageEnv={() => setShowEnvModal(true)}
-        onOpenMcp={() => openKindTab("mcp")}
-        onOpenGraphql={() => openKindTab("graphql")}
+        onOpenRest={() => openWorkspace("rest", openKindTab)}
+        onOpenMcp={() => openWorkspace("mcp", openKindTab)}
+        onOpenGraphql={() => openWorkspace("graphql", openKindTab)}
         curlCopied={curlCopied}
         exportDisabled={!activeRequest}
         search={search}
@@ -239,11 +269,15 @@ export function AppContent() {
           <>
             {/* Sidebar */}
             <div className="flex min-h-0 flex-shrink-0" style={{ width: sidebarWidth }}>
-              <Sidebar
-                onImportClick={() => setShowImportModal(true)}
-                onCollapse={() => setSidebarCollapsed(true)}
-                search={search}
-              />
+              {activeTab?.kind === "mcp" ? (
+                <McpSidebar />
+              ) : (
+                <Sidebar
+                  onImportClick={() => setShowImportModal(true)}
+                  onCollapse={() => setSidebarCollapsed(true)}
+                  search={search}
+                />
+              )}
             </div>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-driven resize handle for the sidebar */}
             <div
@@ -293,7 +327,7 @@ export function AppContent() {
                   className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
                   style={{ display: isActive ? "flex" : "none" }}
                 >
-                  <McpPanel />
+                  <McpPanel tabId={tab.id} />
                 </div>
               );
             }

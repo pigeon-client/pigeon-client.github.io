@@ -309,6 +309,22 @@
     font-size: 13px;
     line-height: 1.6;
   }
+  /* Tailwind v4 preflight resets button cursor to `default` — restore the pointer
+     for every clickable control instead of annotating each one individually. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  a,
+  summary,
+  select,
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 /* ── Scrollbar ── */
