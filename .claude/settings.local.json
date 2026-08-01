@@ -189,7 +189,11 @@
       "Bash(cargo check *)",
       "Bash(pnpm --filter pigeon exec tsc --noEmit)",
       "Bash(pnpm --filter pigeon exec biome check apps/desktop/src/app/layout/MigrationToast.tsx apps/desktop/src/app/AppContent.tsx apps/desktop/src/features/settings/lib/migration.ts apps/desktop/src/features/settings/index.ts)",
-      "Bash(npx biome *)"
+      "Bash(npx biome *)",
+      "Bash(grep -nA1 \"#\\\\[tauri::command\\\\]\" lib.rs)",
+      "Bash(rm -rf pigeon)",
+      "Bash(rm -rf dist .vite playwright-report test-results)",
+      "Bash(rm -rf public; git status --short | head -20)"
     ]
   }
 }
