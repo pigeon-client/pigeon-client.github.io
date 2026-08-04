@@ -101,7 +101,7 @@ errors (`status: 0`), HTML, and live SSE — without the panel stealing layout f
 
 - Playwright: `e2e/send.spec.ts` (`response-status`, `response-body`, `response-empty`,
   `response-empty-body` for non-2xx empty bodies).
-- Vitest: SSE parsing in `execution/lib/sse.test.ts`.
+- Vitest: SSE parsing in `core/http/lib/sse.test.ts`.
 - Not covered by automation or driven in the 2026-07-26 QA pass (no interactive browser available
   in that pass — deferred, not verified): HTML preview sandboxing, huge-JSON scroll containment,
   word-wrap persistence across reload, response-headers-tab long-value scroll, resize-handle drag.
@@ -119,10 +119,15 @@ errors (`status: 0`), HTML, and live SSE — without the panel stealing layout f
 
 ## Key files
 
-`components/ResponsePanel.tsx`, `components/StatusEmptyBody.tsx`, `components/SseEventList.tsx`,
-execution SSE helpers; word wrap via `settings/lib/wordWrap.ts` + `hooks/useWordWrap.ts`;
-theme vars in `src/styles/index.css`. Snapshot rendering: `ApiResponse.snapshotTimestamp` /
-`snapshotTruncated` (`execution/types.ts`), built by `features/history/lib/snapshot.ts`.
+`components/ResponsePanel.tsx` (thin shell + find/toast state) + `components/StatusLine.tsx`,
+`components/HeadersTable.tsx`, `components/BodyView.tsx` (media/HTML-preview/code-block
+rendering), `components/EmptyResponse.tsx`, `components/StatusEmptyBody.tsx`,
+`components/SseEventList.tsx`, `components/types.ts` (`BodyViewMode`); syntax highlighting via
+`shared/ui/result-viewer/highlightCode.ts` (shared with MCP's result view); `core/http` SSE
+helpers; word wrap via `settings/lib/wordWrap.ts` + `hooks/useWordWrap.ts`; theme vars from
+`@pigeon/ui/tokens.css` (imported in `src/styles/index.css`). Snapshot rendering:
+`ApiResponse.snapshotTimestamp` / `snapshotTruncated` (`core/http/types.ts`), built by
+`features/rest/history/lib/snapshot.ts`.
 
 ## Open risks
 

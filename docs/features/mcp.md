@@ -22,7 +22,7 @@ just enough to poke at an MCP server's tools during development, nothing more.
 
 1. **Desktop app**: opened via the header's "MCP bench" icon button (`Plug` icon,
    `header-open-mcp`) or `⌘⇧M` — a separate, singleton **OS window** (label `"mcp"`,
-   `open_workspace_window` in `src-tauri/src/lib.rs` — re-triggering focuses the existing window
+   `open_workspace_window` in `src-tauri/src/windows.rs` — re-triggering focuses the existing window
    instead of opening a duplicate). That window keeps its own multi-tab strip, but every tab in
    it is MCP-kind (`Tab.kind === "mcp"`) — REST and GraphQL each get their own window the same
    way (see `docs/features/sidebar.md` and the "Workspace windows" note below).
@@ -31,12 +31,13 @@ just enough to poke at an MCP server's tools during development, nothing more.
    page) — this is what `e2e/mcp.spec.ts` drives.
    Either way the tab hosts `McpPanel` full-pane with no URL bar/request editor/response panel,
    and the sidebar swaps to `McpSidebar` (see UI below) whenever the active tab is MCP-kind.
-2. Connect form: server URL + optional `Key: Value` headers, both run through the environments
-   resolver **strictly** (`interpolateStrict` — same strictness as `execution.md`'s send path;
-   an unresolved `{{var}}` blocks connecting with an in-pane error).
+2. Connect form: server URL + optional headers (shared `KeyValueEditor` rows, same primitive
+   `RequestEditor` uses for REST headers), both run through the environments resolver **strictly**
+   (`interpolateStrict` — same strictness as `execution.md`'s send path; an unresolved `{{var}}`
+   blocks connecting with an in-pane error).
 3. On connect: `McpSession` runs the Streamable-HTTP lifecycle — `initialize` →
    `notifications/initialized` → `tools/list` + `resources/list` — over `McpTransport`
-   (Tauri `reqwest` / browser `fetch`, mirroring `execution/ports/HttpClient`). The `Mcp-Session-Id`
+   (Tauri `reqwest` / browser `fetch`, mirroring `core/http/ports/HttpClient`). The `Mcp-Session-Id`
    response header is captured and replayed on every subsequent call automatically.
 4. Sidebar (`McpSidebar`) lists tools (name + description on hover) and resources (name/uri) for
    the *active* MCP tab once connected — see `features/mcp/store.ts` below for how state is
@@ -179,7 +180,8 @@ tool-chaining, no scripting, no session save/restore.)
 
 ## Test ids
 
-`mcp-panel`, `mcp-connect-url`, `mcp-connect-headers`, `mcp-connect-btn`, `mcp-tool-<name>`,
+`mcp-panel`, `mcp-connect-url`, `mcp-connect-header-key-<n>`, `mcp-connect-header-value-<n>`,
+`mcp-connect-btn`, `mcp-tool-<name>`,
 `mcp-arg-<key>`, `mcp-raw-args`, `mcp-call-btn`, `mcp-result`, `mcp-error`, `mcp-authorize-btn`,
 `mcp-oauth-client-id`, `mcp-oauth-client-secret`, `mcp-oauth-scope`, `mcp-forget-auth-btn`. The
 last one and the tool buttons now render from `McpSidebar`, not `McpPanel` — same testids either
@@ -198,11 +200,12 @@ way.
 `oauth/pkce.ts` (PKCE + state), `oauth/canonicalUri.ts` (spec's canonical server URI),
 `oauth/metadata.ts` (RFC 9728 / RFC 8414 types + parsers), `oauth/oauthHttp.ts` (Tauri-only
 HTTP/browser-open/loopback wrappers), `oauth/oauthDb.ts` (SQLite-backed token persistence),
-`oauth/OauthFlow.ts` (the orchestrator). Rust: `send_mcp_request` in `src-tauri/src/lib.rs` (dumb
-POST, no JSON-RPC awareness), `open_workspace_window` (singleton-per-kind window creation/focus);
-`src-tauri/src/oauth.rs` (`oauth_http_request`, `open_external_url`, `oauth_loopback_open`/
-`oauth_loopback_wait`); `mcp_oauth` table + CRUD in `src-tauri/src/db.rs` (added via the
-`MIGRATIONS` schema-version runner). Wired via header buttons (`header-open-mcp` etc.) in
+`oauth/OauthFlow.ts` (the orchestrator). Rust: `send_mcp_request` in `src-tauri/src/mcp.rs` (dumb
+POST, no JSON-RPC awareness), `open_workspace_window` in `src-tauri/src/windows.rs`
+(singleton-per-kind window creation/focus); `src-tauri/src/oauth.rs` (`oauth_http_request`,
+`open_external_url`, `oauth_loopback_open`/`oauth_loopback_wait`); `mcp_oauth` table + CRUD in
+`src-tauri/src/db/mcp_oauth.rs` (added via the `MIGRATIONS` schema-version runner in
+`src-tauri/src/db/mod.rs`). Wired via header buttons (`header-open-mcp` etc.) in
 `src/app/layout/Header.tsx`, dispatched from `src/app/AppContent.tsx`'s `openWorkspace()` helper
 (`invoke("open_workspace_window", ...)` in Tauri, `openKindTab()` in the browser build). Window
 kind itself is resolved once via `src/shared/lib/windowKind.ts`.

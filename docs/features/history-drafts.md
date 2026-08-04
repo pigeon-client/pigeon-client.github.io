@@ -30,7 +30,12 @@ forcing an explicit save to a collection.
    Drafts and collections are never pruned. Browser build (localStorage, no retention concept) keeps
    a quota-safety cap instead — history 1,000 / drafts 300 — trimming oldest-first with a one-time
    `console.info`; desktop never drops anything silently.
-8. **Response snapshots (Phase 6):** on send, the response body is captured with the history
+8. **Draft auto-folder headers/auth:** each draft folder's gear icon opens the same
+   `FolderConfigModal` collections uses, inheriting into every request opened from inside it —
+   see `docs/features/collections.md`'s "Folder-level headers & auth" section for the merge rules
+   (request wins, closest folder wins). Config persists keyed by the folder's deterministic
+   host/path id in `localStorage` (`draftFolderConfigs`, both builds — no SQL table).
+9. **Response snapshots (Phase 6):** on send, the response body is captured with the history
    entry — text bodies only, capped at 256KB with a `truncated` flag past the cap; binary/media
    responses (`isBinaryMime`) store content-type + size only, no body. Dedupe upsert replaces the
    snapshot with the latest send's, same as every other field. Clicking a history row renders the
@@ -110,14 +115,19 @@ Draft (always tree)
 
 ## Key files
 
-`apps/desktop/src/features/history/store.ts`, `services/db.ts` (includes the browser
-quota-guard: `stripOldestSnapshots` / `withQuotaGuard`), `lib/retention.ts` (retention window
-get/set + `partitionByRetention`, pure and unit-tested), `lib/snapshot.ts` (`buildSnapshot`,
-`snapshotToApiResponse` — pure, unit-tested; no SQL migration needed since `history.data` is an
-opaque JSON blob column, see `src-tauri/src/db.rs`).
-Tree helpers: `apps/desktop/src/features/collections/lib/tree.ts` (`buildUrlTree`,
-`collapseChains`, `mergeCollectionRoots`) — rendered via `AutoTree` in
-`src/app/layout/Sidebar.tsx` (`loadHistoryItem` renders the snapshot on open).
+`apps/desktop/src/features/rest/history/store.ts`, `services/db.ts` (thin instantiation of
+`core/persistence`'s `createNumTableStore`, includes the browser quota-guard:
+`stripOldestSnapshots` / `withQuotaGuard`, passed in as `browserWriteGuard`), `lib/retention.ts`
+(retention window get/set + `partitionByRetention`, pure and unit-tested), `lib/snapshot.ts`
+(`buildSnapshot`, `snapshotToApiResponse` — pure, unit-tested; no SQL migration needed since
+`history.data` is an opaque JSON blob column, see `src-tauri/src/db/mod.rs` +
+`src-tauri/src/db/history.rs`).
+Tree helpers: `apps/desktop/src/features/rest/collections/lib/tree.ts` (`buildUrlTree`,
+`collapseChains`, `mergeCollectionRoots`, `findAncestors`) and `lib/inheritance.ts`
+(`resolveInheritedRequest`) — rendered via `AutoTree` in
+`src/features/rest/history/components/DraftTab.tsx` (`Sidebar.tsx`'s `loadHistoryItem` renders the
+snapshot on open, passed down as the `onLoad` prop). `DraftTab.tsx` reuses collections'
+`FolderConfigModal` for the folder headers/auth gear icon.
 
 ## Open risks
 

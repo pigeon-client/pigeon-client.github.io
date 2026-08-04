@@ -28,7 +28,8 @@ pnpm e2e:report  # open last report
 - Specs in `apps/desktop/e2e/*.spec.ts`, shared actions in `e2e/helpers.ts`, config
   `playwright.config.ts`.
 - Drives the **browser build** (no Tauri) on browser adapters: DB → `localStorage`
-  (`src/shared/lib/browserTable.ts`), send → `BrowserHttpClient` (fetch). Specs stub the network
+  (`src/core/persistence/browserTable.ts`), send → `BrowserHttpClient` (fetch, in `src/core/http`).
+  Specs stub the network
   with `page.route` (`mockJson`) — no real APIs, no CORS.
 - Covers UI + JS against a mock backend — **not** the real Rust send/SQLite (that needs
   `tauri-driver`, Linux/Windows only).

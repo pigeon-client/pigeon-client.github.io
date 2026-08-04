@@ -1,0 +1,32 @@
+/* Theme + utilities only — deliberately skip Preflight (Tailwind's CSS reset).
+   The site already has its own comprehensive reset below (tokens.css/base.css);
+   Preflight would re-reset headings/lists/buttons the site relies on browser
+   defaults for, which is exactly the pixel-identical guarantee this split
+   promises not to touch. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "@pigeon/ui/tokens.css";
+
+/* Mechanical split of the former single App.css — content unchanged, still
+   concatenated in the exact original order below. Site keeps its own
+   permanently-dark, bespoke palette (tokens.css); it doesn't use @pigeon/ui's
+   theme-variant tokens (--background/--card/etc.) or .dark switching. */
+@import "./tokens.css";
+@import "./base.css";
+@import "./header.css";
+@import "./hero-intro.css";
+@import "./hero-demo.css";
+@import "./organize.css";
+@import "./features.css";
+@import "./why.css";
+@import "./open-source.css";
+@import "./download.css";
+@import "./footer.css";
+@import "./stats-band.css";
+@import "./why-story-demos.css";
+@import "./organize-story-demos.css";
+@import "./responsive.css";
+
+/* Tailwind 4 doesn't auto-scan outside this app's own tree — without this,
+   classes used only inside @pigeon/ui component source render unstyled. */
+@source "../../../../packages/ui/src";

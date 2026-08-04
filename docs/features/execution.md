@@ -3,7 +3,9 @@
 ## Overview
 
 Turns a `RequestConfig` into a normalized `ApiResponse`. Owns *how* a request is sent; response
-UI and history consumers do not know the transport.
+UI and history consumers do not know the transport. Lives in `src/core/http` (pure transport, no
+history/draft side effects) — the send+auto-save orchestration one layer up is
+`features/rest/request-builder/hooks/useSendRequest.ts`, which wraps `core/http`'s `sendRequest`.
 
 ## Problem / job to be done
 
@@ -23,7 +25,8 @@ Users need reliable sends with env interpolation, auth injection, and desktop-cl
 2. Unresolved `{{var}}` blocks send and surfaces all missing names (`UnresolvedVariablesError`).
 3. Transport via `HttpClient` port: Tauri (`reqwest`) or Browser (`fetch`) chosen by `isTauri()`.
 4. Transport failure → synthetic `status: 0` response with error text (UI never throws).
-5. Successful send updates response panel and upserts history + drafts.
+5. Successful send updates response panel and upserts history + drafts (the history/draft write is
+   `useSendRequest`'s job, not `core/http`'s — `core/http` never imports the `history` feature).
 6. Request options from `localStorage`: `pg_follow_redirects`, `pg_ssl_verify`, `pg_proxy_url`.
 7. Production env + mutating methods may prompt confirm (see environments).
 
@@ -63,7 +66,8 @@ No dedicated screen — Send button + spinner in URL bar; loading reflected in r
 | Tauri desktop | `TauriHttpClient` | Rust `send_api_request` (`reqwest`) | No CORS; redirects/SSL/proxy |
 | Browser / Playwright | `BrowserHttpClient` | `fetch` | CORS on real APIs; E2E stubs routes |
 
-Selection: `isTauri() ? tauriHttpClient : browserHttpClient` in `requestService.ts`.
+Selection: `selectImpl({ tauri: tauriHttpClient, browser: browserHttpClient })`
+(`core/platform/selectImpl.ts`) in `requestService.ts`.
 
 ## Keyboard
 
@@ -96,8 +100,10 @@ Selection: `isTauri() ? tauriHttpClient : browserHttpClient` in `requestService.
 
 ## Key files
 
-`hooks/useApiRequest.ts`, `services/requestService.ts`, `services/TauriHttpClient.ts`,
-`services/BrowserHttpClient.ts`, `ports/HttpClient.ts`, `lib/sse.ts`, `services/sseClient.ts`.
+`core/http/services/requestService.ts`, `core/http/services/TauriHttpClient.ts`,
+`core/http/services/BrowserHttpClient.ts`, `core/http/ports/HttpClient.ts`, `core/http/lib/sse.ts`,
+`core/http/services/sseClient.ts`, `core/platform/selectImpl.ts`,
+`features/rest/request-builder/hooks/useSendRequest.ts` (send + history/draft orchestration).
 
 ## Open risks
 

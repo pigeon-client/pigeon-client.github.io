@@ -25,6 +25,8 @@ save destination picking.
 5. Strip live `File` objects before persist — names/metadata only.
 6. Desktop: `collections` SQLite table (text UUIDs; legacy int migrated). Browser:
    `pg_browser_collections`.
+7. Folders can hold inherited headers/auth (`CollectionNode.folderConfig`), applied to every
+   request opened from inside them — see "Folder-level headers & auth" below.
 
 ## Non-functional requirements
 
@@ -52,6 +54,27 @@ save destination picking.
 - Opening a saved request loads into a tab (reuse empty or new).
 - Name lock on save rename keeps chosen tab name later.
 
+## Folder-level headers & auth
+
+Each folder (not the top-level collection itself) can carry its own headers + auth, set via the
+gear icon on a folder's hover actions (`FolderConfigModal` — Headers/Auth tabs, same
+`VarKeyValueEditor`/`AuthEditor` as the request editor). Clicking a saved request merges every
+ancestor folder's config into the request *at that moment* (`lib/inheritance.ts`'s
+`resolveInheritedRequest`, ancestors from `lib/tree.ts`'s `findAncestors`) before it opens in a
+tab — it is a one-time merge, not a live link, matching how history snapshots work.
+
+Precedence: the request's own header/auth always wins; among folders, the closest ancestor wins;
+header matching is by key, case-insensitive. The gear icon shows a dot when a folder has config
+set. A folder with no config set inherits nothing extra.
+
+**Drafts get the same gear icon and modal** on their auto-organized host/path folders (Sidebar's
+Draft tab — see `docs/features/history-drafts.md`). Since that tree is rebuilt fresh from the flat
+draft list on every render (not a persisted `Collection`), config is stored separately, keyed by
+the folder's deterministic host/path id, in `features/rest/history/store.ts`'s
+`draftFolderConfigs` (`services/db.ts`'s `getDraftFolderConfigs`/`saveDraftFolderConfigs` —
+`localStorage`, both builds, no SQL table, same pattern as environments' globals) and reattached to
+the freshly-built tree each render before rendering/resolving.
+
 ## Keyboard
 
 `⌘⇧S` opens save modal when active request has a URL (was `⌘S` before the 2026-07-29
@@ -71,10 +94,12 @@ save destination picking.
 - [ ] Delete folder with children — confirm expected behavior.
 - [ ] Reload persistence check.
 - [ ] Save request with multipart file — only metadata persisted.
+- [ ] Set a folder header + bearer auth via the gear icon; open a request nested inside — both
+      appear on the opened tab. Request's own header with the same key is not overridden.
 
 ## Automation coverage
 
-- Vitest: `src/features/collections/store.test.ts`.
+- Vitest: `src/features/rest/collections/store.test.ts`.
 - Playwright: `e2e/collections.spec.ts` — create+persist, and rename/nested-folder-save/reopen/
   delete-folder-with-children/delete-collection (2026-07-26 QA pass; confirmed `stripFiles` drops
   live `File` handles on save, per `store.ts`).
@@ -86,9 +111,11 @@ Tree rows often selected by text in E2E.
 
 ## Key files
 
-`store.ts`, `types.ts` (`MAX_NESTING_DEPTH`), `lib/tree.ts`,
-`components/SaveToCollectionModal.tsx`, `services/db.ts`, tree UI in
-`src/app/layout/Sidebar.tsx`.
+`store.ts`, `types.ts` (`MAX_NESTING_DEPTH`, `FolderConfig`), `lib/tree.ts` (incl. `findAncestors`),
+`lib/inheritance.ts` (`resolveInheritedRequest`), `components/SaveToCollectionModal.tsx`,
+`components/CollectionsTab.tsx`, `components/FolderConfigModal.tsx`, `components/NameModal.tsx`,
+`services/db.ts`. Composed into `src/app/layout/Sidebar.tsx`; generic tree row UI is
+`src/shared/ui/TreeRow.tsx`.
 
 ## Open risks
 

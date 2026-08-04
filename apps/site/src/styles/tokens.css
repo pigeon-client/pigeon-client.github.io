@@ -1,0 +1,24 @@
+:root {
+  --bg: #08080a;
+  --bg-2: #0c0c0f;
+  --panel: #111114;
+  --panel-2: #17171c;
+  --border: #26262e;
+  --border-soft: #1c1c22;
+  --text: #ebeaf0;
+  --muted: #9390a0;
+  --faint: #5a5866;
+  /* --primary comes from @pigeon/ui/tokens.css (same oklch value) — see index.css */
+  --primary-2: #d97a52;
+  --primary-3: #c96442;
+  --primary-soft: rgba(201, 100, 66, 0.12);
+  --primary-glow: rgba(201, 100, 66, 0.3);
+  --primary-glow-strong: rgba(201, 100, 66, 0.45);
+  --green: #72b872;
+  --amber: #fbbf24;
+  --rose: #fb7185;
+  --radius: 12px;
+  --grad: linear-gradient(135deg, #c96442 0%, #d97a52 50%, #e08858 100%);
+  --grad-text: linear-gradient(110deg, #e8a07a 0%, #c96442 40%, #d97a52 70%, #e8a07a 100%);
+  --font: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+}

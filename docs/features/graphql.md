@@ -26,7 +26,7 @@ inspection reusing the response-viewer. Target `RequestModel` for import/export 
 ## Key files
 
 `src/features/graphql/components/GraphqlComingSoon.tsx`, tab-kind plumbing in
-`src/features/request-builder/store.ts` (`TabKind`, `openKindTab`) and `src/app/AppContent.tsx`.
+`src/features/rest/request-builder/store.ts` (`TabKind`, `openKindTab`) and `src/app/AppContent.tsx`.
 
 ## Automation coverage
 

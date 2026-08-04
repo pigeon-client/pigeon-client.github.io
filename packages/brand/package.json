@@ -1,0 +1,14 @@
+{
+  "name": "@pigeon/brand",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./pigeon-mark.svg": "./assets/pigeon-mark.svg",
+    "./pigeon-mark-mono.svg": "./assets/pigeon-mark-mono.svg",
+    "./pigeon-mark-duotone.svg": "./assets/pigeon-mark-duotone.svg",
+    "./wordmark.svg": "./assets/wordmark.svg",
+    "./logo.svg": "./assets/logo.svg",
+    "./icon-source.png": "./assets/icon-source.png"
+  }
+}

@@ -1,14 +1,13 @@
+import { Button, Switch } from "@pigeon/ui";
 import { Check, Copy, Globe, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { KeyValueEditor } from "@/features/request-builder";
 import { cn } from "@/shared/lib/utils";
 import type { KeyValue } from "@/shared/types";
-import { Button } from "@/shared/ui/button";
-import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
-import { Switch } from "@/shared/ui/switch";
+import { Modal, ModalHeader } from "@/shared/ui/Modal";
 import { selectActiveEnv, useEnvStore } from "../store";
 import type { EnvVariable } from "../types";
 import { GLOBALS_ID } from "../types";
+import { VarKeyValueEditor } from "./VarKeyValueEditor";
 
 interface EnvModalProps {
   onClose: () => void;
@@ -242,7 +241,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-4">
-            <KeyValueEditor
+            <VarKeyValueEditor
               items={editItems}
               onChange={commitVars}
               keyPlaceholder="VARIABLE_NAME"
@@ -262,12 +261,6 @@ export function EnvModal({ onClose }: EnvModalProps) {
           </div>
         </div>
       </div>
-
-      <ModalFooter>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          Close
-        </Button>
-      </ModalFooter>
     </Modal>
   );
 }

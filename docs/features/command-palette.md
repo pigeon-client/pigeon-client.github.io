@@ -23,7 +23,7 @@ that requirement: one query, every source, ranked.
 
 1. `⌘⇧K` opens the palette; `⌘F` is unchanged (still sidebar-pane filtering).
 2. One query searches history, drafts, and every request in every collection (tree walked via
-   `src/features/collections/lib/tree.ts`-adjacent recursion in
+   `src/features/rest/collections/lib/tree.ts`-adjacent recursion in
    `command-palette/lib/search.ts#collectPaletteItems`).
 3. Match fields, case-insensitive substring: request name, method, full URL, header keys/values,
    request body text, and (Phase 6) the history snapshot's response body text.

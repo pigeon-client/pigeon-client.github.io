@@ -4,13 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Tech Stack
 
-- **Frontend**: React 19 + TypeScript 5.8 + TailwindCSS 4 + Vite 7
-- **UI**: Local shared primitives in `src/shared/ui` + Lucide icons
+- **Frontend**: React 19 + TypeScript 5.8 + TailwindCSS 4 + Vite 7 (both `apps/desktop` and `apps/site`)
+- **UI**: `@pigeon/ui` (workspace package — tokens.css + cn + button/badge/switch/tabs/Tooltip,
+  shared by both apps) + app-local primitives in `src/shared/ui` (desktop) for composites that stay
+  desktop-only (`Modal`, `FindBar`, `KeyValueEditor`, `TreeRow`, `EmptyState`, `ConfirmModal`,
+  `result-viewer/HighlightedBody`) + Lucide icons
+- **Brand assets**: `@pigeon/ui` and `@pigeon/brand` (workspace packages) — see Monorepo layout below
 - **Desktop**: Tauri v2 (Rust backend)
 - **State**: Zustand
 - **Lint/Format**: Biome v2.5.0
 - **Git Hooks**: Lefthook v2.1.9
-- **Package Manager**: pnpm 9.15.9 (main app) / npm (marketing site)
+- **Package Manager**: pnpm 9.15.9 (workspace-wide — one lockfile covers `apps/*` and `packages/*`)
 
 ## Commands
 
@@ -27,7 +31,8 @@ pnpm preview          # Preview production Vite build
 pnpm check            # Lint + format check (read-only)
 pnpm lint             # Lint only (read-only)
 pnpm check:write      # Auto-fix lint + format (write) — use this before committing
-pnpm ci:check         # CI-grade check — fails on warnings+
+pnpm ci:check         # CI-grade check — `biome ci --error-on-warnings`, fails on warnings+
+pnpm check:cycles     # madge --circular over apps/desktop/src — fails on any import cycle (also in ci.yml)
 pnpm lint:staged      # Check only staged files
 ```
 
@@ -54,8 +59,9 @@ pnpm e2e:report       # Open last HTML report
 ```
 Specs in `e2e/*.spec.ts`, shared actions in `e2e/helpers.ts`, config `playwright.config.ts`.
 These drive the **browser build** (no Tauri), so the app runs on browser adapters
-(`src/shared/lib/platform.ts` `isTauri()` gate): DB → `localStorage` via
-`src/shared/lib/browserTable.ts`, HTTP send → `BrowserHttpClient` (fetch). Specs stub the network
+(`src/shared/lib/platform.ts` `isTauri()` gate, selected via `src/core/platform/selectImpl.ts`):
+DB → `localStorage` via `src/core/persistence/browserTable.ts`, HTTP send → `BrowserHttpClient`
+(fetch, in `src/core/http`). Specs stub the network
 with `page.route` for determinism (`mockJson` helper) — no real APIs, no CORS. Selectors use
 `data-testid` (`url-input`, `method-trigger`, `response-status`, `response-body`, `response-empty`,
 `method-option-<METHOD>`); inactive tabs stay mounted (`display:none`) so scope interactive testids
@@ -117,61 +123,135 @@ UUIDs — those change per render and can't be selected). Convention: `<area>-<e
 
 ### Monorepo layout
 
-This is a **pnpm workspace** (`pnpm-workspace.yaml` → `packages: ['apps/*']`). The repo root is a
-private workspace-only package (`pigeon-monorepo`, no app code); its scripts delegate to the
-members via `--filter`, so `pnpm dev`, `pnpm build`, `pnpm tauri dev`, `pnpm test`, `pnpm e2e` all
-still run from the root. Biome and Lefthook are repo-wide and configured at the root.
+This is a **pnpm workspace** (`pnpm-workspace.yaml` → `packages: ['apps/*', 'packages/*']`). The
+repo root is a private workspace-only package (`pigeon-monorepo`, no app code); its scripts
+delegate to the members via `--filter`, so `pnpm dev`, `pnpm build`, `pnpm tauri dev`, `pnpm test`,
+`pnpm e2e` all still run from the root. Biome and Lefthook are repo-wide and configured at the root.
 
 - **`apps/desktop/`** — the Tauri desktop app (package `pigeon`). Holds `src/`, `src-tauri/`,
   `e2e/`, and all its build config (`vite`, `vitest`, `playwright`, `tsconfig`, `postcss`,
   `scripts/copy-wasm.js` + `version-bump.js`). Tauri is invoked here (release CI passes
   `projectPath: apps/desktop`).
-- **`apps/site/`** — the marketing site (package `pigeon-site`), a pnpm workspace member.
+- **`apps/site/`** — the marketing site (package `pigeon-site`), a pnpm workspace member. Consumes
+  `@pigeon/ui` + `@pigeon/brand`.
+- **`packages/ui/`** — `@pigeon/ui`, source-only (no build step — both apps' bundlers compile it
+  from TS/CSS source directly, standard for a pnpm-workspace + Vite setup). `src/styles/tokens.css`
+  is the design-token spec (mirrored in `TOKENS.md` at the repo root); `src/lib/cn.ts`; leaf React
+  primitives in `src/components/` (`button`, `badge`, `switch`, `tabs`, `Tooltip`), barrel at
+  `src/index.ts`. A consumer needs `@import "@pigeon/ui/tokens.css";` **and** an `@source` line
+  pointing at this package's `src` — Tailwind 4 doesn't auto-scan outside the consuming app's own
+  tree, so a missing `@source` fails silently as unstyled UI.
+- **`packages/brand/`** — `@pigeon/brand`, canonical logo/brand assets (`pigeon-mark.svg` +
+  mono/duotone variants, wordmark, icon source), exported per-file via `package.json` `exports`
+  (e.g. `@pigeon/brand/pigeon-mark.svg`). `logo/` at the repo root remains the design-source master
+  for non-npm tooling (`tauri icon` regen, etc.) — `packages/brand` is the npm-consumable copy for
+  app code to import.
 - Root-level: `Makefile` (delegates to the workspace), `biome.json`, `lefthook.yml`,
-  `.version.json`, `logo/`, `docs/`, and `scripts/install.sh` (kept at root because its raw URL is
-  the published install command).
+  `.version.json`, `logo/`, `docs/`, `TOKENS.md`, and `scripts/install.sh` (kept at root because its
+  raw URL is the published install command).
 
-Paths below like `src/features/...` are relative to **`apps/desktop/`**.
+Paths below like `src/features/...` are relative to **`apps/desktop/`** unless stated otherwise.
+
+**Layer rule (Biome-enforced)**: `app → features → core → shared → @pigeon/*`. Core never imports
+features; cross-feature imports go through feature barrels only — deep imports like
+`@/features/x/components/Y` from outside feature `x` are banned by Biome's `noRestrictedImports`
+(`biome.json`, `linter.rules.style`), covering `@/features/*` and `@/core/*` internals
+(`components|hooks|lib|services|store|ports|oauth|model|types`), including the extra nesting level
+under `@/features/rest/*`. Import cycles are enforced separately: `pnpm check:cycles` (madge, runs
+in `ci.yml`) fails the build on any cycle. The old `shared/ui/KeyValueEditor` →
+`features/environments` exception is gone: `KeyValueEditor` now takes an injected `autocomplete`
+prop (contract in `shared/ui/KeyValueEditor/autocomplete.ts`), and
+`features/environments` exports `VarKeyValueEditor` — the pre-wired variant every feature uses for
+`{{var}}` autocomplete on values. Use `VarKeyValueEditor`, not the bare shared editor, unless you
+specifically don't want env suggestions.
 
 ### Main App (`apps/desktop/src/`)
 
-Architecture is feature-based. `src/app/` owns bootstrap/layout/global shortcuts only.
-Business logic belongs in `src/features/*`; shared primitives and shared request types live in
-`src/shared/*`.
+Architecture is feature-based, layered `app → features → core → shared`. `src/app/` owns
+bootstrap/layout/global shortcuts only. Business logic belongs in `src/features/*`; cross-cutting,
+feature-agnostic logic lives in `src/core/*`; shared primitives and shared request types live in
+`src/shared/*`. Concretely: `app/layout/Sidebar.tsx` is a thin shell — the sidebar tab sections it
+composes are feature-owned (`HistoryTab`/`DraftTab` from `features/rest/history`,
+`CollectionsTab` from `features/rest/collections`, exported via their barrels), with the generic
+presentational pieces (`TreeRow`, `EmptyState`, `ConfirmModal`) in `shared/ui/`.
+
+- `src/features/rest/` groups the REST workspace's five features (`request-builder`,
+  `response-viewer`, `collections`, `history`, `import-export`) — each is a full standalone feature
+  with its own barrel at `src/features/rest/<name>/index.ts`; `rest/` itself is a grouping
+  directory, not a feature (no `index.ts` of its own).
+- `src/features/{mcp,graphql,environments,settings,command-palette}/` are top-level features.
+- `src/core/http/` — pure send/transport (was `features/execution`): `ports/HttpClient.ts`,
+  `services/{Tauri,Browser}HttpClient.ts`, `services/requestService.ts` (`sendRequest`,
+  `resolveRequest`), SSE (`lib/sse.ts`, `services/sseClient.ts`, `services/activeStreams.ts`). Core
+  never imports features, so it has **no** history/draft auto-save logic — that orchestration is
+  `src/features/rest/request-builder/hooks/useSendRequest.ts`, which wraps `core/http`'s
+  `sendRequest` with the history-writing side effect (this is how the history↔execution import
+  cycle was broken).
+- `src/core/interpolation/` — `interpolateStrict(str, resolve)`, `UnresolvedVariablesError`,
+  `createAccumulatingResolver` (for callers like `resolveRequest` that interpolate several fields
+  before deciding whether to block the send). Resolver-agnostic on purpose — it takes a plain
+  `Resolver` function, not `Environment`/`makeResolver`, so it doesn't need to import
+  `features/environments` and stays a legal `core` module under the layer rule. MCP and
+  `core/http/services/requestService.ts` both consume this; there is exactly one
+  `UnresolvedVariablesError` class in the codebase.
+- `src/core/persistence/` — `browserTable.ts` (the `localStorage` table primitives) +
+  `tableStore.ts`'s `createNumTableStore` / `createStrTableStore` / `createKeyValueStore` factories.
+  Each feature's `services/db.ts` is a thin instantiation (Tauri command names + browser key), not a
+  reimplementation — this is what replaced the 4 near-duplicate `isTauri() ? invoke() :
+  localStorage` wrappers. Exported function names are unchanged from before the factories existed,
+  so call sites and Vitest mocks didn't need touching.
+- `src/core/platform/` — `selectImpl<T>({ tauri, browser })`, the shared shape behind every
+  transport-selection seam (`core/http`'s `httpClient`, MCP's `getMcpTransport`). `isTauri()` and
+  `windowKind.ts` still live at their original `src/shared/lib/` path (not moved into `core/platform`
+  — that particular move was scoped out, not forgotten).
 
 Platform seam: `src/shared/lib/platform.ts` `isTauri()` gates backend access. In the desktop app,
 persistence and HTTP go through Rust (`invoke`); in a plain browser (dev server / Playwright) they
-fall back to browser adapters — `localStorage` via `src/shared/lib/browserTable.ts` and
-`BrowserHttpClient` (fetch). This is what makes `pnpm dev` and browser E2E functional.
+fall back to browser adapters — `localStorage` via `src/core/persistence/browserTable.ts` and
+`BrowserHttpClient` (fetch, in `src/core/http`). This is what makes `pnpm dev` and browser E2E
+functional.
 
-Feature barrels (`src/features/<feature>/index.ts`) are the public API. App/layout code should
-import features through barrels. Features must not import from `src/app/`.
+Feature barrels (`src/features/<feature>/index.ts`, or `src/features/rest/<name>/index.ts`) are the
+public API — enforced by Biome's `noRestrictedImports` (see Monorepo layout above). App/layout code
+should import features through barrels. Features must not import from `src/app/`.
 
 State lives in co-located Zustand stores:
-- `src/features/request-builder/store.ts` — tab lifecycle, request editing, rename/close variants
-- `src/features/history/store.ts` — persisted history and drafts
-- `src/features/collections/store.ts` — collection tree CRUD/move/reorder
+- `src/features/rest/request-builder/store.ts` — tab lifecycle, request editing, rename/close variants
+- `src/features/rest/history/store.ts` — persisted history and drafts
+- `src/features/rest/collections/store.ts` — collection tree CRUD/move/reorder
 - `src/features/environments/store.ts` — environment variables and interpolation
 
 Drafts, history, and collections persist via Rust SQLite commands through thin `services/db.ts`
-wrappers. Do not call `invoke()` directly from components. Tables are `rest_`/`mcp_`-prefixed by
-feature (`rest_drafts`, `rest_history`, `rest_collections`, `mcp_oauth`) — renamed from the
-unprefixed originals via a schema migration (see below), Rust fn/command names and frontend
-`invoke()` call sites are unaffected by that rename. Collections are stored as JSON in
-`rest_collections(id TEXT PRIMARY KEY, data TEXT, created_at INTEGER)`; `src-tauri/src/db.rs`
-migrates legacy integer IDs to text so UUID collection IDs work.
+wrappers built on the `core/persistence` factories above. Do not call `invoke()` directly from
+components. Tables are `rest_`/`mcp_`-prefixed by feature (`rest_drafts`, `rest_history`,
+`rest_collections`, `mcp_oauth`) — renamed from the unprefixed originals via a schema migration (see
+below), Rust fn/command names and frontend `invoke()` call sites are unaffected by that rename.
+Collections are stored as JSON in `rest_collections(id TEXT PRIMARY KEY, data TEXT, created_at
+INTEGER)`; `src-tauri/src/db/mod.rs` migrates legacy integer IDs to text so UUID collection IDs work.
 
-**Schema migrations**: `src-tauri/src/db.rs` tracks an integer `schema_version` in a `schema_meta`
-table. `init_db()` runs every entry in the `MIGRATIONS` array whose index is >= the stored version,
-in order, bumping the version after each step — so a crash mid-migration resumes from the last
-completed step on next launch instead of re-running or skipping steps. This all runs synchronously
-before the window opens, so every launch is auto-migrated with no user action. Append new
-migrations to the end of `MIGRATIONS`; never reorder or remove past ones (older installs may still
-be mid-list). If a migration ran this launch, `get_migration_status` (Tauri command) returns
-`{fromVersion, toVersion}` once; the frontend surfaces it via `MigrationToast`
-(`src/app/layout/MigrationToast.tsx`, wired through `features/settings/lib/migration.ts`) as a
-one-shot dismissible toast — not a real-time progress bar, since local SQLite migrations finish
-before the toast can even mount.
+**Schema migrations**: `src-tauri/src/db/mod.rs` tracks an integer `schema_version` in a
+`schema_meta` table. `init_db()` runs every entry in the `MIGRATIONS` array whose index is >= the
+stored version, in order, bumping the version after each step — so a crash mid-migration resumes
+from the last completed step on next launch instead of re-running or skipping steps. This all runs
+synchronously before the window opens, so every launch is auto-migrated with no user action. Append
+new migrations to the end of `MIGRATIONS`; never reorder or remove past ones (older installs may
+still be mid-list) — a `#[cfg(test)]` guard test in `db/mod.rs` (`migrations_are_append_only`) pins
+the migration name list and fails the build if it's reordered/renamed, forcing an explicit update
+when a migration is genuinely added. If a migration ran this launch, `get_migration_status` (Tauri
+command, in `db/mod.rs`) returns `{fromVersion, toVersion}` once; the frontend surfaces it via
+`MigrationToast` (`src/app/layout/MigrationToast.tsx`, wired through
+`features/settings/lib/migration.ts`) as a one-shot dismissible toast — not a real-time progress
+bar, since local SQLite migrations finish before the toast can even mount.
+
+**Rust module layout** (`src-tauri/src/`, command fn names never change — only which file they live
+in): `lib.rs` is just `run()` (plugins, `DbState`, `generate_handler!`); `http.rs` (client builders +
+`send_api_request`); `sse.rs` (SSE parser + stream registry + `cancel_sse_stream` — the shared
+cancel-flag state moved as one unit); `mcp.rs` (`send_mcp_request`); `windows.rs`
+(`open_workspace_window`); `oauth.rs` (unchanged); `db/mod.rs` (`DbState`, `MIGRATIONS`, guard test,
+`get_migration_status`) + `db/{drafts,history,collections,mcp_oauth}.rs` (per-domain SQL + Tauri
+commands combined into one function each, e.g. `db::drafts::save_draft`). `generate_handler!` needs
+these fully-qualified module paths — a `db::mod` re-export wouldn't work, since the
+`#[tauri::command]` macro's hidden companion items aren't re-exportable.
 
 **Environments are the exception**: they persist to `localStorage` for *both* builds
 (`environments/services/db.ts`, keys `pg_browser_environments` / `pg_globals` / `pg_active_env`) —
@@ -180,13 +260,16 @@ word-wrap (`pg_word_wrap`) and theme (`pg_theme`) likewise persist through small
 `localStorage` helpers, not SQLite.
 
 HTTP requests are sent from Rust via `reqwest` (not browser fetch) so there are no CORS
-restrictions. Use `src/features/execution/hooks/useApiRequest.ts`; Rust owns the actual
-`send_api_request` command.
+restrictions. Use `src/features/rest/request-builder/hooks/useSendRequest.ts` (orchestration:
+send + auto-save) or `src/core/http`'s `sendRequest` directly for a pure send with no history
+side effect; Rust owns the actual `send_api_request` command (`src-tauri/src/http.rs`).
 
 ### Import / Export Architecture
 
-`src/features/import-export/model/RequestModel.ts` is the stable internal request interchange
-model for import/export. Keep parser/library details behind adapters:
+`src/features/rest/import-export/model/RequestModel.ts` is the stable internal request interchange
+model for import/export. Its `Header` type is exported as `ImportedHeader` (renamed to avoid
+colliding with `shared/types`' `Header`, which has a different shape). Keep parser/library details
+behind adapters:
 - `services/curlImporter.ts` — cURL text -> `RequestModel` using `curlconverter.toJsonObject()`
 - `services/requestModelAdapter.ts` — `RequestModel` <-> app `RequestConfig`
 - `services/curlService.ts` — compatibility wrapper: cURL text -> `Partial<RequestConfig>`
@@ -202,7 +285,7 @@ Collections are a folder/request tree:
 - `CollectionNode` is either `folder` with `children` or `request` with `RequestConfig`
 - folder nesting limit is `MAX_NESTING_DEPTH`
 
-Tree updates in `src/features/collections/store.ts` must rebuild immutable nodes. Never mutate
+Tree updates in `src/features/rest/collections/store.ts` must rebuild immutable nodes. Never mutate
 existing tree nodes in place; React change detection depends on new object/array references.
 
 UI entry points:
@@ -216,8 +299,8 @@ When saving requests into collections, strip live `File` objects. Persist file n
 ### Settings Persistence
 
 Theme and request options (follow redirects, SSL verify, proxy URL) persist to `localStorage`
-(`pg_theme`, `pg_follow_redirects`, `pg_ssl_verify`, `pg_proxy_url`). `src/features/execution`
-reads those keys directly when sending requests — settings and execution are coupled through
+(`pg_theme`, `pg_follow_redirects`, `pg_ssl_verify`, `pg_proxy_url`). `src/features/rest/request-builder/hooks/useSendRequest.ts`
+reads those keys directly when sending requests — settings and the send path are coupled through
 `localStorage`, not through a shared store.
 
 ### Update System
@@ -239,9 +322,14 @@ Two themes are exposed in Settings: dark and light. Theme classes are applied on
 `.dark` (default) and `.theme-light`. Legacy `.theme-pink` styles may exist but are not currently
 shown in the Settings UI.
 
-All design tokens are CSS custom properties in `src/styles/index.css` — **never use hardcoded hex
-values**. Use `var(--token-name)` everywhere. Syntax highlight colors are also CSS vars per theme
-so `highlight.js` output adapts automatically.
+All design tokens are CSS custom properties, sourced from `@pigeon/ui/tokens.css` (imported at the
+top of `src/styles/index.css`, spec in `TOKENS.md`) plus desktop-only additions (scrollbar, `.pg-logo`
+theme filter, `@layer base`) in `index.css` itself — **never use hardcoded hex values**. Use
+`var(--token-name)` everywhere. Syntax highlight colors are also CSS vars per theme so
+`highlight.js` output adapts automatically. `apps/site` imports the same `@pigeon/ui/tokens.css` but
+keeps its own separate, permanently-dark bespoke palette on top (it has no light/dark toggle) —
+see `docs/restructure-plan.md`'s Phase 7 notes for exactly which token names are shared vs.
+site-only.
 
 ### Key Behaviours
 
@@ -265,7 +353,7 @@ so `highlight.js` output adapts automatically.
 - **Tab kinds**: `Tab.kind = "http" | "mcp" | "graphql"` in the tab store. Non-http tabs render
   full-pane with no URL bar and show a kind badge (`MCP` / `GQL`) in the tab strip.
 - **Workspace windows (desktop app only)**: REST/MCP/GraphQL each open as a separate singleton
-  OS window (`open_workspace_window` in `src-tauri/src/lib.rs` — focuses the existing window for
+  OS window (`open_workspace_window` in `src-tauri/src/windows.rs` — focuses the existing window for
   that kind rather than duplicating it; REST is always the app's default `"main"` window). Each
   window is a separate webview/JS heap, so `useTabStore` (and every other Zustand store) is
   naturally isolated per window with no extra plumbing — `src/shared/lib/windowKind.ts` resolves
@@ -288,8 +376,11 @@ reads `apps/site/src/release.json`, fetched from the GitHub API **at build time*
 the fallback. `parseRelease()` in `apps/site/src/lib/github.ts` handles missing/empty fields
 defensively.
 
-`apps/site/postcss.config.js` must exist (even if empty) to stop Vite walking up to
-`apps/desktop/postcss.config.js` / any Tailwind PostCSS config.
+`apps/site/postcss.config.js` must exist (mirrors `apps/desktop`'s: `@tailwindcss/postcss` +
+`autoprefixer`) to stop Vite walking up to `apps/desktop/postcss.config.js` and to load Tailwind 4
+for the site's own `@import "tailwindcss/theme.css" layer(theme); @import "tailwindcss/utilities.css"
+layer(utilities);` (deliberately not the full `@import "tailwindcss"` — that would pull in
+Preflight, which would reset headings/buttons/lists the site currently leaves at browser defaults).
 
 ## CI/CD Pipelines
 
@@ -326,8 +417,8 @@ new release refreshes the site's download links with no code change.
 
 ## Known Gotchas
 
-- **`pnpm-workspace.yaml`** must have a `packages` field (`packages: ['apps/*']`) — pnpm 9+ fails every command without it
-- **One root `pnpm-lock.yaml`** covers both apps — `pnpm install` at the root; never run `npm install` in `apps/site` (the old npm-only workaround is gone; pnpm's lockfile records per-platform optional deps, so the rollup-native-binary problem doesn't apply)
+- **`pnpm-workspace.yaml`** must have a `packages` field (`packages: ['apps/*', 'packages/*']`) — pnpm 9+ fails every command without it
+- **One root `pnpm-lock.yaml`** covers both apps and both packages — `pnpm install` at the root; never run `npm install` in `apps/site` (the old npm-only workaround is gone; pnpm's lockfile records per-platform optional deps, so the rollup-native-binary problem doesn't apply)
 - **Root scripts delegate** via `pnpm --filter pigeon` / `--filter pigeon-site`; `pnpm dev`/`build`/`tauri`/`test`/`e2e` from the root still work
 - **Tauri lives in `apps/desktop`** — run `pnpm tauri dev` from the root, or `cd apps/desktop`; release CI passes `projectPath: apps/desktop`
 - **TypeScript target is ES2022** (`apps/desktop/tsconfig.json`) — required for `Object.hasOwn`; do not lower it
@@ -335,11 +426,16 @@ new release refreshes the site's download links with no code change.
 
 ## Icons / Assets
 
-**Brand mark** — `logo/logo.svg` is the master. Derived variants live in `logo/`:
-`mark.svg` (orange), `mark-mono.svg` (`currentColor`), `mark-duotone.svg`, `wordmark.svg`. The UI
-uses the mark: `apps/desktop/src/assets/pigeon-mark.svg` (header, empty states, settings) and
-`apps/site/public/pigeon-mark.svg` + `pigeon-mark.png` (nav, favicon, OG). Do not reintroduce the
-old `pigeon-logo-*.png` files — they were removed.
+**Brand mark** — `logo/logo.svg` is the design-source master. Derived variants live in `logo/`:
+`mark.svg` (orange), `mark-mono.svg` (`currentColor`), `mark-duotone.svg`, `wordmark.svg`.
+`packages/brand/assets/` holds the npm-consumable copies (`pigeon-mark.svg`,
+`pigeon-mark-mono.svg`, `pigeon-mark-duotone.svg`, `wordmark.svg`, `logo.svg`, `icon-source.png`),
+exported per-file from `@pigeon/brand`'s `package.json`. `apps/desktop`'s 3 code-level consumers
+(header, empty state, settings) import `@pigeon/brand/pigeon-mark.svg` — there is no local
+`apps/desktop/src/assets/pigeon-mark.svg` copy anymore. `apps/site/public/pigeon-mark.svg` +
+`pigeon-mark.png` are a separate, still-duplicated copy (favicon/OG-image `<link>`/`<meta>` tags
+need a real static file under `public/`, not an npm import) — adopting `@pigeon/brand` there too is
+future work, not done. Do not reintroduce the old `pigeon-logo-*.png` files — they were removed.
 
 **OS app icon** — the source master is `logo/icon-source.png` (1024², white bg + orange dove,
 rendered from `logo/mark.svg`). To regenerate the full `apps/desktop/src-tauri/icons/` set (icns,

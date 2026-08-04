@@ -1,8 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
-import { strTable } from "@/shared/lib/browserTable";
-import { isTauri } from "@/shared/lib/platform";
-
-const BROWSER_KEY = "pg_browser_mcp_oauth";
+import { createKeyValueStore } from "@/core/persistence";
 
 /** Persisted OAuth state for one MCP server, keyed by its canonical URI. */
 export interface McpOauthRecord {
@@ -21,27 +17,24 @@ export interface McpOauthRecord {
   expiresAt?: number;
 }
 
+const store = createKeyValueStore<McpOauthRecord>({
+  browserKey: "pg_browser_mcp_oauth",
+  keyArgName: "serverUrl",
+  commands: {
+    save: "save_mcp_oauth",
+    get: "get_mcp_oauth",
+    delete: "delete_mcp_oauth",
+  },
+});
+
 export async function saveMcpOauth(record: McpOauthRecord): Promise<void> {
-  if (!isTauri()) {
-    strTable.upsert(BROWSER_KEY, record.serverUrl, JSON.stringify(record));
-    return;
-  }
-  await invoke("save_mcp_oauth", { serverUrl: record.serverUrl, data: JSON.stringify(record) });
+  await store.save(record.serverUrl, record);
 }
 
 export async function getMcpOauth(serverUrl: string): Promise<McpOauthRecord | null> {
-  if (!isTauri()) {
-    const row = strTable.all<string>(BROWSER_KEY).find((r) => r.id === serverUrl);
-    return row ? (JSON.parse(row.data) as McpOauthRecord) : null;
-  }
-  const data = await invoke<string | null>("get_mcp_oauth", { serverUrl });
-  return data ? (JSON.parse(data) as McpOauthRecord) : null;
+  return store.get(serverUrl);
 }
 
 export async function deleteMcpOauth(serverUrl: string): Promise<void> {
-  if (!isTauri()) {
-    strTable.remove(BROWSER_KEY, serverUrl);
-    return;
-  }
-  await invoke("delete_mcp_oauth", { serverUrl });
+  await store.remove(serverUrl);
 }

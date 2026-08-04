@@ -88,7 +88,7 @@ need guardrails; missing vars must fail loudly on send.
 
 `store.ts`, `services/db.ts`, `lib/resolve.ts`, `components/EnvSelector.tsx`,
 `components/EnvModal.tsx`, `components/VarSuggestions.tsx`, `hooks/useVarAutocomplete.ts`,
-`shared/lib/template.ts`; strict errors in `execution/services/requestService.ts`.
+`shared/lib/template.ts`; strict errors in `core/http/services/requestService.ts`.
 
 ## Open risks
 

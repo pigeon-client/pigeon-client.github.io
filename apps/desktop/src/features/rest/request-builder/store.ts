@@ -1,0 +1,243 @@
+import { create } from "zustand";
+import type { ApiResponse } from "@/core/http";
+import { getWindowKind } from "@/shared/lib/windowKind";
+import type { RequestConfig } from "@/shared/types";
+
+function pathFromUrl(url: string): string {
+  if (!url) return "Untitled Request";
+  try {
+    const u = new URL(url.startsWith("http") ? url : `https://${url}`);
+    return u.pathname && u.pathname !== "/" ? u.pathname : u.hostname || "Untitled Request";
+  } catch {
+    const m = url.match(/(?:https?:\/\/)?[^/]*(\/[^?# ]*)/);
+    return m?.[1] || url || "Untitled Request";
+  }
+}
+
+/** What a workspace tab hosts: an HTTP request (default), the MCP bench, or the
+ *  GraphQL coming-soon pane. Non-http tabs keep an (unused) default request so
+ *  every consumer of `tab.request` stays total. */
+export type TabKind = "http" | "mcp" | "graphql";
+
+const KIND_NAMES: Record<Exclude<TabKind, "http">, string> = {
+  mcp: "MCP",
+  graphql: "GraphQL",
+};
+
+export interface Tab {
+  id: string;
+  kind: TabKind;
+  name: string;
+  nameLocked: boolean;
+  request: RequestConfig;
+  response: ApiResponse | null;
+  isLoading: boolean;
+}
+
+interface TabState {
+  tabs: Tab[];
+  activeTabId: string | null;
+  nextId: number;
+
+  addTab: (kind?: TabKind) => string;
+  /** Focus the existing tab of this kind, or open one — singleton per kind. */
+  openKindTab: (kind: Exclude<TabKind, "http">) => string;
+  /** Clone a tab's request into a new tab (clears response). Returns new id or null. */
+  duplicateTab: (id: string) => string | null;
+  closeTab: (id: string) => void;
+  closeOtherTabs: (id: string) => void;
+  closeAllTabs: () => void;
+  setActiveTab: (id: string) => void;
+  updateTabRequest: (id: string, req: Partial<RequestConfig>) => void;
+  updateTabResponse: (id: string, res: ApiResponse | null) => void;
+  setTabLoading: (id: string, loading: boolean) => void;
+  setTabName: (id: string, name: string) => void;
+  setTabNameLocked: (id: string, locked: boolean) => void;
+}
+
+const defaultRequest = (): RequestConfig => ({
+  name: "Untitled Request",
+  nameLocked: false,
+  method: "GET",
+  url: "",
+  params: [],
+  headers: [],
+  bodyType: "none",
+  body: "",
+  formData: [],
+  multipart: [],
+  file: null,
+  auth: {
+    type: "none",
+    username: "",
+    password: "",
+    token: "",
+    apiKey: "",
+    apiValue: "",
+    apiAddTo: "header",
+  },
+});
+
+function cloneRequest(req: RequestConfig): RequestConfig {
+  return {
+    ...req,
+    params: req.params.map((p) => ({ ...p })),
+    headers: req.headers.map((h) => ({ ...h })),
+    formData: req.formData.map((f) => ({ ...f })),
+    multipart: req.multipart.map((m) => ({ ...m })),
+    auth: { ...req.auth },
+    // Same-session File handle is fine to share; collections still strip on save.
+    file: req.file,
+  };
+}
+
+let tabCounter = 1;
+
+/** This window's fixed tab kind — "rest" maps to the default "http" tab kind. */
+function defaultKindForWindow(): TabKind {
+  const kind = getWindowKind();
+  return kind === "rest" ? "http" : kind;
+}
+
+function buildTab(id: string, kind: TabKind): Tab {
+  const name = kind === "http" ? "Untitled Request" : KIND_NAMES[kind];
+  return {
+    id,
+    kind,
+    name,
+    // Non-http tabs keep a fixed name — URL-derived naming never applies.
+    nameLocked: kind !== "http",
+    request: { ...defaultRequest(), name },
+    response: null,
+    isLoading: false,
+  };
+}
+
+export const useTabStore = create<TabState>((set, get) => ({
+  tabs: [],
+  activeTabId: null,
+  nextId: 1,
+
+  addTab: (kind = defaultKindForWindow()) => {
+    const id = `tab-${tabCounter++}`;
+    const tab = buildTab(id, kind);
+    set((s) => ({
+      tabs: [...s.tabs, tab],
+      activeTabId: id,
+    }));
+    return id;
+  },
+
+  openKindTab: (kind) => {
+    const existing = get().tabs.find((t) => t.kind === kind);
+    if (existing) {
+      set({ activeTabId: existing.id });
+      return existing.id;
+    }
+    return get().addTab(kind);
+  },
+
+  duplicateTab: (id) => {
+    const source = get().tabs.find((t) => t.id === id);
+    if (!source) return null;
+
+    const newId = `tab-${tabCounter++}`;
+    // New tab with the same request payload — keep name / lock as-is (no "copy" suffix).
+    const request = cloneRequest(source.request);
+    const tab: Tab = {
+      id: newId,
+      kind: source.kind,
+      name: source.name,
+      nameLocked: source.nameLocked,
+      request,
+      response: null,
+      isLoading: false,
+    };
+    set((s) => ({
+      tabs: [...s.tabs, tab],
+      activeTabId: newId,
+    }));
+    return newId;
+  },
+
+  closeTab: (id) => {
+    set((s) => {
+      const filtered = s.tabs.filter((t) => t.id !== id);
+      let newActive = s.activeTabId;
+      if (s.activeTabId === id) {
+        const idx = s.tabs.findIndex((t) => t.id === id);
+        newActive = filtered[Math.min(idx, filtered.length - 1)]?.id ?? null;
+      }
+      // If no tabs left, create one of this window's own kind
+      if (filtered.length === 0) {
+        const newId = `tab-${tabCounter++}`;
+        return {
+          tabs: [buildTab(newId, defaultKindForWindow())],
+          activeTabId: newId,
+        };
+      }
+      return { tabs: filtered, activeTabId: newActive };
+    });
+  },
+
+  closeOtherTabs: (id) =>
+    set((s) => {
+      const keep = s.tabs.filter((t) => t.id === id);
+      if (keep.length === 0) return s;
+      return { tabs: keep, activeTabId: id };
+    }),
+
+  closeAllTabs: () => {
+    const newId = `tab-${tabCounter++}`;
+    set({
+      tabs: [buildTab(newId, defaultKindForWindow())],
+      activeTabId: newId,
+    });
+  },
+
+  setActiveTab: (id) => set({ activeTabId: id }),
+
+  updateTabRequest: (id, req) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) => {
+        if (t.id !== id) return t;
+        // Adopt an incoming lock flag (e.g. loading a saved request), else keep current.
+        const nextLocked = req.nameLocked ?? t.nameLocked;
+        let name = req.name ?? t.name;
+        // Auto names track the URL path; manual names never change.
+        if (!nextLocked && req.url !== undefined) name = pathFromUrl(req.url);
+        const newRequest = { ...t.request, ...req, name, nameLocked: nextLocked };
+        return { ...t, request: newRequest, name, nameLocked: nextLocked };
+      }),
+    })),
+
+  updateTabResponse: (id, res) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) => (t.id === id ? { ...t, response: res } : t)),
+    })),
+
+  setTabLoading: (id, loading) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) => (t.id === id ? { ...t, isLoading: loading } : t)),
+    })),
+
+  setTabName: (id, name) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) =>
+        t.id === id
+          ? { ...t, name, nameLocked: true, request: { ...t.request, name, nameLocked: true } }
+          : t,
+      ),
+    })),
+  setTabNameLocked: (id, locked) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) =>
+        t.id === id
+          ? { ...t, nameLocked: locked, request: { ...t.request, nameLocked: locked } }
+          : t,
+      ),
+    })),
+}));
+
+// Initialize with one tab
+useTabStore.getState().addTab();

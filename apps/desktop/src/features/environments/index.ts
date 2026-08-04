@@ -1,5 +1,6 @@
 export { EnvModal } from "./components/EnvModal";
 export { EnvSelector } from "./components/EnvSelector";
+export { VarKeyValueEditor } from "./components/VarKeyValueEditor";
 export { VarSuggestions } from "./components/VarSuggestions";
 export { useVarAutocomplete } from "./hooks/useVarAutocomplete";
 export { makeResolver, resolveForPreview } from "./lib/resolve";

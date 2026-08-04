@@ -1,9 +1,9 @@
-import { isTauri } from "@/shared/lib/platform";
+import { selectImpl } from "@/core/platform";
 import type { McpTransport } from "../ports/McpTransport";
 import { browserMcpTransport } from "./BrowserMcpTransport";
 import { tauriMcpTransport } from "./TauriMcpTransport";
 
-/** Platform-selected transport, same seam pattern as `execution`'s `getHttpClient`. */
+/** Platform-selected transport, same seam pattern as `core/http`'s `httpClient`. */
 export function getMcpTransport(): McpTransport {
-  return isTauri() ? tauriMcpTransport : browserMcpTransport;
+  return selectImpl({ tauri: tauriMcpTransport, browser: browserMcpTransport });
 }

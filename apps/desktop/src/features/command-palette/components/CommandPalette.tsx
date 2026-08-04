@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useCollectionStore } from "@/features/collections";
-import type { ApiResponse } from "@/features/execution";
-import { useHistoryStore } from "@/features/history";
-import { useTabStore } from "@/features/request-builder";
+import type { ApiResponse } from "@/core/http";
+import { useCollectionStore } from "@/features/rest/collections";
+import { useHistoryStore } from "@/features/rest/history";
+import { useTabStore } from "@/features/rest/request-builder";
 import { methodTextClass } from "@/shared/lib/httpMethod";
 import { cn } from "@/shared/lib/utils";
 import {

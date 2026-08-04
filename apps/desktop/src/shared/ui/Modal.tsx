@@ -1,4 +1,4 @@
-import { Button } from "./button";
+import { Button } from "@pigeon/ui";
 
 /* Shared modal shell — used by ImportModal, EnvModal, KeyboardShortcutsModal. */
 export function Modal({

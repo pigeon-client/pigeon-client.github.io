@@ -1,0 +1,234 @@
+/* ===== Organize story demos ===== */
+.org-demo {
+  position: relative;
+  padding-bottom: 28px;
+}
+.org-caps {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 8px;
+  height: 16px;
+  display: grid;
+}
+.org-cap {
+  grid-area: 1 / 1;
+  font-size: 0.58rem;
+  color: var(--primary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+.org-playing .org-cap.c0 {
+  animation: sc-cap-0 4.8s ease-in-out infinite;
+}
+.org-playing .org-cap.c1 {
+  animation: sc-cap-1 4.8s ease-in-out infinite;
+}
+.org-playing .org-cap.c2 {
+  animation: sc-cap-2 4.8s ease-in-out infinite;
+}
+
+/* Tabs name themselves */
+.org-name {
+  gap: 8px;
+  align-items: flex-start;
+}
+.org-name .chip {
+  align-self: flex-start;
+}
+.org-a-arrow {
+  color: var(--faint);
+  font-size: 0.75rem;
+  opacity: 0;
+  padding-left: 4px;
+}
+.org-playing .org-a-ghost {
+  animation: org-ghost 4.8s ease-in-out infinite;
+}
+.org-playing .org-a-arrow {
+  animation: org-arrow 4.8s ease-in-out infinite;
+}
+.org-playing .org-a-live {
+  opacity: 0;
+  animation: org-live 4.8s ease-in-out infinite;
+}
+@keyframes org-ghost {
+  0%,
+  18% {
+    opacity: 1;
+    border-color: var(--border);
+  }
+  30%,
+  100% {
+    opacity: 0.25;
+  }
+}
+@keyframes org-arrow {
+  0%,
+  22% {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  28%,
+  55% {
+    opacity: 1;
+    transform: translateX(0);
+    color: var(--primary);
+  }
+  70%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes org-live {
+  0%,
+  32% {
+    opacity: 0;
+    transform: translateY(4px);
+    box-shadow: none;
+  }
+  40%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    box-shadow: 0 0 14px var(--primary-soft);
+    border-color: var(--primary);
+  }
+}
+
+/* Requests file themselves */
+.org-chev {
+  display: inline-block;
+  color: var(--faint);
+  font-size: 0.72em;
+  margin-right: 2px;
+  transform-origin: center;
+}
+.org-playing .org-a-domain .org-chev,
+.org-playing .org-a-folder .org-chev,
+.card.playing .sc-a-root .org-chev,
+.card.playing .sc-a-folder .org-chev {
+  animation: org-chev-open 4.8s ease-in-out infinite;
+}
+@keyframes org-chev-open {
+  0%,
+  12% {
+    opacity: 0.45;
+    transform: rotate(-90deg);
+  }
+  22%,
+  100% {
+    opacity: 1;
+    transform: rotate(0deg);
+    color: var(--primary);
+  }
+}
+.org-playing .org-a-domain {
+  opacity: 0;
+  animation: sc-tree-in 4.8s ease-in-out infinite;
+}
+.org-playing .org-a-folder {
+  opacity: 0;
+  animation: sc-tree-in 4.8s ease-in-out infinite;
+  animation-delay: 0.35s;
+}
+.org-playing .org-a-req0 {
+  opacity: 0;
+  animation: sc-tree-in 4.8s ease-in-out infinite;
+  animation-delay: 0.7s;
+}
+.org-playing .org-a-req1 {
+  opacity: 0;
+  animation: sc-tree-in 4.8s ease-in-out infinite;
+  animation-delay: 1.05s;
+}
+.org-playing .org-a-cnt {
+  animation: sc-cnt-pop 4.8s ease-in-out infinite;
+}
+
+/* History writes itself */
+.org-playing .org-a-b0,
+.org-playing .org-a-h0,
+.org-playing .org-a-b1,
+.org-playing .org-a-h1 {
+  opacity: 0;
+}
+.org-playing .org-a-b0 {
+  animation: sc-tree-in 4.8s ease-in-out infinite;
+}
+.org-playing .org-a-h0 {
+  animation: sc-tree-in 4.8s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+.org-playing .org-a-b1 {
+  animation: sc-tree-in 4.8s ease-in-out infinite;
+  animation-delay: 0.7s;
+}
+.org-playing .org-a-h1 {
+  animation: sc-tree-in 4.8s ease-in-out infinite;
+  animation-delay: 1s;
+}
+.org-hist .ok {
+  position: relative;
+}
+.org-playing .org-hist .ok::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  background: var(--green);
+  border-radius: 2px;
+  animation: okpulse 2s ease-in-out infinite;
+  opacity: 0.5;
+}
+@keyframes okpulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scaleX(0.7);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .org-playing .org-a-ghost,
+  .org-playing .org-a-arrow,
+  .org-playing .org-a-live,
+  .org-playing .org-a-domain,
+  .org-playing .org-a-folder,
+  .org-playing .org-a-req0,
+  .org-playing .org-a-req1,
+  .org-playing .org-a-cnt,
+  .org-playing .org-a-b0,
+  .org-playing .org-a-h0,
+  .org-playing .org-a-b1,
+  .org-playing .org-a-h1,
+  .org-playing .org-cap,
+  .org-playing .org-hist .ok::after {
+    animation: none;
+  }
+  .org-a-ghost,
+  .org-a-live,
+  .org-a-domain,
+  .org-a-folder,
+  .org-a-req0,
+  .org-a-req1,
+  .org-a-b0,
+  .org-a-h0,
+  .org-a-b1,
+  .org-a-h1 {
+    opacity: 1;
+  }
+  .org-a-arrow {
+    display: none;
+  }
+  .org-caps {
+    display: none;
+  }
+}

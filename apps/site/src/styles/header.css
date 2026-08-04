@@ -1,0 +1,100 @@
+/* ===== First screen: header + hero = full viewport ===== */
+.hero-screen {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== Nav ===== */
+header.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  flex: none;
+  background: rgba(10, 10, 11, 0.85);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-soft);
+}
+.hero-screen header.nav {
+  position: sticky;
+  top: 0;
+  background: rgba(8, 8, 10, 0.72);
+  backdrop-filter: blur(14px);
+  border-bottom-color: transparent;
+}
+.hero-screen .wrap {
+  max-width: none;
+  width: 100%;
+  padding-left: clamp(16px, 3vw, 40px);
+  padding-right: clamp(16px, 3vw, 40px);
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 62px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.02rem;
+  color: var(--text);
+}
+.logo svg,
+.logo img {
+  width: 34px;
+  height: 34px;
+}
+nav.links {
+  display: flex;
+  gap: 26px;
+}
+nav.links a {
+  color: var(--muted);
+  font-size: 0.85rem;
+  transition: color 0.15s;
+}
+nav.links a:hover {
+  color: var(--text);
+}
+nav.links a::before {
+  content: "./";
+  color: var(--faint);
+}
+.nav-cta {
+  display: flex;
+  gap: 10px;
+}
+.nav-cta .btn {
+  padding: 8px 15px;
+  font-size: 0.8rem;
+}
+@media (max-height: 780px) {
+  .demo-steps {
+    display: none;
+  }
+  .hero-offer h1 {
+    font-size: clamp(1.35rem, 3.2vw, 1.85rem);
+  }
+  .hero-offer .sub {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  nav.links {
+    display: none;
+  }
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+  .sb {
+    display: none;
+  }
+}

@@ -33,7 +33,7 @@ pub struct OauthHttpResponse {
 pub async fn oauth_http_request(
     method: String,
     url: String,
-    headers: Vec<crate::RequestHeader>,
+    headers: Vec<crate::http::RequestHeader>,
     body: Option<String>,
 ) -> Result<OauthHttpResponse, String> {
     let client = reqwest::Client::builder()
@@ -101,10 +101,7 @@ pub async fn oauth_loopback_open(
     let listener = TcpListener::bind("127.0.0.1:0")
         .await
         .map_err(|e| format!("Failed to open loopback listener: {}", e))?;
-    let port = listener
-        .local_addr()
-        .map_err(|e| e.to_string())?
-        .port();
+    let port = listener.local_addr().map_err(|e| e.to_string())?.port();
     let listener_id = format!("oauth-{}", port);
 
     let mut listeners = state.listeners.lock().await;

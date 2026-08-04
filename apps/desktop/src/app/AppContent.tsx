@@ -1,21 +1,21 @@
 import { invoke } from "@tauri-apps/api/core";
 import { PanelLeftOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { SaveToCollectionModal, useCollectionStore } from "@/features/collections";
 import { CommandPalette } from "@/features/command-palette";
 import { EnvModal, selectActiveEnv, useEnvStore } from "@/features/environments";
 import { GraphqlComingSoon } from "@/features/graphql";
-import { useHistoryStore } from "@/features/history";
-import { generateCurl, ImportModal } from "@/features/import-export";
 import { McpPanel, McpSidebar } from "@/features/mcp";
+import { SaveToCollectionModal, useCollectionStore } from "@/features/rest/collections";
+import { useHistoryStore } from "@/features/rest/history";
+import { generateCurl, ImportModal } from "@/features/rest/import-export";
 import {
   EmptyRequestState,
   RequestEditor,
   TabStrip,
   UrlBar,
   useTabStore,
-} from "@/features/request-builder";
-import { ResponsePanel } from "@/features/response-viewer";
+} from "@/features/rest/request-builder";
+import { ResponsePanel } from "@/features/rest/response-viewer";
 import {
   applyTheme,
   checkForUpdates,
@@ -83,6 +83,7 @@ export function AppContent() {
   const addTab = useTabStore((s) => s.addTab);
   const closeTab = useTabStore((s) => s.closeTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
+  const updateTabRequest = useTabStore((s) => s.updateTabRequest);
   const openKindTab = useTabStore((s) => s.openKindTab);
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
   // Only http tabs have an exportable/saveable request.
@@ -421,7 +422,16 @@ export function AppContent() {
 
       {/* Modals */}
       {showEnvModal && <EnvModal onClose={() => setShowEnvModal(false)} />}
-      {showImportModal && <ImportModal onClose={() => setShowImportModal(false)} />}
+      {showImportModal && (
+        <ImportModal
+          onClose={() => setShowImportModal(false)}
+          onImportRequest={(parsed) => {
+            const id = addTab();
+            updateTabRequest(id, parsed);
+            setActiveTab(id);
+          }}
+        />
+      )}
       {showSaveModal && activeRequest && (
         <SaveToCollectionModal request={activeRequest} onClose={() => setShowSaveModal(false)} />
       )}

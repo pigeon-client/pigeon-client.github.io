@@ -1,0 +1,73 @@
+/* ===== Stats marquee band ===== */
+.stats-band {
+  padding: 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-2);
+  overflow: hidden;
+  position: relative;
+}
+.stats-band::before,
+.stats-band::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 120px;
+  z-index: 2;
+  pointer-events: none;
+}
+.stats-band::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-2), transparent);
+}
+.stats-band::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-2), transparent);
+}
+.marquee {
+  display: flex;
+  gap: 0;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+.marquee:hover {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-group {
+  display: flex;
+  gap: 56px;
+  padding: 26px 28px;
+  align-items: center;
+  flex: none;
+}
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+.stat .num {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.stat .lbl {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.stat .star {
+  color: var(--primary);
+  font-size: 1.3rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    animation: none;
+  }
+}

@@ -1,4 +1,4 @@
-import { useTabStore } from "@/features/request-builder";
+import { useTabStore } from "@/features/rest/request-builder";
 import { deleteMcpOauth } from "../oauth/oauthDb";
 import { useMcpTab } from "../store";
 

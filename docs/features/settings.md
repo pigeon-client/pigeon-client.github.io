@@ -26,7 +26,7 @@ destructive data wipes — without a settings store coupled into every feature (
 4. Request options → `pg_follow_redirects`, `pg_ssl_verify`, `pg_proxy_url` (read at send).
 5. Data: live counts (History / Drafts / Collections / Environments) + a "Keep history for"
    retention selector (30 days / 90 days / 1 year / Forever, default 90, `pg_history_retention_days`
-   via `features/history/lib/retention.ts`) + Clear History / Drafts / All (envs included on Clear
+   via `features/rest/history/lib/retention.ts`) + Clear History / Drafts / All (envs included on Clear
    All; collections **not** cleared by Clear All). Retention is pruned once on the *next* app start,
    never mid-session.
 6. About: version, update status, Check / Install (Tauri updater).
