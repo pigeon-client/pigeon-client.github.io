@@ -6,6 +6,8 @@ on:
     paths:
       - 'apps/site/**'
       - 'scripts/install.sh'
+      - 'packages/ui/**'
+      - 'packages/brand/**'
   # release.yml dispatches this on `main` after publishing (a `release`-event run
   # would execute on the tag ref, which the github-pages environment blocks).
   workflow_dispatch:

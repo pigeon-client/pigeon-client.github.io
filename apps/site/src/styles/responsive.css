@@ -1,0 +1,272 @@
+/* ===== Mobile / small screens ===== */
+@media (max-width: 640px) {
+  .wrap {
+    padding: 0 16px;
+  }
+  section {
+    padding: 56px 0;
+  }
+  h2 {
+    font-size: clamp(1.35rem, 6.5vw, 1.75rem);
+    letter-spacing: -0.02em;
+  }
+  .lead {
+    font-size: 0.9rem;
+  }
+
+  /* Nav */
+  .nav-inner {
+    height: 52px;
+    gap: 10px;
+  }
+  .logo {
+    font-size: 0.95rem;
+    gap: 8px;
+  }
+  .logo img {
+    width: 28px;
+    height: 28px;
+  }
+  .nav-cta {
+    gap: 8px;
+  }
+  .nav-cta .btn {
+    padding: 8px 12px;
+    font-size: 0.76rem;
+  }
+  .nav-cta .btn-ghost {
+    padding: 8px 10px;
+  }
+  .nav-cta-label {
+    display: none;
+  }
+
+  /* Hero: keep animation readable, less chrome */
+  .hero-stage {
+    padding: 6px 10px 10px;
+    gap: 8px;
+  }
+  .hero .app {
+    border-radius: 10px;
+    font-size: 0.72rem;
+  }
+  .demo-steps {
+    display: none;
+  }
+  .launch-title {
+    font-size: 1.15rem;
+  }
+  .launch-sub {
+    font-size: 0.74rem;
+    max-width: 260px;
+    padding: 0 8px;
+  }
+  .launch-mark {
+    width: 44px;
+    height: 44px;
+  }
+  .mac-dock {
+    bottom: 22px;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .dock-icon {
+    width: 26px;
+    height: 26px;
+  }
+  .dock-icon.pigeon {
+    width: 32px;
+    height: 32px;
+  }
+  .launch-dock-hint {
+    bottom: 8px;
+    font-size: 0.62rem;
+  }
+  .launch-row {
+    max-width: 280px;
+    gap: 8px;
+  }
+  .launch-lbl {
+    width: 52px;
+    font-size: 0.7rem;
+  }
+  .hero-offer {
+    padding: 36px 16px max(20px, env(safe-area-inset-bottom));
+    background: linear-gradient(
+      to top,
+      rgba(8, 8, 10, 0.98) 0%,
+      rgba(8, 8, 10, 0.95) 55%,
+      rgba(8, 8, 10, 0.7) 80%,
+      transparent 100%
+    );
+  }
+  .hero-offer .badge {
+    margin-bottom: 10px;
+    font-size: 0.66rem;
+    padding: 4px 10px;
+  }
+  .hero-offer h1 {
+    font-size: clamp(1.25rem, 6vw, 1.65rem);
+    line-height: 1.2;
+  }
+  .hero-offer .sub {
+    font-size: 0.84rem;
+    margin: 10px auto 16px;
+  }
+  .hero-offer .hero-ctas {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .hero-offer .hero-ctas .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 18px;
+  }
+  .hero-offer .hero-note {
+    font-size: 0.68rem;
+  }
+  .demo-draft-badge {
+    bottom: 10px;
+    right: 10px;
+    font-size: 0.66rem;
+    padding: 6px 10px;
+  }
+
+  /* Stats */
+  .stats-band {
+    padding: 0;
+  }
+  .stats-band::before,
+  .stats-band::after {
+    width: 40px;
+  }
+  .marquee-group {
+    gap: 28px;
+    padding: 18px 16px;
+  }
+  .stat {
+    gap: 8px;
+  }
+  .stat .num {
+    font-size: 1.25rem;
+  }
+  .stat .lbl {
+    font-size: 0.7rem;
+  }
+
+  /* Organize / features / why cards */
+  .organize {
+    padding-top: 48px;
+  }
+  .org-grid,
+  .grid,
+  .why-grid {
+    gap: 12px;
+    margin-top: 28px;
+  }
+  .org-card,
+  .card,
+  .why-card {
+    padding: 18px 16px;
+  }
+  .org-card:hover,
+  .card:hover,
+  .card.active,
+  .why-card:hover {
+    transform: none;
+  }
+  .card .showcase {
+    height: 140px;
+    margin: -4px -2px 8px;
+    padding: 10px;
+  }
+  .sc-story-line {
+    font-size: 0.64rem;
+  }
+
+  /* Open source */
+  .oss-flex {
+    gap: 28px;
+    margin-top: 28px;
+  }
+  .oss-flex > div {
+    min-width: 0;
+  }
+  .oss-flex .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Download */
+  .dl-grid {
+    margin-top: 28px;
+  }
+  .dl-card {
+    padding: 24px 16px;
+  }
+  .dl-card:hover {
+    transform: none;
+  }
+  .install {
+    margin-top: 18px;
+    padding: 8px 8px 8px 12px;
+    gap: 8px;
+  }
+  .install code {
+    font-size: 0.68rem;
+  }
+  .install .copy {
+    padding: 8px 10px;
+    font-size: 0.68rem;
+  }
+
+  /* Footer */
+  footer {
+    padding: 28px 0;
+  }
+  .foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .foot nav {
+    flex-wrap: wrap;
+    gap: 14px 18px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .wrap {
+    padding: 0 12px;
+  }
+  .nav-cta .btn-primary {
+    padding: 8px 10px;
+  }
+  .hero-stage {
+    padding: 4px 8px 8px;
+  }
+  .launch-center {
+    padding: 16px 12px 88px;
+  }
+}
+
+/* Short mobile landscape / small height */
+@media (max-height: 700px) and (max-width: 900px) {
+  .hero-screen {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .hero {
+    overflow: visible;
+  }
+  .hero-stage {
+    min-height: min(70dvh, 520px);
+  }
+  .demo-steps {
+    display: none;
+  }
+}

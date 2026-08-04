@@ -58,6 +58,9 @@ export interface Header {
   key: string;
   value: string;
   enabled: boolean;
+  /** Set when this header came from a collection/draft folder's inherited
+   *  config, not typed directly on the request — see `collections/lib/inheritance.ts`. */
+  inherited?: boolean;
 }
 
 export interface KeyValue {
@@ -69,6 +72,8 @@ export interface KeyValue {
   fileName?: string;
   /** Masked value (secret mode — used by the environment editor). */
   secret?: boolean;
+  /** Set when this row came from a collection/draft folder's inherited config. */
+  inherited?: boolean;
 }
 
 export interface FileData {

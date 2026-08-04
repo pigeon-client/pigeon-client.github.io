@@ -1,9 +1,10 @@
+import { Button } from "@pigeon/ui";
 import { useRef, useState } from "react";
 
 /** Copy-to-clipboard button used in the install command boxes. */
 export function CopyButton({ text }: { text: string }) {
   const [done, setDone] = useState(false);
-  const timer = useRef<number>();
+  const timer = useRef<number | undefined>(undefined);
 
   const copy = () => {
     const flag = () => {
@@ -29,14 +30,15 @@ export function CopyButton({ text }: { text: string }) {
   };
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="xs"
       className={`copy${done ? " done" : ""}`}
       onClick={copy}
       aria-label="Copy install command"
     >
       {done ? "copied!" : "copy"}
-    </button>
+    </Button>
   );
 }
 

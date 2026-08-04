@@ -1,0 +1,41 @@
+/* ===== Footer ===== */
+footer {
+  border-top: 1px solid var(--border-soft);
+  padding: 38px 0;
+}
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.foot p,
+.foot a {
+  color: var(--faint);
+  font-size: 0.8rem;
+}
+.foot nav {
+  display: flex;
+  gap: 22px;
+}
+.foot a:hover {
+  color: var(--text);
+}
+.center {
+  text-align: center;
+}
+.center .lead {
+  margin: 0 auto;
+}
+
+/* ===== Section heading gradient + glow ===== */
+section h2 .accent,
+.why-item h3 span,
+.steps strong {
+  background: var(--grad-text);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

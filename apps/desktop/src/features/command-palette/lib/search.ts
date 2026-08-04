@@ -1,5 +1,5 @@
-import type { Collection, CollectionNode } from "@/features/collections";
-import type { HistoryItem, ResponseSnapshot } from "@/features/history";
+import type { Collection, CollectionNode } from "@/features/rest/collections";
+import type { HistoryItem, ResponseSnapshot } from "@/features/rest/history";
 import { relativeTime } from "@/shared/lib/time";
 import type { HttpMethod, RequestConfig } from "@/shared/types";
 

@@ -1,13 +1,14 @@
-import hljs from "highlight.js";
 import { useEffect, useState } from "react";
-import { selectActiveEnv, useEnvStore } from "@/features/environments";
-import { isTauri } from "@/shared/lib/platform";
-import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
+import { interpolateStrict, UnresolvedVariablesError } from "@/core/interpolation";
 import {
-  interpolateStrict,
-  McpUnresolvedVariablesError,
-  parseHeaderLines,
-} from "../lib/interpolate";
+  makeResolver,
+  selectActiveEnv,
+  useEnvStore,
+  VarKeyValueEditor,
+} from "@/features/environments";
+import { isTauri } from "@/shared/lib/platform";
+import type { Header } from "@/shared/types";
+import { HighlightedBody } from "@/shared/ui/result-viewer";
 import { buildToolArgs, isSimpleSchema } from "../lib/toolSchema";
 import { canonicalizeServerUrl } from "../oauth/canonicalUri";
 import {
@@ -39,14 +40,6 @@ function prettyJson(value: unknown): string {
   }
 }
 
-function highlightJson(code: string): string {
-  try {
-    return hljs.highlight(code, { language: "json", ignoreIllegals: true }).value;
-  } catch {
-    return code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }
-}
-
 export function McpPanel({ tabId }: { tabId: string }) {
   const activeEnv = useEnvStore(selectActiveEnv);
   const globals = useEnvStore((s) => s.globals);
@@ -54,7 +47,7 @@ export function McpPanel({ tabId }: { tabId: string }) {
 
   // Connect-form / auth-flow input ephemera — never needed by the sidebar, stays local.
   const [url, setUrl] = useState("");
-  const [headersText, setHeadersText] = useState("");
+  const [headers, setHeaders] = useState<Header[]>([]);
   const [pendingConnect, setPendingConnect] = useState<PendingConnect | null>(null);
   const [authorizing, setAuthorizing] = useState(false);
   const [authStatusText, setAuthStatusText] = useState<string | null>(null);
@@ -103,11 +96,11 @@ export function McpPanel({ tabId }: { tabId: string }) {
     let resolvedUrl = "";
     let resolvedHeaders: Record<string, string> = {};
     try {
-      resolvedUrl = interpolateStrict(url, activeEnv, globals);
-      const rawHeaders = parseHeaderLines(headersText);
+      const resolve = makeResolver(activeEnv, globals);
+      resolvedUrl = interpolateStrict(url, resolve);
       resolvedHeaders = {};
-      for (const [k, v] of Object.entries(rawHeaders)) {
-        resolvedHeaders[k] = interpolateStrict(v, activeEnv, globals);
+      for (const h of headers) {
+        if (h.enabled && h.key) resolvedHeaders[h.key] = interpolateStrict(h.value, resolve);
       }
       await attemptConnect(resolvedUrl, resolvedHeaders);
     } catch (e) {
@@ -277,20 +270,17 @@ export function McpPanel({ tabId }: { tabId: string }) {
               className="h-9 rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
             />
           </label>
-          <label className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5">
             <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Headers (optional, one per line — Key: Value)
+              Headers (optional)
             </span>
-            <textarea
-              data-testid="mcp-connect-headers"
-              value={headersText}
-              onChange={(e) => setHeadersText(e.target.value)}
-              placeholder="Authorization: Bearer {{token}}"
-              rows={3}
-              spellCheck={false}
-              className="resize-none rounded border border-border bg-card px-3 py-2 font-mono text-xs text-foreground outline-none focus:border-primary"
+            <VarKeyValueEditor
+              items={headers}
+              onChange={setHeaders}
+              testId="mcp-connect-header"
+              addLabel="Add header"
             />
-          </label>
+          </div>
           <button
             type="button"
             data-testid="mcp-connect-btn"
@@ -418,8 +408,9 @@ export function McpPanel({ tabId }: { tabId: string }) {
                         {JSON.stringify(mcp.callResult)}
                       </pre>
                     ) : (
-                      <HighlightedHtml
-                        html={highlightJson(prettyJson(mcp.callResult))}
+                      <HighlightedBody
+                        code={prettyJson(mcp.callResult)}
+                        language="json"
                         className="hljs whitespace-pre-wrap font-mono text-xs"
                       />
                     )}
@@ -435,7 +426,7 @@ export function McpPanel({ tabId }: { tabId: string }) {
 }
 
 export function describeError(e: unknown): string {
-  if (e instanceof McpUnresolvedVariablesError) return e.message;
+  if (e instanceof UnresolvedVariablesError) return e.message;
   if (e instanceof McpConnectError) return `Couldn't reach the MCP server: ${e.message}`;
   if (e instanceof OauthFlowError) return e.message;
   if (e instanceof McpProtocolError) return e.message;

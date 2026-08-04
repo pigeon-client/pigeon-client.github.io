@@ -1,0 +1,212 @@
+/* ===== Hero: animation-first, offer after ===== */
+.hero {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(680px 360px at 50% -2%, rgba(201, 100, 66, 0.18), transparent 68%),
+    radial-gradient(480px 300px at 20% 10%, rgba(217, 122, 82, 0.08), transparent 60%),
+    radial-gradient(480px 300px at 80% 10%, rgba(201, 100, 66, 0.08), transparent 60%),
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    auto,
+    44px 44px,
+    44px 44px;
+  mask-image: linear-gradient(to bottom, black 60%, transparent);
+  z-index: 0;
+}
+.hero-stage {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 8px clamp(12px, 2.5vw, 28px) 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hero .app {
+  margin: 0;
+  max-width: none;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: 14px;
+}
+.hero .demo-steps {
+  flex: none;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+}
+
+/* Offer panel: tagline + CTAs after first demo cycle */
+.hero-offer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  padding: 48px clamp(16px, 4vw, 40px) 28px;
+  background: linear-gradient(
+    to top,
+    rgba(8, 8, 10, 0.98) 0%,
+    rgba(8, 8, 10, 0.92) 45%,
+    rgba(8, 8, 10, 0.55) 75%,
+    transparent 100%
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(28px);
+  pointer-events: none;
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hero.offer-on .hero-offer {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.hero.offer-on .demo-steps {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.hero-offer .badge {
+  margin-bottom: 14px;
+}
+.hero-offer h1 {
+  font-size: clamp(1.55rem, 3.8vw, 2.4rem);
+  margin: 0;
+  max-width: 720px;
+}
+.hero-offer .sub {
+  color: var(--muted);
+  font-size: 0.92rem;
+  max-width: 480px;
+  margin: 12px auto 20px;
+}
+.hero-offer .hero-ctas {
+  margin: 0;
+}
+.hero-offer .hero-note {
+  margin-top: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-offer {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    transition: none;
+  }
+}
+.grad-text {
+  background: var(--grad-text);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shimmer 5s linear infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: 200% center;
+  }
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 14px;
+  background: var(--panel);
+  flex: none;
+}
+.badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(114, 184, 114, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(114, 184, 114, 0);
+  }
+}
+h1 {
+  font-size: clamp(1.7rem, 4.2vw, 2.75rem);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  flex: none;
+}
+h1 .accent {
+  background: var(--grad-text);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 5s linear infinite;
+}
+h1 .cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  background: var(--primary);
+  vertical-align: text-bottom;
+  margin-left: 4px;
+  animation: blink 1.05s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+.hero p.sub {
+  color: var(--muted);
+  font-size: 0.9rem;
+  max-width: 520px;
+  margin: 12px auto 18px;
+  flex: none;
+}
+.hero-ctas {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  flex: none;
+}
+.hero-note {
+  margin-top: 10px;
+  font-size: 0.72rem;
+  color: var(--faint);
+  flex: none;
+}

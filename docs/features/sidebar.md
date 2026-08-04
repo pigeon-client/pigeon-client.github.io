@@ -105,8 +105,14 @@ chord).
 
 ## Key files
 
-`src/app/layout/Sidebar.tsx`, `Header.tsx`, `AppContent.tsx` (resize + shortcuts).
-Tree helpers: `src/features/collections/lib/tree.ts`.
+`src/app/layout/Sidebar.tsx` (thin shell: New Request/Import buttons, tab switcher, status bar).
+The tab sections live in their owning features and are composed via barrels:
+`src/features/rest/history/components/{HistoryTab,DraftTab}.tsx`,
+`src/features/rest/collections/components/{CollectionsTab,NameModal}.tsx`
+(each tab section is self-contained — reads its own store slice, owns its own local state).
+Generic presentational pieces are shared: `src/shared/ui/{TreeRow,EmptyState,ConfirmModal}.tsx`.
+`Header.tsx`, `AppContent.tsx` (resize + shortcuts).
+Tree helpers: `src/features/rest/collections/lib/tree.ts`.
 
 ## Open risks
 

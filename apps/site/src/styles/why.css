@@ -1,0 +1,17 @@
+/* ===== Why strip ===== */
+.why {
+  background: var(--bg-2);
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 34px;
+  margin-top: 42px;
+}
+@media (max-width: 720px) {
+  .why-grid {
+    grid-template-columns: 1fr;
+  }
+}

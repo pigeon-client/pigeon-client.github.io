@@ -1,8 +1,13 @@
 # Design Tokens — Single Source of Truth
 
-All styling values live in `src/styles/index.css` (Tailwind v4 `@theme` + per-theme
-CSS variables). **Components reference tokens only** — no raw `px`, no ad-hoc hex, no
-inline color literals. This file documents the scales; the token layer is the source.
+All styling values live in `packages/ui/src/styles/tokens.css` (Tailwind v4 `@theme` + per-theme
+CSS variables) — the shared `@pigeon/ui` package, consumed by `apps/desktop` via
+`@import "@pigeon/ui/tokens.css";` at the top of `apps/desktop/src/styles/index.css` (which then
+adds only desktop-specific things on top: scrollbar styling, the `.pg-logo` theme filter,
+`@layer base`). `apps/site` imports the same `tokens.css` but layers its own separate,
+permanently-dark bespoke palette on top (no light/dark toggle there — see
+`docs/restructure-plan.md`'s Phase 7 notes). **Components reference tokens only** — no raw `px`, no
+ad-hoc hex, no inline color literals. This file documents the scales; the token layer is the source.
 
 Two themes: `:root` (light, default) and `.dark`. `.theme-pink` is dead — only a
 `.pg-logo` selector remains for `.theme-light`. Colors are semantic and defined

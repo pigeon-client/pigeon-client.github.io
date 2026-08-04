@@ -128,7 +128,7 @@ and Params.
 
 ## Automation coverage
 
-- Vitest: `src/features/request-builder/store.test.ts`, `src/shared/lib/url.test.ts`,
+- Vitest: `src/features/rest/request-builder/store.test.ts`, `src/shared/lib/url.test.ts`,
   `src/shared/lib/httpMethod.test.ts`.
 - Playwright: `e2e/tabs.spec.ts`, `e2e/url-params.spec.ts`, `e2e/method-and-actions.spec.ts`,
   `e2e/body-editor.spec.ts`.
@@ -144,10 +144,14 @@ Workspace tabs: `role="tab"`. Scope `url-input` / `method-trigger` to `:visible`
 
 ## Key files
 
-`components/TabStrip.tsx`, `components/UrlBar.tsx`, `components/RequestEditor.tsx`,
-`components/KeyValueEditor.tsx`, `components/BodyEditor.tsx`, `components/HeadersEditor.tsx`,
+`components/TabStrip.tsx`, `components/UrlBar.tsx` (+ `MethodSelector.tsx`, `MethodOption.tsx`,
+`TokenChip.tsx`, `UrlBarStatusLine.tsx`), `components/RequestEditor.tsx`,
+`components/BodyEditor.tsx` (+ `BodyTypeSelector.tsx`, `BinaryFilePane.tsx`, `HighlightLayer.tsx`,
+`LineNumbers.tsx`, `lib/bodyEditorHelpers.ts`), `components/HeadersEditor.tsx`,
 `components/AuthEditor.tsx`, `components/EmptyRequestState.tsx`, `store.ts`,
-`hooks/useAutoClose.ts`.
+`hooks/useAutoClose.ts`, `hooks/useSendRequest.ts` (send + history/draft orchestration — see
+[execution.md](./execution.md)). `KeyValueEditor` itself now lives in `shared/ui/KeyValueEditor/`
+(shared with MCP's headers editor), not in this feature.
 
 ## Open risks
 

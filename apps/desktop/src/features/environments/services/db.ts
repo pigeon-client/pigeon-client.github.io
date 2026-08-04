@@ -1,7 +1,6 @@
-import { strTable } from "@/shared/lib/browserTable";
+import { createStrTableStore } from "@/core/persistence";
 import type { Environment, EnvVariable } from "../types";
 
-const KEY = "pg_browser_environments";
 const GLOBALS_KEY = "pg_globals";
 const ACTIVE_KEY = "pg_active_env";
 
@@ -10,20 +9,26 @@ const ACTIVE_KEY = "pg_active_env";
    The Tauri webview's localStorage survives restarts (stored in the app's data
    dir), so this needs no Rust/SQLite command and works without a rebuild. */
 
+const store = createStrTableStore<Environment>({
+  browserKey: "pg_browser_environments",
+  getId: (data) => data.id,
+});
+
 export async function saveEnvironment(env: Environment): Promise<void> {
-  strTable.upsert(KEY, env.id, JSON.stringify(env));
+  await store.save(env);
 }
 
 export async function getEnvironments(): Promise<Environment[]> {
-  return strTable.all<string>(KEY).map((r) => JSON.parse(r.data) as Environment);
+  const rows = await store.getAll();
+  return rows.map((r) => JSON.parse(r.data) as Environment);
 }
 
 export async function updateEnvironment(env: Environment): Promise<void> {
-  strTable.upsert(KEY, env.id, JSON.stringify(env));
+  await store.update(env);
 }
 
 export async function deleteEnvironment(id: string): Promise<void> {
-  strTable.remove(KEY, id);
+  await store.remove(id);
 }
 
 /* ── Globals + active id (localStorage, both builds — like pg_theme) ── */

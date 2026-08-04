@@ -44,4 +44,5 @@ blob-report
 # Rust lock — untracked; version-bump churns it (see CLAUDE.md)
 Cargo.lock
 
-testsprite_tests/tmp/config.json
+# TestSprite artifacts (removed from repo)
+testsprite_tests/

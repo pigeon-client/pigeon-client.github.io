@@ -1,12 +1,11 @@
+import pigeonLogo from "@pigeon/brand/pigeon-mark.svg";
+import { Button, Tooltip } from "@pigeon/ui";
 import { Braces, Check, Globe, Plug, Search, Settings, Terminal, X } from "lucide-react";
 import { type RefObject, useEffect, useState } from "react";
-import pigeonLogo from "@/assets/pigeon-mark.svg";
 import { EnvSelector } from "@/features/environments";
 import { getCachedUpdateResult, onUpdateCacheChange } from "@/features/settings";
 import { cn } from "@/shared/lib/utils";
 import { getWindowKind, type WindowKind } from "@/shared/lib/windowKind";
-import { Button } from "@/shared/ui/button";
-import { Tooltip } from "@/shared/ui/Tooltip";
 
 interface HeaderProps {
   onOpenSettings: () => void;

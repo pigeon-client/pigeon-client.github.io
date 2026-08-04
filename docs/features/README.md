@@ -9,14 +9,14 @@ updating these docs when behavior changes — the `feature-qa` Claude Code agent
 
 | Doc | Feature | Code (under `apps/desktop/`) |
 |-----|---------|------------------------------|
-| [request-builder.md](./request-builder.md) | Tabs, URL bar, Params/Auth/Headers/Body | `src/features/request-builder` |
+| [request-builder.md](./request-builder.md) | Tabs, URL bar, Params/Auth/Headers/Body | `src/features/rest/request-builder` |
 | [content-types.md](./content-types.md) | Request/response body formats + curl CT parity | `src/shared/lib/contentType.ts` |
-| [execution.md](./execution.md) | Send path, Rust vs browser transport | `src/features/execution` |
-| [response-viewer.md](./response-viewer.md) | Status, body, headers, empty/SSE | `src/features/response-viewer` |
-| [collections.md](./collections.md) | Saved tree, folders, save modal | `src/features/collections` |
-| [history-drafts.md](./history-drafts.md) | History log + drafts | `src/features/history` |
+| [execution.md](./execution.md) | Send path, Rust vs browser transport | `src/core/http` |
+| [response-viewer.md](./response-viewer.md) | Status, body, headers, empty/SSE | `src/features/rest/response-viewer` |
+| [collections.md](./collections.md) | Saved tree, folders, save modal | `src/features/rest/collections` |
+| [history-drafts.md](./history-drafts.md) | History log + drafts | `src/features/rest/history` |
 | [environments.md](./environments.md) | `{{var}}` envs + interpolation | `src/features/environments` |
-| [import-export.md](./import-export.md) | cURL import + copy-as-cURL | `src/features/import-export` |
+| [import-export.md](./import-export.md) | cURL import + copy-as-cURL | `src/features/rest/import-export` |
 | [settings.md](./settings.md) | Theme, request options, updates | `src/features/settings` |
 | [sidebar.md](./sidebar.md) | Left nav shell | `src/app/layout/Sidebar.tsx` |
 | [command-palette.md](./command-palette.md) | `⌘⇧K` global search across history/drafts/collections | `src/features/command-palette` |
