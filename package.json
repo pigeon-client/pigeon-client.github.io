@@ -29,7 +29,7 @@
     "version:bump": "pnpm --filter pigeon version:bump"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.0",
+    "@biomejs/biome": "^2.5.5",
     "@evilmartians/lefthook": "^2.1.9"
   },
   "pnpm": {
