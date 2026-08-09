@@ -5,7 +5,7 @@ import { type RefObject, useEffect, useState } from "react";
 import { EnvSelector } from "@/features/environments";
 import { getCachedUpdateResult, onUpdateCacheChange } from "@/features/settings";
 import { cn } from "@/shared/lib/utils";
-import { getWindowKind, type WindowKind } from "@/shared/lib/windowKind";
+import type { WindowKind } from "@/shared/lib/windowKind";
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -14,6 +14,7 @@ interface HeaderProps {
   onOpenRest: () => void;
   onOpenMcp: () => void;
   onOpenGraphql: () => void;
+  activeWorkspace: WindowKind;
   curlCopied: boolean;
   exportDisabled: boolean;
   search: string;
@@ -31,6 +32,7 @@ export function Header({
   onOpenRest,
   onOpenMcp,
   onOpenGraphql,
+  activeWorkspace,
   curlCopied,
   exportDisabled,
   search,
@@ -41,7 +43,6 @@ export function Header({
   onSearchBlur,
 }: HeaderProps) {
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const activeWorkspace = getWindowKind();
 
   useEffect(() => {
     setUpdateAvailable(getCachedUpdateResult()?.status === "available");
@@ -72,8 +73,8 @@ export function Header({
       kind: "mcp",
       label: "MCP",
       icon: Plug,
-      tooltip: "MCP bench (⌘⇧M)",
-      ariaLabel: "MCP bench",
+      tooltip: "MCP — coming soon (⌘⇧M)",
+      ariaLabel: "MCP (coming soon)",
       testId: "header-open-mcp",
       onClick: onOpenMcp,
     },

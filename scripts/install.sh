@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-REPO="pigeon-client/pigeon"
+SITE="${PIGEON_SITE:-https://trypigeon.dev}"
 
-# Version: use the explicit arg if given, else the latest published release.
+# Version: explicit arg, else latest from trypigeon.dev/release.json.
 VERSION="$1"
 if [ -z "$VERSION" ]; then
-  echo "Resolving latest release..."
-  VERSION="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+  echo "Resolving latest release from ${SITE}..."
+  VERSION="$(curl -fsSL "${SITE}/release.json" \
     | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' | head -1)"
 fi
 if [ -z "$VERSION" ]; then
@@ -19,7 +19,7 @@ case "$VERSION" in
   *[!0-9.]*|"") echo "Invalid version: ${VERSION}" >&2; exit 1 ;;
 esac
 
-# Arch: Apple Silicon vs Intel → matching Tauri dmg name.
+# Arch: Apple Silicon vs Intel → trypigeon.dev/download/latest/{arch}
 case "$(uname -m)" in
   arm64|aarch64) ARCH="aarch64" ;;
   x86_64) ARCH="x64" ;;
@@ -39,7 +39,7 @@ trap cleanup EXIT
 # Download and mount FIRST — the existing install is only replaced once the
 # new app has actually been fetched and verified to exist in the DMG.
 echo "Downloading Pigeon v${VERSION} (${ARCH})..."
-curl -fL "https://github.com/${REPO}/releases/download/v${VERSION}/${FILENAME}" -o "$TMP_DMG"
+curl -fL "${SITE}/download/latest/${ARCH}" -o "$TMP_DMG"
 
 echo "Mounting DMG..."
 hdiutil attach "$TMP_DMG" -mountpoint "$VOLUME" -nobrowse

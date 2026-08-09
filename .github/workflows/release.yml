@@ -25,7 +25,7 @@ jobs:
           append_body: true
           draft: true
           body: |
-            ## Install
+            ## Install (macOS)
 
             **macOS** — Pigeon is not notarized by Apple, so the first launch shows
             *"Apple could not verify…"*. This is expected for unsigned apps. To open it:
@@ -38,9 +38,7 @@ jobs:
             xattr -cr /Applications/Pigeon.app
             ```
 
-            **Windows** — run the `.exe` installer. SmartScreen may warn (unsigned): **More info → Run anyway**.
-
-            **Linux** — `.AppImage` (chmod +x, then run) or install the `.deb`.
+            > Windows and Linux CI builds are paused — macOS is the only published platform for now.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -63,17 +61,17 @@ jobs:
             args: '--target x86_64-apple-darwin --bundles app,dmg'
             artifact_name: macOS-Intel
 
-          # Windows → .exe (NSIS installer)
-          - platform: windows-latest
-            target: x86_64-pc-windows-msvc
-            args: '--target x86_64-pc-windows-msvc --bundles nsis'
-            artifact_name: Windows-x64
+          # Windows → .exe (NSIS installer) — paused; macOS-only releases for now.
+          # - platform: windows-latest
+          #   target: x86_64-pc-windows-msvc
+          #   args: '--target x86_64-pc-windows-msvc --bundles nsis'
+          #   artifact_name: Windows-x64
 
-          # Linux → .AppImage + .deb
-          - platform: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            args: '--bundles appimage,deb'
-            artifact_name: Linux-x64
+          # Linux → .AppImage + .deb — paused; macOS-only releases for now.
+          # - platform: ubuntu-22.04
+          #   target: x86_64-unknown-linux-gnu
+          #   args: '--bundles appimage,deb'
+          #   artifact_name: Linux-x64
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -138,8 +136,7 @@ jobs:
               make_latest: 'true',
             })
 
-      # Refresh the marketing site on `main` (the github-pages environment blocks
-      # deploys from a tag ref, so we can't use a `release`-event trigger).
+      # Refresh marketing site on Cloudflare (R2 + Worker → trypigeon.dev).
       - name: Refresh marketing site
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}

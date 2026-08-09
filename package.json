@@ -13,6 +13,8 @@
     "build": "pnpm --filter pigeon build",
     "build:site": "pnpm --filter pigeon-site build",
     "preview:site": "pnpm --filter pigeon-site preview",
+    "preview:site:worker": "pnpm --filter pigeon-site preview:worker",
+    "deploy:site": "pnpm --filter pigeon-site deploy",
     "test": "pnpm --filter pigeon test",
     "test:watch": "pnpm --filter pigeon test:watch",
     "test:cov": "pnpm --filter pigeon test:cov",

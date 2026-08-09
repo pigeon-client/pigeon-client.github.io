@@ -9,11 +9,11 @@ export function Header() {
           pigeon
         </a>
         <nav className="links" aria-label="Main">
-          <a href="#organize">organize</a>
-          <a href="#mcp">mcp</a>
-          <a href="#features">features</a>
-          <a href="#open-source">open-source</a>
-          <a href="#download">download</a>
+          <a href="/#organize">organize</a>
+          <a href="/#features">features</a>
+          <a href="/#open-source">open-source</a>
+          <a href="/blog">blog</a>
+          <a href="/#download">download</a>
         </nav>
         <div className="nav-cta">
           <a className="btn btn-ghost" href={REPO_URL} aria-label="Star Pigeon on GitHub">
@@ -22,7 +22,7 @@ export function Header() {
             </svg>
             <span className="nav-cta-label">star</span>
           </a>
-          <a className="btn btn-primary" href="#download">
+          <a className="btn btn-primary" href="/#download">
             download
           </a>
         </div>

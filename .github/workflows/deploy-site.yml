@@ -8,22 +8,24 @@ on:
       - 'scripts/install.sh'
       - 'packages/ui/**'
       - 'packages/brand/**'
-  # release.yml dispatches this on `main` after publishing (a `release`-event run
-  # would execute on the tag ref, which the github-pages environment blocks).
+  # release.yml dispatches this on `main` after publishing so download/install
+  # copy stays current after a new GitHub Release.
   workflow_dispatch:
 
 concurrency:
-  group: pages
+  group: deploy-site
   cancel-in-progress: true
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
+
+env:
+  R2_BUCKET: trypigeon-site
+  WORKER_NAME: trypigeon
 
 jobs:
-  build:
-    name: Build Site
+  deploy:
+    name: Build & Deploy (Cloudflare R2 + Worker)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,12 +42,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Fetch latest release data
+      - name: Fetch latest release + updater manifest
         run: |
+          mkdir -p public
           curl -sf \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -o src/release.json \
             https://api.github.com/repos/${{ github.repository }}/releases/latest || true
+          cp src/release.json public/release.json
+          ASSET_URL="$(curl -sf \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/latest \
+            | jq -r '.assets[] | select(.name=="latest.json") | .browser_download_url' \
+            | head -1)"
+          if [ -n "$ASSET_URL" ] && [ "$ASSET_URL" != "null" ]; then
+            curl -sfL -o public/latest.json "$ASSET_URL"
+            echo "Fetched Tauri latest.json for auto-update endpoint."
+          else
+            echo '{"version":"0.0.0","notes":"","pub_date":"","platforms":{}}' > public/latest.json
+            echo "No latest.json release asset yet — stub written."
+          fi
         working-directory: apps/site
 
       - name: Sync install.sh into site public/
@@ -53,22 +69,32 @@ jobs:
           mkdir -p apps/site/public
           cp scripts/install.sh apps/site/public/install.sh
 
-      - name: Build
+      - name: Build Astro site
         run: pnpm --filter pigeon-site build
 
-      - name: Upload pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Ensure R2 bucket exists
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: apps/site/dist
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/site
+          # Idempotent — no-op if the bucket already exists.
+          command: r2 bucket create trypigeon-site
+        continue-on-error: true
 
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Upload build to R2
+        working-directory: apps/site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET: trypigeon-site
+        run: pnpm exec node scripts/sync-r2.mjs
+
+      - name: Deploy Worker (creates trypigeon if missing)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/site
+          command: deploy
+          # Worker name + R2 binding come from apps/site/wrangler.jsonc.

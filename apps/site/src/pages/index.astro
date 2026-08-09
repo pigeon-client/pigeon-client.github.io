@@ -1,0 +1,48 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import HomePage from "../components/HomePage";
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE } from "../lib/constants";
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Is Pigeon a free alternative to Postman?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Pigeon is completely free and open source. There are no paid tiers, no account requirements, and no cloud sync — your data stays on your machine.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What platforms does Pigeon support?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Pigeon is available for macOS today (Apple Silicon and Intel) — install with curl from trypigeon.dev/install.sh or download the .dmg from trypigeon.dev/download/latest.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I import my existing requests?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Paste any cURL command into the URL bar or import modal and Pigeon builds the full request — method, headers, auth, and body. You can also copy any request back out as cURL.",
+      },
+    },
+  ],
+};
+---
+
+<SiteLayout
+  title={DEFAULT_TITLE}
+  description={DEFAULT_DESCRIPTION}
+  canonicalPath="/"
+  softwareSchema
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
+  </Fragment>
+  <HomePage client:load />
+</SiteLayout>

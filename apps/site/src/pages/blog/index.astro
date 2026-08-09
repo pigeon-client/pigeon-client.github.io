@@ -1,0 +1,51 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { getCollection } from "astro:content";
+import { SITE_NAME } from "../../lib/constants";
+
+const posts = (await getCollection("blog"))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const title = `Blog · ${SITE_NAME}`;
+const description =
+  "Release notes, deep dives, and tips for Pigeon — the API client that organizes itself.";
+---
+
+<SiteLayout title={title} description={description} canonicalPath="/blog" bodyClass="page-blog">
+  <main class="site-main">
+    <div class="blog-index wrap">
+      <header class="blog-index-header">
+        <p class="blog-kicker">Blog</p>
+        <h1>Notes from the nest</h1>
+        <p class="blog-dek">
+          Product updates, API-client tips, and how Pigeon stays out of your way.
+        </p>
+      </header>
+
+      {
+        posts.length === 0 ? (
+          <p class="blog-empty">No posts yet. Check back soon.</p>
+        ) : (
+          <ul class="blog-list">
+            {posts.map((post) => (
+              <li>
+                <a class="blog-card" href={`/blog/${post.id}`}>
+                  <time datetime={post.data.pubDate.toISOString()}>
+                    {post.data.pubDate.toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </time>
+                  <h2>{post.data.title}</h2>
+                  <p>{post.data.description}</p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </main>
+</SiteLayout>

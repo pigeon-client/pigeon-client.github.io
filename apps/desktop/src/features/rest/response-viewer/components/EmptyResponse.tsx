@@ -13,6 +13,7 @@ export function EmptyResponse() {
       data-testid="response-empty"
       style={{
         flex: 1,
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

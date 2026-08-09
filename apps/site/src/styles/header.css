@@ -1,32 +1,33 @@
-/* ===== First screen: header + hero = full viewport ===== */
+/* ===== Nav — same chrome on every page ===== */
+header.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  flex: none;
+  background: rgba(8, 8, 10, 0.85);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+header.nav .wrap {
+  max-width: none;
+  width: 100%;
+  padding-left: clamp(16px, 3vw, 40px);
+  padding-right: clamp(16px, 3vw, 40px);
+}
+
+/* ===== First screen: hero fills viewport below shared header ===== */
 .hero-screen {
   width: 100%;
   max-width: 100%;
-  min-height: 100vh;
-  height: 100dvh;
+  min-height: calc(100vh - 62px);
+  min-height: calc(100dvh - 62px);
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
 }
 
-/* ===== Nav ===== */
-header.nav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  flex: none;
-  background: rgba(10, 10, 11, 0.85);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border-soft);
-}
-.hero-screen header.nav {
-  position: sticky;
-  top: 0;
-  background: rgba(8, 8, 10, 0.72);
-  backdrop-filter: blur(14px);
-  border-bottom-color: transparent;
-}
 .hero-screen .wrap {
   max-width: none;
   width: 100%;

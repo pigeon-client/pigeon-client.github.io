@@ -5,24 +5,32 @@
   "type": "module",
   "scripts": {
     "sync:install": "mkdir -p public && cp ../../scripts/install.sh public/install.sh",
-    "dev": "pnpm sync:install && vite",
-    "build": "pnpm sync:install && tsc && vite build",
-    "preview": "vite preview"
+    "sync:release-public": "node scripts/sync-release-public.mjs",
+    "dev": "pnpm sync:install && pnpm sync:release-public && astro dev",
+    "build": "pnpm sync:install && pnpm sync:release-public && astro build",
+    "preview": "astro preview",
+    "preview:worker": "pnpm build && node scripts/sync-r2.mjs --local && wrangler dev",
+    "sync:r2": "node scripts/sync-r2.mjs",
+    "sync:r2:local": "node scripts/sync-r2.mjs --local",
+    "deploy": "pnpm build && pnpm sync:r2 && wrangler deploy",
+    "check": "astro check"
   },
   "dependencies": {
+    "@astrojs/react": "^6.0.2",
+    "@astrojs/sitemap": "^3.7.3",
     "@pigeon/brand": "workspace:*",
     "@pigeon/ui": "workspace:*",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.0",
+    "@astrojs/check": "^0.9.10",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.6.0",
-    "autoprefixer": "^10.5.0",
     "tailwindcss": "^4.3.0",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4"
+    "wrangler": "^4.120.0"
   }
 }

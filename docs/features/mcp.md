@@ -1,5 +1,9 @@
 # MCP Bench
 
+> **UI status (current):** header / `⌘⇧M` opens a **coming-soon** pane
+> (`ComingSoonWorkspace`, testid `mcp-coming-soon`). The MCP bench implementation under
+> `src/features/mcp` is retained for when this ships; docs below describe that target UX.
+
 ## Overview
 
 A deliberately tiny MCP (Model Context Protocol) client: connect to a server over Streamable
@@ -24,7 +28,7 @@ just enough to poke at an MCP server's tools during development, nothing more.
    `header-open-mcp`) or `⌘⇧M` — a separate, singleton **OS window** (label `"mcp"`,
    `open_workspace_window` in `src-tauri/src/windows.rs` — re-triggering focuses the existing window
    instead of opening a duplicate). That window keeps its own multi-tab strip, but every tab in
-   it is MCP-kind (`Tab.kind === "mcp"`) — REST and GraphQL each get their own window the same
+   it is MCP-kind (`Tab.kind === "mcp"`) — REST gets its own window the same
    way (see `docs/features/sidebar.md` and the "Workspace windows" note below).
    **Browser/E2E build**: no OS windows exist, so the same button/shortcut instead opens an
    in-page MCP tab in the single combined window (`openKindTab("mcp")`, singleton within that
@@ -212,8 +216,8 @@ kind itself is resolved once via `src/shared/lib/windowKind.ts`.
 
 ## Open risks
 
-- **Resolved (2026-07-29):** MCP is now a real tab-store tab (`Tab.kind = "http" | "mcp" |
-  "graphql"`, `openKindTab` singleton-focus) — the earlier modal compromise is gone.
+- **Resolved (2026-07-29):** MCP is now a real tab-store tab (`Tab.kind = "http" | "mcp"`,
+  `openKindTab` singleton-focus) — the earlier modal compromise is gone.
 - **Resolved (2026-07-31):** MCP now opens as its own singleton OS window in the desktop app
   (`open_workspace_window`), with its own multi-tab strip — multiple concurrent MCP connections
   work today (one tab per connection, per-tab state in `features/mcp/store.ts`). Browser/E2E build

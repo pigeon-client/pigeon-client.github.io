@@ -1,33 +1,23 @@
 # GraphQL (coming soon)
 
-## Overview
+Placeholder workspace tab for the future GraphQL bench. Opened via the header `Braces` icon
+(`header-open-graphql`) or `⌘⇧G`; a singleton tab (`Tab.kind === "graphql"`, `GQL` badge)
+rendering `ComingSoonWorkspace` — no URL bar, editor, or response panel.
 
-A placeholder workspace tab for the future GraphQL bench. Opened via the header `Braces` icon
-(`header-open-graphql`) or `⌘⇧G`; a singleton tab (`Tab.kind === "graphql"`, `GQL` badge in the
-tab strip) rendering `GraphqlComingSoon` — no URL bar, editor, or response panel.
-
-## Current behavior
+## Acceptance criteria
 
 - Header button / `⌘⇧G` opens (or focuses) the single GraphQL tab.
-- Pane copy explains the roadmap: query editor with schema introspection, variables, response
-  inspection — and points at the workaround (HTTP request with an `application/graphql` body,
-  which the request builder already supports via content types).
-- Closing the tab behaves like any other tab.
-
-## Planned scope (roadmap)
-
-Query/variables split editor, schema introspection + autocomplete, operation picker, and response
-inspection reusing the response-viewer. Target `RequestModel` for import/export parity.
+- Pane shows "coming soon" copy (`graphql-coming-soon`).
+- Until the bench ships, GraphQL over HTTP still works via `application/graphql` body types
+  (see [content-types.md](./content-types.md)).
 
 ## Test ids
 
 `header-open-graphql`, `graphql-coming-soon`.
 
-## Key files
+## Code
 
-`src/features/graphql/components/GraphqlComingSoon.tsx`, tab-kind plumbing in
-`src/features/rest/request-builder/store.ts` (`TabKind`, `openKindTab`) and `src/app/AppContent.tsx`.
-
-## Automation coverage
+`src/features/workspaces/components/ComingSoonWorkspace.tsx`, tab-kind plumbing in
+`request-builder/store.ts` + `AppContent.tsx`.
 
 Playwright: `e2e/find-and-kind-tabs.spec.ts` ("GraphQL tab shows the coming-soon pane").

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://trypigeon.dev/sitemap-index.xml

@@ -1,2 +1,7 @@
-package-lock.json
+.astro
+dist
+.wrangler
 public/install.sh
+public/release.json
+public/latest.json
+package-lock.json

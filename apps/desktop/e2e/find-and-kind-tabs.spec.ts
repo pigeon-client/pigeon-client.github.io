@@ -149,12 +149,9 @@ test.describe("header icon-button tooltips", () => {
   }) => {
     await openApp(page);
     const mcpButton = page.getByTestId("header-open-mcp");
-    // The native title attribute is gone — tooltip text lives only in the themed popup.
     await expect(mcpButton).not.toHaveAttribute("title");
     await mcpButton.hover();
-    await expect(page.getByRole("tooltip", { name: "MCP bench (⌘⇧M)" })).toBeVisible();
-    // Moving the real mouse elsewhere fires mouseout/mouseleave (React listens at the
-    // root via mouseout, so a synthetic dispatchEvent("mouseleave") wouldn't be seen).
+    await expect(page.getByRole("tooltip", { name: "MCP — coming soon (⌘⇧M)" })).toBeVisible();
     await page.mouse.move(10, 400);
     await expect(page.getByRole("tooltip")).toHaveCount(0);
 
@@ -168,30 +165,30 @@ test.describe("header icon-button tooltips", () => {
   test("keyboard focus also shows the tooltip (accessible, not hover-only)", async ({ page }) => {
     await openApp(page);
     await page.getByTestId("header-open-mcp").focus();
-    await expect(page.getByRole("tooltip", { name: "MCP bench (⌘⇧M)" })).toBeVisible();
+    await expect(page.getByRole("tooltip", { name: "MCP — coming soon (⌘⇧M)" })).toBeVisible();
   });
 });
 
-test.describe("workspace tab kinds", () => {
-  test("MCP opens as a singleton workspace tab, not a modal", async ({ page }) => {
+test.describe("workspace coming-soon pages", () => {
+  test("MCP opens in-place — no new tab, no sidebar", async ({ page }) => {
     await openApp(page);
+    const tabsBefore = await page.getByRole("tab").count();
     await page.getByTestId("header-open-mcp").click();
-    await expect(page.getByTestId("mcp-panel")).toBeVisible();
-    // No URL bar in an MCP tab.
+    await expect(page.getByTestId("mcp-coming-soon")).toBeVisible();
     await expect(page.locator('[data-testid="url-input"]:visible')).toHaveCount(0);
-    await expect(page.getByRole("tab", { name: /MCP/ })).toBeVisible();
+    await expect(page.getByRole("tab")).toHaveCount(0);
+    await expect(page.getByTestId("header-open-mcp")).toHaveAttribute("data-state", "active");
 
-    // Second click focuses the existing tab instead of opening another.
-    await page.getByRole("tab", { name: /Untitled Request/ }).click();
-    await page.getByTestId("header-open-mcp").click();
-    await expect(page.getByRole("tab", { name: /MCP/ })).toHaveCount(1);
+    await page.getByTestId("header-open-rest").click();
+    await expect(page.getByRole("tab")).toHaveCount(tabsBefore);
   });
 
-  test("GraphQL tab shows the coming-soon pane (⌘⇧G)", async ({ page }) => {
+  test("GraphQL opens in-place via ⌘⇧G — no new tab", async ({ page }) => {
     await openApp(page);
     await page.keyboard.press("ControlOrMeta+Shift+g");
     await expect(page.getByTestId("graphql-coming-soon")).toBeVisible();
     await expect(page.getByTestId("graphql-coming-soon")).toContainText("coming soon");
+    await expect(page.getByRole("tab")).toHaveCount(0);
     await expect(page.locator('[data-testid="url-input"]:visible')).toHaveCount(0);
   });
 });

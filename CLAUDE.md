@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Tech Stack
 
-- **Frontend**: React 19 + TypeScript 5.8 + TailwindCSS 4 + Vite 7 (both `apps/desktop` and `apps/site`)
+- **Frontend**: React 19 + TypeScript 5.8 + TailwindCSS 4 + Vite 7 (`apps/desktop`); marketing site is Astro 7 + React islands (`apps/site`)
 - **UI**: `@pigeon/ui` (workspace package — tokens.css + cn + button/badge/switch/tabs/Tooltip,
   shared by both apps) + app-local primitives in `src/shared/ui` (desktop) for composites that stay
   desktop-only (`Modal`, `FindBar`, `KeyValueEditor`, `TreeRow`, `EmptyState`, `ConfirmModal`,
@@ -78,18 +78,20 @@ make lint             # pnpm lint (Biome, repo-wide)
 make format           # pnpm check:write
 make ci-check         # pnpm ci:check
 make test             # pnpm test        make e2e     # pnpm e2e
-make dev-site         # site dev         make build-site / preview-site
+make dev-site         # site dev         make build-site / preview-site / preview-site-worker / deploy-site
 make deps             # pnpm install --frozen-lockfile
 make clean            # Remove apps/*/dist, apps/desktop/src-tauri/target, node_modules
 make open             # Open built DMG folder (apps/desktop/…/bundle/dmg)
 ```
 
-### Marketing site (`apps/site`)
+### Marketing site (`apps/site` → Cloudflare R2 + Worker / `trypigeon.dev`)
 ```bash
 pnpm install                     # Root workspace install (covers both apps)
-pnpm build:site                  # Build the site (tsc + Vite)
-pnpm preview:site                # Preview at localhost:4173
-# or from the package: pnpm --filter pigeon-site <script>
+pnpm build:site                  # Astro static build → apps/site/dist
+pnpm preview:site                # Astro local preview
+pnpm preview:site:worker         # Wrangler dev (local R2 + Worker)
+pnpm deploy:site                 # Build → R2 sync → wrangler deploy (needs Cloudflare auth)
+# or: make dev-site / build-site / preview-site / preview-site-worker / deploy-site
 ```
 
 ### Release
@@ -132,7 +134,8 @@ delegate to the members via `--filter`, so `pnpm dev`, `pnpm build`, `pnpm tauri
   `e2e/`, and all its build config (`vite`, `vitest`, `playwright`, `tsconfig`, `postcss`,
   `scripts/copy-wasm.js` + `version-bump.js`). Tauri is invoked here (release CI passes
   `projectPath: apps/desktop`).
-- **`apps/site/`** — the marketing site (package `pigeon-site`), a pnpm workspace member. Consumes
+- **`apps/site/`** — marketing site (package `pigeon-site`), Astro + React islands. Hosted at
+  `https://trypigeon.dev` on Cloudflare R2 + Worker (`wrangler.jsonc`, bucket `trypigeon-site`). Consumes
   `@pigeon/ui` + `@pigeon/brand`.
 - **`packages/ui/`** — `@pigeon/ui`, source-only (no build step — both apps' bundlers compile it
   from TS/CSS source directly, standard for a pnpm-workspace + Vite setup). `src/styles/tokens.css`
@@ -179,7 +182,7 @@ presentational pieces (`TreeRow`, `EmptyState`, `ConfirmModal`) in `shared/ui/`.
   `response-viewer`, `collections`, `history`, `import-export`) — each is a full standalone feature
   with its own barrel at `src/features/rest/<name>/index.ts`; `rest/` itself is a grouping
   directory, not a feature (no `index.ts` of its own).
-- `src/features/{mcp,graphql,environments,settings,command-palette}/` are top-level features.
+- `src/features/{mcp,workspaces,environments,settings,command-palette}/` are top-level features.
 - `src/core/http/` — pure send/transport (was `features/execution`): `ports/HttpClient.ts`,
   `services/{Tauri,Browser}HttpClient.ts`, `services/requestService.ts` (`sendRequest`,
   `resolveRequest`), SSE (`lib/sse.ts`, `services/sseClient.ts`, `services/activeStreams.ts`). Core
@@ -306,6 +309,8 @@ reads those keys directly when sending requests — settings and the send path a
 ### Update System
 
 Tauri updater is wired with `@tauri-apps/plugin-updater` and `@tauri-apps/plugin-process`.
+`plugins.updater.endpoints` in `tauri.conf.json` points at `https://trypigeon.dev/latest.json`
+(mirrored from the GitHub Release asset on each `deploy-site.yml` run).
 `src/features/settings/lib/updater.ts` owns update models and actions:
 - `UpdateVersionModel`
 - `UpdateCheckResult`
@@ -345,13 +350,14 @@ site-only.
 - **Save request shortcut**: `Cmd+Shift+S` / `Ctrl+Shift+S` opens `SaveToCollectionModal` for the
   active request when it has a URL.
 - **Shortcut scheme**: every app-global chord is `Cmd+Shift+<key>` (`⇧N` new tab, `⇧W` close,
-  `⇧K` palette, `⇧E` envs, `⇧R` REST workspace, `⇧M` MCP, `⇧G` GraphQL, `⇧,` settings, `⇧/`
-  shortcuts, `⇧1–9` tabs). Two exceptions: `Cmd+Enter` sends, and plain `Cmd+F` is contextual
-  find — the body editor and response panel intercept it for an in-panel `FindBar`
+  `⇧K` palette, `⇧E` envs, `⇧R` REST workspace, `⇧M` MCP (coming soon), `⇧G` GraphQL (coming soon),
+  `⇧,` settings, `⇧/` shortcuts, `⇧1–9` tabs). Two exceptions: `Cmd+Enter` sends, and plain `Cmd+F`
+  is contextual find — the body editor and response panel intercept it for an in-panel `FindBar`
   (`shared/ui/FindBar.tsx` + `shared/lib/textFind.ts`); anywhere else it focuses the header
   search. Handlers match on `e.code` (Shift changes `e.key`).
-- **Tab kinds**: `Tab.kind = "http" | "mcp" | "graphql"` in the tab store. Non-http tabs render
-  full-pane with no URL bar and show a kind badge (`MCP` / `GQL`) in the tab strip.
+- **Tab kinds**: `Tab.kind = "http" | "mcp" | "graphql"` in the tab store. Non-http tabs currently
+  render the shared `ComingSoonWorkspace` pane (no URL bar) with a kind badge (`MCP` / `GQL`).
+  Real MCP/GraphQL benches land later; MCP feature code under `features/mcp` is retained.
 - **Workspace windows (desktop app only)**: REST/MCP/GraphQL each open as a separate singleton
   OS window (`open_workspace_window` in `src-tauri/src/windows.rs` — focuses the existing window for
   that kind rather than duplicating it; REST is always the app's default `"main"` window). Each
@@ -359,28 +365,31 @@ site-only.
   naturally isolated per window with no extra plumbing — `src/shared/lib/windowKind.ts` resolves
   which kind a given window is (by its Tauri window label) and is what makes the tab store default
   to the right kind (`addTab()`'s default, and the "tabs emptied" fallback) in each one. The
-  sidebar is swapped per the *active tab's* kind, not the window's, in `AppContent.tsx` (`Sidebar`
-  for http/graphql, `McpSidebar` for mcp) — see `docs/features/sidebar.md`/`mcp.md`. The plain
-  browser/E2E build has no OS windows at all and keeps the original single-page, mixed-kind-tabs
-  experience (`openKindTab` singleton-within-the-page); `windowKind.ts` always resolves `"rest"`
-  there, and `AppContent.tsx`'s `openWorkspace()` helper branches on `isTauri()` to pick between
-  `invoke("open_workspace_window", ...)` and the legacy `openKindTab()`.
+  sidebar stays the REST `Sidebar` while MCP/GraphQL are coming-soon — see `docs/features/sidebar.md`.
+  The plain browser/E2E build has no OS windows at all and keeps the original single-page,
+  mixed-kind-tabs experience (`openKindTab` singleton-within-the-page); `windowKind.ts` always
+  resolves `"rest"` there, and `AppContent.tsx`'s `openWorkspace()` helper branches on `isTauri()`
+  to pick between `invoke("open_workspace_window", ...)` and the legacy `openKindTab()`.
 - **Modal keyboard behaviour**: Shared `Modal` only closes on backdrop keyboard events when the
   backdrop itself is focused. Space inside inputs/selects must not close modals.
 
 ### Marketing Site (`apps/site/`)
 
-A separate React app (package `pigeon-site`, workspace member — not part of the Tauri build). It
-reads `apps/site/src/release.json`, fetched from the GitHub API **at build time** by
+Astro site (package `pigeon-site`, workspace member — not part of the Tauri build) with React
+islands for interactive demos. Blog posts live in `src/content/blog/*.md` (Astro content
+collections). Canonical URL / sitemap site is `https://trypigeon.dev` (`astro.config.mjs`).
+Deploy target is **Cloudflare R2 + Worker** via Wrangler (`apps/site/wrangler.jsonc`, worker
+name `trypigeon`, R2 bucket `trypigeon-site`). Astro `dist/` uploads to R2 on deploy; the Worker
+serves objects. Custom domain is attached in the Cloudflare dashboard (not a GitHub Pages
+`CNAME`).
+
+It reads `apps/site/src/release.json`, fetched from the GitHub API **at build time** by
 `deploy-site.yml` — not at runtime. The repo ships a stub `release.json` with empty `assets: []` as
 the fallback. `parseRelease()` in `apps/site/src/lib/github.ts` handles missing/empty fields
 defensively.
 
-`apps/site/postcss.config.js` must exist (mirrors `apps/desktop`'s: `@tailwindcss/postcss` +
-`autoprefixer`) to stop Vite walking up to `apps/desktop/postcss.config.js` and to load Tailwind 4
-for the site's own `@import "tailwindcss/theme.css" layer(theme); @import "tailwindcss/utilities.css"
-layer(utilities);` (deliberately not the full `@import "tailwindcss"` — that would pull in
-Preflight, which would reset headings/buttons/lists the site currently leaves at browser defaults).
+Tailwind 4 is wired via `@tailwindcss/vite` in `astro.config.mjs`. Global CSS still imports
+theme + utilities only (no Preflight) plus site-local dark tokens — same split as before.
 
 ## CI/CD Pipelines
 
@@ -398,18 +407,24 @@ would not trigger `release.yml`.
 
 ### `release.yml` — `v*` tag push
 1. Creates a draft GitHub release
-2. Builds Tauri for 4 targets in parallel (macOS Intel, macOS ARM, Linux, Windows) — `tauri-action` with `projectPath: apps/desktop`
+2. Builds Tauri for **macOS only** today (Apple Silicon + Intel `.dmg`). Windows/Linux matrix
+   rows in `release.yml` are commented out until those platforms ship.
 3. Publishes draft → public once all builds pass, then dispatches `deploy-site.yml` on `main`
    (via `RELEASE_TOKEN`) to refresh the site's download links
 
 Required secrets: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, `RELEASE_TOKEN`.
-The site deploy is dispatched on `main` (not a `release` event) because the `github-pages`
-environment blocks deploys from a tag ref.
+Site refresh is dispatched on `main` after publish so `release.json` / install copy stay current.
 
 ### `deploy-site.yml` — push to `main` (`apps/site/**`) **or** dispatched by `release.yml`
 1. Fetches latest release JSON from GitHub API into `apps/site/src/release.json` (uses `curl -o` — only writes on success, leaving the stub intact on 404)
-2. `pnpm install --frozen-lockfile` + `pnpm --filter pigeon-site build`
-3. Deploys `apps/site/dist` to GitHub Pages (`https://pigeon-client.github.io`)
+2. `pnpm install --frozen-lockfile` + `pnpm --filter pigeon-site build` (Astro → `apps/site/dist`)
+3. Fetches `release.json` + Tauri `latest.json` into `public/` (served at `/release.json`, `/latest.json`)
+4. Creates R2 bucket `trypigeon-site` if missing, uploads `dist/` to R2, deploys Worker with Wrangler
+
+Required site secrets: **`CLOUDFLARE_API_TOKEN`**, **`CLOUDFLARE_ACCOUNT_ID`**.
+Attach custom domain `trypigeon.dev` in Cloudflare → Workers → `trypigeon` → Custom Domains
+(DNS can live on Cloudflare or external with the records Cloudflare shows).
+Disable Cloudflare Auto Minify for the zone if React islands show hydration mismatch warnings.
 
 The download buttons come from the release assets automatically — `parseRelease()` in
 `apps/site/src/lib/github.ts` maps each asset's `browser_download_url` to the right platform button, so a

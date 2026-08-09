@@ -64,7 +64,7 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
   };
 
   return (
-    <aside className="flex w-full min-w-0 flex-col border-r border-border bg-sidebar text-sidebar-foreground min-h-0">
+    <aside className="flex w-full min-w-0 flex-col bg-sidebar text-sidebar-foreground min-h-0">
       {/* New Request + Import */}
       <div className="flex flex-shrink-0 gap-2 px-2.5 pt-3 pb-1.5">
         <Button

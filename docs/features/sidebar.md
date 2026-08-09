@@ -8,11 +8,11 @@ Search lives in the **header** (`⌘F`) and filters the active sidebar pane. Imp
 *all* panes at once, see `⌘⇧K` — [command-palette.md](./command-palette.md).
 
 **Kind-aware since 2026-07-31**: this document covers the REST sidebar specifically. `AppContent.tsx`
-swaps the whole sidebar slot based on the active tab's kind — `Sidebar` (this doc) for `"http"`/
-`"graphql"` tabs, `McpSidebar` (see [mcp.md](./mcp.md)) for `"mcp"` tabs. In the desktop app each
+swaps the whole sidebar slot based on the active tab's kind — `Sidebar` (this doc) for `"http"`
+tabs, `McpSidebar` (see [mcp.md](./mcp.md)) for `"mcp"` tabs. In the desktop app each
 kind is also its own singleton OS window (`open_workspace_window`), so in practice a REST window's
 sidebar is always this one and an MCP window's is always `McpSidebar` — the active-tab check is
-what makes it also work correctly in the browser/E2E build, where all kinds share one window.
+what makes it also work correctly in the browser/E2E build, where both kinds share one window.
 
 ## Problem / job to be done
 

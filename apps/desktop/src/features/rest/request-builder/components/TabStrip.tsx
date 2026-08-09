@@ -1,3 +1,14 @@
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { METHOD_COLORS } from "@pigeon/ui";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -239,11 +250,75 @@ function TabContextMenu({ menu, onClose }: { menu: TabCtxMenu; onClose: () => vo
   );
 }
 
+interface SortableTabProps {
+  tabId: string;
+  active: boolean;
+  dragOver: boolean;
+  children: React.ReactNode;
+  onClick: React.MouseEventHandler<HTMLDivElement>;
+  onKeyDown: React.KeyboardEventHandler<HTMLDivElement>;
+  onMouseDown: React.MouseEventHandler<HTMLDivElement>;
+  onContextMenu: React.MouseEventHandler<HTMLDivElement>;
+}
+
+function SortableTab({
+  tabId,
+  active,
+  dragOver,
+  children,
+  onClick,
+  onKeyDown,
+  onMouseDown,
+  onContextMenu,
+}: SortableTabProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: tabId,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      role="tab"
+      tabIndex={0}
+      aria-selected={active}
+      data-workspace-tab-id={tabId}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+      onMouseDown={onMouseDown}
+      onContextMenu={onContextMenu}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flexShrink: 0,
+        minWidth: 124,
+        maxWidth: 210,
+        height: 38,
+        padding: "0 8px 0 13px",
+        borderRight: "1px solid var(--border)",
+        cursor: isDragging ? "grabbing" : "grab",
+        background: active ? "var(--bg-base)" : "transparent",
+        opacity: isDragging ? 0.5 : 1,
+        borderLeft: dragOver ? "2px solid var(--primary)" : undefined,
+        transform: CSS.Transform.toString(transform),
+        transition: transition ?? "background 0.1s",
+        touchAction: "none",
+      }}
+      className={!active ? "hover:bg-accent" : ""}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function TabStrip() {
   const tabs = useTabStore((s) => s.tabs);
   const activeTabId = useTabStore((s) => s.activeTabId);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const closeTab = useTabStore((s) => s.closeTab);
+  const reorderTabs = useTabStore((s) => s.reorderTabs);
   const addTab = useTabStore((s) => s.addTab);
   const setTabName = useTabStore((s) => s.setTabName);
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
@@ -252,6 +327,16 @@ export function TabStrip() {
   const [editValue, setEditValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [ctxMenu, setCtxMenu] = useState<TabCtxMenu | null>(null);
+  const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const tabStripRef = useRef<HTMLDivElement>(null);
+  const previousTabIdsRef = useRef<string[] | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
 
   const startRename = (tab: { id: string; name: string }) => {
     setEditingId(tab.id);
@@ -274,6 +359,74 @@ export function TabStrip() {
     setEditingId(null);
   };
 
+  const clearDragState = () => {
+    setDragOverTabId(null);
+  };
+
+  const handleDragStart = () => {
+    setDragOverTabId(null);
+  };
+
+  const handleDragOver = ({ over }: DragOverEvent) => {
+    setDragOverTabId(over ? String(over.id) : null);
+  };
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (over && active.id !== over.id) {
+      reorderTabs(String(active.id), String(over.id));
+    }
+    clearDragState();
+  };
+
+  useEffect(() => {
+    const strip = tabStripRef.current;
+    if (!strip) return;
+
+    const updateScrollButtons = () => {
+      const maxScrollLeft = strip.scrollWidth - strip.clientWidth;
+      setCanScrollLeft(strip.scrollLeft > 1);
+      setCanScrollRight(maxScrollLeft - strip.scrollLeft > 1);
+    };
+
+    updateScrollButtons();
+    strip.addEventListener("scroll", updateScrollButtons, { passive: true });
+    const observer = new ResizeObserver(updateScrollButtons);
+    observer.observe(strip);
+    return () => {
+      strip.removeEventListener("scroll", updateScrollButtons);
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const previousTabIds = previousTabIdsRef.current;
+    const currentTabIds = tabs.map((tab) => tab.id);
+    previousTabIdsRef.current = currentTabIds;
+    if (!previousTabIds) return;
+
+    const newTabId = currentTabIds.find((id) => !previousTabIds.includes(id));
+    if (!newTabId) return;
+
+    const frame = requestAnimationFrame(() => {
+      const newTab = Array.from(
+        tabStripRef.current?.querySelectorAll<HTMLElement>("[data-workspace-tab-id]") ?? [],
+      ).find((tab) => tab.dataset.workspaceTabId === newTabId);
+      if (!newTab) return;
+      newTab.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+      newTab.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [tabs]);
+
+  const scrollTabs = (direction: -1 | 1) => {
+    const strip = tabStripRef.current;
+    if (!strip) return;
+    strip.scrollTo({
+      left: direction < 0 ? 0 : strip.scrollWidth,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <div
       style={{
@@ -282,208 +435,271 @@ export function TabStrip() {
         alignItems: "stretch",
         height: 38,
         background: "var(--bg-surface)",
-        borderBottom: "1px solid var(--border)",
-        overflowX: "auto",
-        overflowY: "hidden",
       }}
+      className="pg-tab-strip-shell border-b border-border"
     >
-      {tabs.map((tab) => {
-        const active = tab.id === activeTabId;
-        const isEditing = editingId === tab.id;
-        // Non-http tabs show a kind badge where the method usually sits.
-        const badge =
-          tab.kind === "mcp" ? "MCP" : tab.kind === "graphql" ? "GQL" : tab.request.method;
-        const mc =
-          tab.kind === "http"
-            ? (METHOD_COLORS[tab.request.method] ?? METHOD_COLORS.GET)
-            : "var(--primary)";
-        return (
-          <div
-            key={tab.id}
-            role="tab"
-            tabIndex={0}
-            aria-selected={active}
-            onClick={() => setActiveTab(tab.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setActiveTab(tab.id);
-              }
+      {(canScrollLeft || canScrollRight) && (
+        <button
+          type="button"
+          aria-label="Scroll tabs left"
+          aria-disabled={!canScrollLeft}
+          title="Scroll tabs left"
+          onClick={() => scrollTabs(-1)}
+          className="pg-tab-scroll-button order-first"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+      )}
+
+      <div
+        ref={tabStripRef}
+        role="tablist"
+        aria-label="Workspace tabs"
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          alignItems: "stretch",
+          overflowX: "scroll",
+          overflowY: "hidden",
+        }}
+        className="pg-tab-strip"
+      >
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={clearDragState}
+        >
+          <SortableContext
+            items={tabs.map((tab) => tab.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            {tabs.map((tab) => {
+              const active = tab.id === activeTabId;
+              const isEditing = editingId === tab.id;
+              // Non-http tabs show a kind badge where the method usually sits.
+              const badge =
+                tab.kind === "mcp" ? "MCP" : tab.kind === "graphql" ? "GQL" : tab.request.method;
+              const mc =
+                tab.kind === "http"
+                  ? (METHOD_COLORS[tab.request.method] ?? METHOD_COLORS.GET)
+                  : "var(--primary)";
+              return (
+                <SortableTab
+                  key={tab.id}
+                  tabId={tab.id}
+                  active={active}
+                  dragOver={dragOverTabId === tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setActiveTab(tab.id);
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    if (e.button === 1) closeTab(tab.id);
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setCtxMenu({ tabId: tab.id, x: e.clientX, y: e.clientY });
+                  }}
+                >
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "var(--text-2xs)",
+                      fontWeight: 700,
+                      letterSpacing: "0.03em",
+                      color: mc,
+                    }}
+                  >
+                    {badge}
+                  </span>
+
+                  {isEditing ? (
+                    <input
+                      ref={renameInputRef}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={() => commitRename(tab.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          commitRename(tab.id);
+                        }
+                        if (e.key === "Escape") {
+                          e.preventDefault();
+                          setEditingId(null);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-xs)",
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        background: "var(--bg-input)",
+                        border: "1px solid var(--accent)",
+                        borderRadius: "var(--radius)",
+                        outline: "none",
+                        padding: "1px 5px",
+                        height: 22,
+                      }}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        startRename(tab);
+                      }}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-xs)",
+                        fontWeight: active ? 600 : 500,
+                        color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        background: "none",
+                        border: "none",
+                        cursor: "inherit",
+                        padding: 0,
+                        textAlign: "left",
+                      }}
+                    >
+                      {tab.name}
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    aria-label="Close tab"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeTab(tab.id);
+                    }}
+                    style={{
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 18,
+                      height: 18,
+                      borderRadius: "var(--radius)",
+                      color: "var(--text-secondary)",
+                      cursor: "pointer",
+                    }}
+                    className="hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </SortableTab>
+              );
+            })}
+          </SortableContext>
+
+          {/* New tab button */}
+          <button
+            type="button"
+            onClick={() => {
+              const id = addTab();
+              setActiveTab(id);
             }}
-            onMouseDown={(e) => {
-              if (e.button === 1) closeTab(tab.id);
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setCtxMenu({ tabId: tab.id, x: e.clientX, y: e.clientY });
-            }}
+            title="New request"
             style={{
+              flexShrink: 0,
+              width: 40,
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              flexShrink: 0,
-              minWidth: 124,
-              maxWidth: 210,
-              height: 38,
-              padding: "0 8px 0 13px",
+              justifyContent: "center",
+              background: "transparent",
+              border: "none",
               borderRight: "1px solid var(--border)",
+              color: "var(--text-secondary)",
               cursor: "pointer",
-              background: active ? "var(--bg-base)" : "transparent",
-              transition: "background 0.1s",
+              fontFamily: "inherit",
             }}
-            className={!active ? "hover:bg-accent" : ""}
+            className="hover:text-[var(--text-primary)] hover:bg-accent"
           >
-            <span
-              style={{
-                flexShrink: 0,
-                fontFamily: "var(--font-mono)",
-                fontSize: "var(--text-2xs)",
-                fontWeight: 700,
-                letterSpacing: "0.03em",
-                color: mc,
-              }}
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
             >
-              {badge}
-            </span>
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        </DndContext>
+      </div>
 
-            {isEditing ? (
-              <input
-                ref={renameInputRef}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onBlur={() => commitRename(tab.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    commitRename(tab.id);
-                  }
-                  if (e.key === "Escape") {
-                    e.preventDefault();
-                    setEditingId(null);
-                  }
-                }}
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "var(--text-xs)",
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                  background: "var(--bg-input)",
-                  border: "1px solid var(--accent)",
-                  borderRadius: "var(--radius)",
-                  outline: "none",
-                  padding: "1px 5px",
-                  height: 22,
-                }}
-              />
-            ) : (
-              <button
-                type="button"
-                onDoubleClick={(e) => {
-                  e.stopPropagation();
-                  startRename(tab);
-                }}
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "var(--text-xs)",
-                  fontWeight: active ? 600 : 500,
-                  color: active ? "var(--text-primary)" : "var(--text-secondary)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  background: "none",
-                  border: "none",
-                  cursor: "inherit",
-                  padding: 0,
-                  textAlign: "left",
-                }}
-              >
-                {tab.name}
-              </button>
-            )}
-
-            <button
-              type="button"
-              aria-label="Close tab"
-              onClick={(e) => {
-                e.stopPropagation();
-                closeTab(tab.id);
-              }}
-              style={{
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 18,
-                height: 18,
-                borderRadius: "var(--radius)",
-                color: "var(--text-secondary)",
-                cursor: "pointer",
-              }}
-              className="hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-        );
-      })}
-
-      {/* New tab button */}
-      <button
-        type="button"
-        onClick={() => {
-          const id = addTab();
-          setActiveTab(id);
-        }}
-        title="New request"
-        style={{
-          flexShrink: 0,
-          width: 40,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "transparent",
-          border: "none",
-          borderRight: "1px solid var(--border)",
-          color: "var(--text-secondary)",
-          cursor: "pointer",
-          fontFamily: "inherit",
-        }}
-        className="hover:text-[var(--text-primary)] hover:bg-accent"
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
+      {(canScrollLeft || canScrollRight) && (
+        <button
+          type="button"
+          aria-label="Scroll tabs right"
+          aria-disabled={!canScrollRight}
+          title="Scroll tabs right"
+          onClick={() => scrollTabs(1)}
+          className="pg-tab-scroll-button"
         >
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-      </button>
-      <div style={{ flex: 1 }} />
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+      )}
 
       {ctxMenu && <TabContextMenu menu={ctxMenu} onClose={() => setCtxMenu(null)} />}
     </div>

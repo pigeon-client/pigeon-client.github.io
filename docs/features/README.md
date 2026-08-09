@@ -20,8 +20,8 @@ updating these docs when behavior changes — the `feature-qa` Claude Code agent
 | [settings.md](./settings.md) | Theme, request options, updates | `src/features/settings` |
 | [sidebar.md](./sidebar.md) | Left nav shell | `src/app/layout/Sidebar.tsx` |
 | [command-palette.md](./command-palette.md) | `⌘⇧K` global search across history/drafts/collections | `src/features/command-palette` |
-| [mcp.md](./mcp.md) | Minimal MCP client — workspace tab (⌘⇧M): connect, list tools, call, inspect | `src/features/mcp` |
-| [graphql.md](./graphql.md) | GraphQL workspace tab (⌘⇧G) — coming-soon placeholder | `src/features/graphql` |
+| [graphql.md](./graphql.md) | GraphQL workspace tab (⌘⇧G) — coming-soon placeholder | `src/features/workspaces` |
+| [mcp.md](./mcp.md) | MCP workspace tab (⌘⇧M) — coming-soon placeholder (bench code retained) | `src/features/mcp` + `workspaces` |
 
 ## Doc shape (required sections)
 

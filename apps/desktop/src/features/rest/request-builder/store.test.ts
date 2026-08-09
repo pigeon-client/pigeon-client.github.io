@@ -121,3 +121,19 @@ describe("duplicateTab", () => {
     expect(useTabStore.getState().duplicateTab("missing")).toBeNull();
   });
 });
+
+describe("reorderTabs", () => {
+  it("moves a tab before drop target and preserves active tab", () => {
+    const s = useTabStore.getState();
+    const first = s.tabs[0].id;
+    const second = s.addTab();
+    const third = s.addTab();
+    s.setActiveTab(second);
+
+    s.reorderTabs(third, first);
+
+    const state = useTabStore.getState();
+    expect(state.tabs.map((tab) => tab.id)).toEqual([third, first, second]);
+    expect(state.activeTabId).toBe(second);
+  });
+});

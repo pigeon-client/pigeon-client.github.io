@@ -339,15 +339,7 @@ function ResponseContent({
 }
 
 /* ── Main ResponsePanel ── */
-export function ResponsePanel({
-  tabId,
-  onResizeStart,
-  onResizeReset,
-}: {
-  tabId: string;
-  onResizeStart?: (e: React.MouseEvent) => void;
-  onResizeReset?: () => void;
-}) {
+export function ResponsePanel({ tabId }: { tabId: string }) {
   const tabs = useTabStore((s) => s.tabs);
   const tab = tabs.find((t) => t.id === tabId);
   const response = tab?.response ?? null;
@@ -402,23 +394,7 @@ export function ResponsePanel({
   const codeLanguage = highlightLanguageFor(response?.contentType ?? "");
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col" style={{ overflow: "hidden" }}>
-      <button
-        type="button"
-        aria-label="Resize request and response panels"
-        data-testid="response-resize-handle"
-        title="Drag to resize; double-click to reset"
-        className="group flex h-1 flex-shrink-0 cursor-row-resize items-center justify-center border-t border-border bg-transparent transition-colors hover:bg-accent/40 active:bg-accent/60 select-none"
-        onMouseDown={onResizeStart}
-        onDoubleClick={onResizeReset}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          onResizeReset?.();
-        }}
-      >
-        <div className="h-0.5 w-8 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100" />
-      </button>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {isLoading && !sseLive ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <div

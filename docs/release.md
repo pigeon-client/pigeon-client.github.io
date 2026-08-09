@@ -2,6 +2,8 @@
 
 This is the human-facing companion to `CLAUDE.md`'s CI/CD section — read that first for how
 `version-bump.yml` → `release.yml` → `deploy-site.yml` chain together. This doc covers the parts
+that need secrets / human judgment. Marketing site ships to **Cloudflare R2 + Worker** (`trypigeon`
+worker, bucket `trypigeon-site` → `https://trypigeon.dev`) via Wrangler — not GitHub Pages.
 that need a person: code signing, notarization, proving auto-update, and the Homebrew cask.
 
 ## Current state (as of this doc, 2026-07-26) — **not yet notarized**
@@ -58,9 +60,8 @@ tied to a real Apple ID) and a certificate that only that account can generate. 
 **Wiring (verified by reading the code, not by running it):**
 
 - `tauri.conf.json` → `plugins.updater.endpoints` points at
-  `https://github.com/pigeon-client/pigeon-client.github.io/releases/latest/download/latest.json`
-  — the **site repo's** releases, not the app repo's. `deploy-site.yml` is what publishes that
-  `latest.json` (fetched from the app repo's GitHub API at build time — see `CLAUDE.md`).
+  `https://trypigeon.dev/latest.json` (mirrored from the GitHub Release `latest.json`
+  asset on every `deploy-site.yml` run).
 - `src/features/settings/lib/updater.ts` (`checkForUpdates`, `checkUpdateVersion`,
   `installUpdate`) wraps `@tauri-apps/plugin-updater`. `AppContent.tsx` runs a silent
   `checkForUpdates(true)` on startup; `SettingsDrawer.tsx`'s About tab has the manual
@@ -78,6 +79,7 @@ macOS machine to install/launch on. Procedure for whoever runs this:
    `git tag v0.9.9-test && git push origin v0.9.9-test`), let `release.yml` build and publish it,
    install the resulting `.dmg`.
 2. Bump to `1.0.0-test`, tag, push — let it build and publish, and let `deploy-site.yml` refresh
+   the Cloudflare site (R2 + Worker; needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` repo secrets).
    `latest.json` on the site repo (it's dispatched automatically by `release.yml`'s
    `publish-release` job).
 3. Launch the `0.9.9-test` install. Confirm: the gear icon in Settings shows the update-available
@@ -124,9 +126,8 @@ To make it real, once a signed `.dmg` is published for a version:
    PRs/commits; the hardcoded `body:` block (install instructions) is prepended via `append_body`.
 3. **Tag format**: `v<major>.<minor>.<patch>` (e.g. `v0.1.10`), pushed automatically by
    `version-bump.yml` using `RELEASE_TOKEN`, or manually with `git tag vX.Y.Z && git push origin vX.Y.Z`.
-4. **Artifact names**: `Pigeon_<version>_aarch64.dmg` / `Pigeon_<version>_x64.dmg` (macOS),
-   `.exe` (Windows NSIS), `.AppImage` + `.deb` (Linux) — see `scripts/install.sh` for the exact
-   macOS naming this depends on.
+4. **Artifact names**: `Pigeon_<version>_aarch64.dmg` / `Pigeon_<version>_x64.dmg` (macOS).
+   Windows/Linux builds are commented out in `release.yml` for now — re-enable the matrix when ready.
 5. **Manifest update**: automatic — `release.yml`'s `publish-release` job dispatches
    `deploy-site.yml` on `main`, which re-fetches the latest release JSON into
    `apps/site/src/release.json` and rebuilds the site (this is also what refreshes `latest.json`

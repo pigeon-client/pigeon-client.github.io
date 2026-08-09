@@ -6,7 +6,7 @@ Companion doc: [restructure-plan.md](./restructure-plan.md) covers the code arch
 `docs/features/*.md` hold the detailed per-feature UX reference and `data-testid` hooks.
 
 Two products share one brand: the **desktop app** (Tauri, dark theme default + light theme)
-and the **marketing site** (React SPA on GitHub Pages).
+and the **marketing site** (Astro on Cloudflare Workers / trypigeon.dev).
 
 ---
 
@@ -15,7 +15,7 @@ and the **marketing site** (React SPA on GitHub Pages).
 ### 1.1 Header bar
 - **Purpose**: global navigation + app identity.
 - **Surfaces**: brand mark (theme-aware `.pg-logo`), workspace switch buttons (REST / MCP /
-  GraphQL — each opens a singleton OS window in the desktop build), global search field
+  GraphQL — MCP & GraphQL open coming-soon panes), global search field
   (plain `Cmd+F` outside editor/response focuses it), settings + shortcuts entry points,
   icon-only cURL export button.
 - **States**: active workspace highlighted; search focused/blurred; per-kind window focused.
@@ -36,7 +36,7 @@ and the **marketing site** (React SPA on GitHub Pages).
 - **Design notes**: rename input must match tab metrics exactly (no layout jump); the context
   menu closes on Escape and restores app input (e2e-covered).
 
-### 1.3 Sidebar (REST/GraphQL windows)
+### 1.3 Sidebar (REST window)
 - **Purpose**: workspace navigation over saved work.
 - **Surfaces**: three tabs — **Collections**, **History**, **Drafts** (`sidebar-tab-*` testids);
   search/filter field (`Cmd+F` scoped); collapse/expand control; per-row method badge + name +
@@ -56,6 +56,7 @@ and the **marketing site** (React SPA on GitHub Pages).
 
 ### 1.5 Workspace windows
 - **Purpose**: REST, MCP, GraphQL each in a separate singleton OS window (desktop build only).
+  MCP/GraphQL windows currently show coming-soon panes.
 - **States**: browser/E2E build falls back to single-page mixed-kind tabs.
 - **Design notes**: each window is its own webview + JS heap; window chrome follows OS.
 
@@ -174,10 +175,13 @@ and the **marketing site** (React SPA on GitHub Pages).
 ---
 
 ## 4. GraphQL workspace
-- **Purpose**: placeholder ("coming soon") pane; full-pane, no URL bar, `GQL` tab badge.
-- **Design opportunity**: future — query editor + variables pane + schema explorer + response
-  viewer sharing REST's response design. Design the empty/coming-soon state now, the workspace
-  later.
+- **Status**: coming-soon pane (`ComingSoonWorkspace`, `⌘⇧G` / header).
+- **Still available**: send GraphQL over REST with `application/graphql` body types.
+- **Future**: dedicated query editor + schema explorer.
+
+## 4b. MCP workspace
+- **Status**: coming-soon pane (`ComingSoonWorkspace`, `⌘⇧M` / header). Bench code kept under
+  `features/mcp` for later enablement.
 
 ---
 
@@ -210,7 +214,7 @@ and the **marketing site** (React SPA on GitHub Pages).
 
 ## 6. Marketing site (`apps/site`)
 
-Single-page landing at pigeon-client.github.io. Sections top to bottom:
+Landing + blog at trypigeon.dev (Astro on Cloudflare Workers). Landing sections top to bottom:
 
 | Section | Content | Design notes |
 |---|---|---|

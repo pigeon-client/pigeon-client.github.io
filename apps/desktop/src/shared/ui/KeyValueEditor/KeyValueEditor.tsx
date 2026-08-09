@@ -198,7 +198,7 @@ export function KeyValueEditor({
       {/* Column headers */}
       <div
         className={cn(
-          "grid min-w-0 gap-0 border-b border-border pb-2 text-2xs font-semibold uppercase tracking-wide text-muted-foreground",
+          "grid min-w-0 gap-0 border-b border-border/60 pb-2 text-2xs font-semibold uppercase tracking-wide text-muted-foreground",
           cols,
         )}
       >
@@ -212,7 +212,10 @@ export function KeyValueEditor({
       {itemsWithKeys.map((item, index) => (
         <div
           key={item._rowKey}
-          className={cn("grid min-h-9 min-w-0 items-center border-b border-border", cols)}
+          className={cn(
+            "grid min-h-9 min-w-0 items-center rounded-sm transition-colors hover:bg-muted/20",
+            cols,
+          )}
         >
           <span className="flex items-center justify-center">
             <Checkbox on={item.enabled} onClick={() => update(index, "enabled", !item.enabled)} />

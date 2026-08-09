@@ -26,6 +26,7 @@
 @import "./why-story-demos.css";
 @import "./organize-story-demos.css";
 @import "./responsive.css";
+@import "./blog.css";
 
 /* Tailwind 4 doesn't auto-scan outside this app's own tree — without this,
    classes used only inside @pigeon/ui component source render unstyled. */

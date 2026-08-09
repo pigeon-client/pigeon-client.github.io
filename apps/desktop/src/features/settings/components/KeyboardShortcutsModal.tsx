@@ -27,7 +27,7 @@ const SECTIONS: { label: string; shortcuts: { keys: string[]; action: string }[]
   {
     label: "Workbenches",
     shortcuts: [
-      { keys: ["⌘", "⇧", "M"], action: "Open MCP bench tab" },
+      { keys: ["⌘", "⇧", "M"], action: "Open MCP tab (coming soon)" },
       { keys: ["⌘", "⇧", "G"], action: "Open GraphQL tab (coming soon)" },
     ],
   },

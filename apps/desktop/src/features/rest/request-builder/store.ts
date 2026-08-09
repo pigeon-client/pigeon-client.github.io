@@ -14,9 +14,8 @@ function pathFromUrl(url: string): string {
   }
 }
 
-/** What a workspace tab hosts: an HTTP request (default), the MCP bench, or the
- *  GraphQL coming-soon pane. Non-http tabs keep an (unused) default request so
- *  every consumer of `tab.request` stays total. */
+/** What a workspace tab hosts: an HTTP request (default), or a coming-soon MCP / GraphQL pane.
+ *  Non-http tabs keep an (unused) default request so every consumer of `tab.request` stays total. */
 export type TabKind = "http" | "mcp" | "graphql";
 
 const KIND_NAMES: Record<Exclude<TabKind, "http">, string> = {
@@ -47,6 +46,7 @@ interface TabState {
   closeTab: (id: string) => void;
   closeOtherTabs: (id: string) => void;
   closeAllTabs: () => void;
+  reorderTabs: (fromId: string, toId: string) => void;
   setActiveTab: (id: string) => void;
   updateTabRequest: (id: string, req: Partial<RequestConfig>) => void;
   updateTabResponse: (id: string, res: ApiResponse | null) => void;
@@ -93,6 +93,8 @@ function cloneRequest(req: RequestConfig): RequestConfig {
 
 let tabCounter = 1;
 
+const TAB_STORAGE_KEY = "pg_open_tabs";
+
 /** This window's fixed tab kind — "rest" maps to the default "http" tab kind. */
 function defaultKindForWindow(): TabKind {
   const kind = getWindowKind();
@@ -113,10 +115,113 @@ function buildTab(id: string, kind: TabKind): Tab {
   };
 }
 
+function storageKey(): string {
+  return `${TAB_STORAGE_KEY}:${getWindowKind()}`;
+}
+
+function persistableRequest(request: RequestConfig): RequestConfig {
+  const withoutLiveFiles = (items: RequestConfig["params"]) =>
+    items.map((item) => ({ ...item, file: null }));
+
+  return {
+    ...request,
+    params: withoutLiveFiles(request.params),
+    formData: withoutLiveFiles(request.formData),
+    multipart: withoutLiveFiles(request.multipart),
+    // File handles cannot survive an app restart. Keep metadata fields, drop live handle.
+    file: null,
+  };
+}
+
+function persistTabs(state: Pick<TabState, "tabs" | "activeTabId">): void {
+  if (typeof localStorage === "undefined") return;
+
+  try {
+    localStorage.setItem(
+      storageKey(),
+      JSON.stringify({
+        activeTabId: state.activeTabId,
+        tabs: state.tabs.map((tab) => ({
+          id: tab.id,
+          kind: tab.kind,
+          name: tab.name,
+          nameLocked: tab.nameLocked,
+          request: persistableRequest(tab.request),
+        })),
+      }),
+    );
+  } catch {
+    // Storage can be unavailable or full. In-memory tabs still work.
+  }
+}
+
+function restoreTabs(): Pick<TabState, "tabs" | "activeTabId"> | null {
+  if (typeof localStorage === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(storageKey());
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as {
+      activeTabId?: unknown;
+      tabs?: unknown;
+    };
+    if (!Array.isArray(saved.tabs)) return null;
+
+    const tabs = saved.tabs.flatMap((value): Tab[] => {
+      if (!value || typeof value !== "object") return [];
+      const savedTab = value as Partial<Tab>;
+      if (typeof savedTab.id !== "string" || !savedTab.request) return [];
+      // Coming-soon workbenches are in-view (no tabs). Drop legacy mcp/graphql kind tabs.
+      const kind: TabKind = "http";
+      const defaults = defaultRequest();
+      const request = savedTab.request as Partial<RequestConfig>;
+      return [
+        {
+          id: savedTab.id,
+          kind,
+          name: typeof savedTab.name === "string" ? savedTab.name : defaults.name,
+          nameLocked: Boolean(savedTab.nameLocked),
+          request: {
+            ...defaults,
+            ...request,
+            auth: { ...defaults.auth, ...(request.auth ?? {}) },
+            params: Array.isArray(request.params) ? request.params : [],
+            headers: Array.isArray(request.headers) ? request.headers : [],
+            formData: Array.isArray(request.formData) ? request.formData : [],
+            multipart: Array.isArray(request.multipart) ? request.multipart : [],
+            file: null,
+          },
+          response: null,
+          isLoading: false,
+        },
+      ];
+    });
+    if (tabs.length === 0) return null;
+
+    const maxId = tabs.reduce((max, tab) => {
+      const match = tab.id.match(/^tab-(\d+)$/);
+      return Math.max(max, match ? Number(match[1]) : 0);
+    }, 0);
+    tabCounter = Math.max(tabCounter, maxId + 1);
+
+    return {
+      tabs,
+      activeTabId:
+        typeof saved.activeTabId === "string" && tabs.some((tab) => tab.id === saved.activeTabId)
+          ? saved.activeTabId
+          : tabs[0].id,
+    };
+  } catch {
+    return null;
+  }
+}
+
+const restoredTabs = restoreTabs();
+
 export const useTabStore = create<TabState>((set, get) => ({
-  tabs: [],
-  activeTabId: null,
-  nextId: 1,
+  tabs: restoredTabs?.tabs ?? [],
+  activeTabId: restoredTabs?.activeTabId ?? null,
+  nextId: tabCounter,
 
   addTab: (kind = defaultKindForWindow()) => {
     const id = `tab-${tabCounter++}`;
@@ -195,6 +300,19 @@ export const useTabStore = create<TabState>((set, get) => ({
     });
   },
 
+  reorderTabs: (fromId, toId) =>
+    set((s) => {
+      if (fromId === toId) return s;
+      const fromIndex = s.tabs.findIndex((tab) => tab.id === fromId);
+      const toIndex = s.tabs.findIndex((tab) => tab.id === toId);
+      if (fromIndex < 0 || toIndex < 0) return s;
+      const tabs = [...s.tabs];
+      const [moved] = tabs.splice(fromIndex, 1);
+      const targetIndex = tabs.findIndex((tab) => tab.id === toId);
+      tabs.splice(targetIndex < 0 ? tabs.length : targetIndex, 0, moved);
+      return { tabs };
+    }),
+
   setActiveTab: (id) => set({ activeTabId: id }),
 
   updateTabRequest: (id, req) =>
@@ -239,5 +357,8 @@ export const useTabStore = create<TabState>((set, get) => ({
     })),
 }));
 
-// Initialize with one tab
-useTabStore.getState().addTab();
+useTabStore.subscribe((state) => persistTabs(state));
+
+// Initialize with one tab on first launch. Restored tabs stay untouched.
+if (!restoredTabs) useTabStore.getState().addTab();
+persistTabs(useTabStore.getState());

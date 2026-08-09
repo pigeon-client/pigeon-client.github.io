@@ -13,7 +13,7 @@
     <img src="https://img.shields.io/badge/price-free_forever-72b872?style=flat-square" alt="free" />
   </p>
 
-  <a href="https://github.com/pigeon-client/pigeon/releases/latest"><strong>Download for macOS →</strong></a>
+  <a href="https://trypigeon.dev/#download"><strong>Download for macOS →</strong></a>
 </div>
 
 ---
@@ -66,10 +66,10 @@ anyone's cloud.
 **macOS (Apple Silicon & Intel)** — one command:
 
 ```bash
-curl -fsSL https://pigeon-client.github.io/install.sh | sh
+curl -fsSL https://trypigeon.dev/install.sh | sh
 ```
 
-Or grab the `.dmg` from the [latest release](https://github.com/pigeon-client/pigeon/releases/latest).
+Or grab the `.dmg` from [trypigeon.dev/download/latest/aarch64](https://trypigeon.dev/download/latest/aarch64) (Apple Silicon) or [Intel](https://trypigeon.dev/download/latest/x64).
 
 Or via Homebrew, once the tap is published (see `docs/release.md`):
 
@@ -78,9 +78,8 @@ brew tap pigeon-client/pigeon
 brew install --cask pigeon
 ```
 
-> **Linux & Windows** builds (`.AppImage`/`.deb`, `.exe`) are produced by CI on every release —
-> see [Releases](https://github.com/pigeon-client/pigeon/releases) — but macOS is the primary,
-> most-tested target today.
+> **Windows & Linux** builds are paused in CI — only macOS `.dmg` artifacts are published today.
+> Re-enable the matrix rows in `.github/workflows/release.yml` when those platforms are ready.
 
 ---
 

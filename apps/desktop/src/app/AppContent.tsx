@@ -1,10 +1,9 @@
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@pigeon/ui";
 import { invoke } from "@tauri-apps/api/core";
 import { PanelLeftOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CommandPalette } from "@/features/command-palette";
 import { EnvModal, selectActiveEnv, useEnvStore } from "@/features/environments";
-import { GraphqlComingSoon } from "@/features/graphql";
-import { McpPanel, McpSidebar } from "@/features/mcp";
 import { SaveToCollectionModal, useCollectionStore } from "@/features/rest/collections";
 import { useHistoryStore } from "@/features/rest/history";
 import { generateCurl, ImportModal } from "@/features/rest/import-export";
@@ -23,6 +22,7 @@ import {
   KeyboardShortcutsModal,
   SettingsDrawer,
 } from "@/features/settings";
+import { ComingSoonWorkspace } from "@/features/workspaces";
 import { isTauri } from "@/shared/lib/platform";
 import { getWindowKind, type WindowKind } from "@/shared/lib/windowKind";
 import { Header } from "./layout/Header";
@@ -30,42 +30,32 @@ import { MigrationToast } from "./layout/MigrationToast";
 import { Sidebar } from "./layout/Sidebar";
 import { UpdateToast } from "./layout/UpdateToast";
 
-const MIN_EDITOR_HEIGHT = 150;
-const MIN_RESPONSE_HEIGHT = 160;
-
-/** REST/MCP/GraphQL each open as a separate singleton-per-kind OS window in the desktop
- *  app (`open_workspace_window` in `src-tauri/src/lib.rs`); the browser/E2E build has no
- *  windows to open, so it falls back to the legacy in-page tab switch. */
-function openWorkspace(kind: WindowKind, openKindTab: (kind: "mcp" | "graphql") => void) {
-  if (isTauri()) {
-    // GraphQL isn't built yet — no window to open. The header button/shortcut is a
-    // no-op there (its tooltip already says "coming soon"); the browser build still
-    // shows the in-page placeholder pane below, since that's not a real window.
-    if (kind === "graphql") return;
-    invoke("open_workspace_window", { kind }).catch((e) =>
-      console.log(`[Pigeon] Failed to open ${kind} workspace: ${e}`),
-    );
-    return;
-  }
-  if (kind !== "rest") openKindTab(kind);
+/** Focus the REST OS window when leaving a coming-soon view (desktop only). */
+function focusRestWindow() {
+  if (!isTauri()) return;
+  invoke("open_workspace_window", { kind: "rest" }).catch((e) =>
+    console.log(`[Pigeon] Failed to focus REST workspace: ${e}`),
+  );
 }
 
 /* ── Empty state when no URL has been typed yet ── */
 export function AppContent() {
+  const windowKind = getWindowKind();
+
   useEffect(() => {
     applyTheme(getStoredTheme());
     useEnvStore.getState().load();
-    // History/collections and the update check are REST-only concerns — skip them
-    // entirely in the MCP/GraphQL windows so they don't do pointless work 3x over.
-    if (getWindowKind() === "rest") {
+    // Coming-soon OS windows (legacy) still skip REST-only boot work.
+    if (windowKind === "rest") {
       useHistoryStore.getState().load();
       useCollectionStore.getState().load();
       checkForUpdates(true);
     }
-  }, []);
+  }, [windowKind]);
 
-  const [editorHeights, setEditorHeights] = useState<Record<string, number>>({});
-  const [sidebarWidth, setSidebarWidth] = useState(300);
+  const [workbench, setWorkbench] = useState<WindowKind>(
+    windowKind === "rest" ? "rest" : windowKind,
+  );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [search, setSearch] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -84,11 +74,16 @@ export function AppContent() {
   const closeTab = useTabStore((s) => s.closeTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
-  const openKindTab = useTabStore((s) => s.openKindTab);
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
   // Only http tabs have an exportable/saveable request.
   const activeRequest = activeTab && activeTab.kind === "http" ? activeTab.request : null;
   const prodActive = useEnvStore((s) => selectActiveEnv(s)?.isProduction ?? false);
+  const showComingSoon = workbench === "mcp" || workbench === "graphql";
+
+  const openWorkbench = (kind: WindowKind) => {
+    setWorkbench(kind);
+    if (kind === "rest") focusRestWindow();
+  };
 
   const handleExportCurl = async () => {
     if (!activeRequest) return;
@@ -97,15 +92,23 @@ export function AppContent() {
     setTimeout(() => setCurlCopied(false), 2000);
   };
 
-  // Keyboard shortcuts. Every app-global chord is ⌘⇧+key; the two exceptions are
-  // ⌘↵ (Send) and ⌘F (contextual find — body/response panels intercept it before
-  // this window listener, so reaching here means "focus the header search").
-  // Matching uses e.code because Shift changes e.key ("," → "<", "/" → "?").
+  // Keyboard shortcuts follow Postman's core desktop bindings where this app has
+  // an equivalent action. Matching uses e.code because Shift changes e.key.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
       const metaShift = meta && e.shiftKey;
       if (metaShift && e.code === "KeyK") {
+        e.preventDefault();
+        setShowPalette((o) => !o);
+        return;
+      }
+      if (meta && !e.shiftKey && e.code === "KeyK") {
+        e.preventDefault();
+        setShowPalette((o) => !o);
+        return;
+      }
+      if (metaShift && e.code === "KeyP") {
         e.preventDefault();
         setShowPalette((o) => !o);
         return;
@@ -123,6 +126,17 @@ export function AppContent() {
         e.preventDefault();
         const sendBtn = document.querySelector("[data-send-btn]") as HTMLButtonElement;
         sendBtn?.click();
+        return;
+      }
+      if (meta && !e.shiftKey && e.code === "KeyT") {
+        e.preventDefault();
+        const id = addTab();
+        setActiveTab(id);
+        return;
+      }
+      if (meta && e.code === "KeyW") {
+        e.preventDefault();
+        if (activeTabId) closeTab(activeTabId);
         return;
       }
       // ⌘⇧/ opens the shortcuts help (leaves plain `?` free to type).
@@ -161,17 +175,28 @@ export function AppContent() {
         setActiveTab(id);
         return;
       }
-      if (metaShift && e.code === "KeyW") {
-        e.preventDefault();
-        if (activeTabId) closeTab(activeTabId);
-        return;
-      }
       if (meta && !e.shiftKey && e.code === "KeyF") {
         e.preventDefault();
         const input = searchInputRef.current;
         if (input) {
           input.focus();
           input.select();
+        }
+        return;
+      }
+      if (meta && !e.shiftKey && e.code === "KeyL") {
+        e.preventDefault();
+        const input = Array.from(
+          document.querySelectorAll<HTMLInputElement>('[data-testid="url-input"]'),
+        ).find((element) => element.offsetParent !== null);
+        input?.focus();
+        input?.select();
+        return;
+      }
+      if (meta && !e.shiftKey && e.code === "KeyS") {
+        e.preventDefault();
+        if (activeRequest?.url.trim()) {
+          setShowSaveModal(true);
         }
         return;
       }
@@ -182,15 +207,36 @@ export function AppContent() {
         }
         return;
       }
-      if (metaShift && /^Digit[1-9]$/.test(e.code)) {
+      if (meta && !e.altKey && /^Digit[1-9]$/.test(e.code)) {
         e.preventDefault();
         const tab = tabs[parseInt(e.code.slice(5), 10) - 1];
         if (tab) setActiveTab(tab.id);
         return;
       }
-      if (metaShift && e.code === "Comma") {
+      if (meta && e.code === "Comma") {
         e.preventDefault();
         setShowSettings(true);
+        return;
+      }
+      if (meta && e.altKey && e.code === "Digit1") {
+        e.preventDefault();
+        const sidebarButton = document.querySelector<HTMLElement>(
+          '[data-testid="sidebar-new-request"], [data-testid="sidebar-expand"]',
+        );
+        sidebarButton?.focus();
+        return;
+      }
+      if (meta && e.altKey && e.code === "Digit2") {
+        e.preventDefault();
+        const urlInput = Array.from(
+          document.querySelectorAll<HTMLInputElement>('[data-testid="url-input"]'),
+        ).find((element) => element.offsetParent !== null);
+        urlInput?.focus();
+        return;
+      }
+      if (meta && !e.shiftKey && e.code === "Backslash") {
+        e.preventDefault();
+        if (!showComingSoon) setSidebarCollapsed((collapsed) => !collapsed);
         return;
       }
       if (metaShift && e.code === "KeyE") {
@@ -200,17 +246,18 @@ export function AppContent() {
       }
       if (metaShift && e.code === "KeyR") {
         e.preventDefault();
-        openWorkspace("rest", openKindTab);
+        setWorkbench("rest");
+        focusRestWindow();
         return;
       }
       if (metaShift && e.code === "KeyM") {
         e.preventDefault();
-        openWorkspace("mcp", openKindTab);
+        setWorkbench("mcp");
         return;
       }
       if (metaShift && e.code === "KeyG") {
         e.preventDefault();
-        openWorkspace("graphql", openKindTab);
+        setWorkbench("graphql");
         return;
       }
     };
@@ -222,7 +269,7 @@ export function AppContent() {
     addTab,
     closeTab,
     setActiveTab,
-    openKindTab,
+    showComingSoon,
     showShortcutsModal,
     showEnvModal,
     showImportModal,
@@ -239,11 +286,12 @@ export function AppContent() {
         onOpenSettings={() => setShowSettings(true)}
         onExportCurl={handleExportCurl}
         onManageEnv={() => setShowEnvModal(true)}
-        onOpenRest={() => openWorkspace("rest", openKindTab)}
-        onOpenMcp={() => openWorkspace("mcp", openKindTab)}
-        onOpenGraphql={() => openWorkspace("graphql", openKindTab)}
+        onOpenRest={() => openWorkbench("rest")}
+        onOpenMcp={() => openWorkbench("mcp")}
+        onOpenGraphql={() => openWorkbench("graphql")}
+        activeWorkspace={workbench}
         curlCopied={curlCopied}
-        exportDisabled={!activeRequest}
+        exportDisabled={!activeRequest || showComingSoon}
         search={search}
         onSearchChange={setSearch}
         searchInputRef={searchInputRef}
@@ -252,173 +300,136 @@ export function AppContent() {
         onSearchBlur={() => setSearchFocused(false)}
       />
 
-      {/* Body */}
-      <div className="relative flex min-h-0 min-w-0 flex-1">
-        {sidebarCollapsed ? (
-          /* Fully hidden — a floating button to reopen the sidebar */
-          <button
-            type="button"
-            data-testid="sidebar-expand"
-            onClick={() => setSidebarCollapsed(false)}
-            title="Show sidebar"
-            aria-label="Show sidebar"
-            className="absolute bottom-2 left-2 z-[var(--z-sticky)] flex h-7 w-7 items-center justify-center rounded border border-border bg-sidebar text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
-          >
-            <PanelLeftOpen className="h-4 w-4" />
-          </button>
-        ) : (
-          <>
-            {/* Sidebar */}
-            <div className="flex min-h-0 flex-shrink-0" style={{ width: sidebarWidth }}>
-              {activeTab?.kind === "mcp" ? (
-                <McpSidebar />
-              ) : (
-                <Sidebar
-                  onImportClick={() => setShowImportModal(true)}
-                  onCollapse={() => setSidebarCollapsed(true)}
-                  search={search}
-                />
-              )}
-            </div>
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-driven resize handle for the sidebar */}
-            <div
-              className="group flex w-1 flex-shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors hover:bg-accent/40 active:bg-accent/60 select-none border-l border-border"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const startX = e.clientX;
-                const startWidth = sidebarWidth;
-                const onMove = (ev: MouseEvent) => {
-                  const delta = ev.clientX - startX;
-                  setSidebarWidth(Math.min(480, Math.max(180, startWidth + delta)));
-                };
-                const onUp = () => {
-                  document.removeEventListener("mousemove", onMove);
-                  document.removeEventListener("mouseup", onUp);
-                  document.body.style.cursor = "";
-                  document.body.style.userSelect = "";
-                };
-                document.addEventListener("mousemove", onMove);
-                document.addEventListener("mouseup", onUp);
-                document.body.style.cursor = "col-resize";
-                document.body.style.userSelect = "none";
-              }}
+      {/* Body — MCP/GraphQL: coming-soon page only (no sidebar, no tab strip). */}
+      {showComingSoon ? (
+        <div className="relative flex min-h-0 min-w-0 flex-1">
+          {workbench === "mcp" ? (
+            <ComingSoonWorkspace
+              kind="mcp"
+              title="MCP — coming soon"
+              description="A dedicated MCP bench — connect to servers, list tools, call them, and inspect results — is on the roadmap. Until then, stick with REST."
             />
-          </>
-        )}
-
-        {/* Main panel — in production the request bar's existing border turns red (R4) */}
-        <div
-          data-testid={prodActive ? "env-prod-indicator" : undefined}
-          className="flex min-h-0 min-w-0 flex-1 flex-col bg-background"
-        >
-          {/* Tab strip */}
-          <TabStrip />
-
-          {/* Per-tab content */}
-          {tabs.map((tab) => {
-            const isActive = tab.id === activeTabId;
-            const hasUrl = tab.request.url.trim().length > 0;
-            const editorHeight = editorHeights[tab.id];
-            // Non-http tab kinds get their own full-pane surface — no URL bar,
-            // no request editor, no response panel.
-            if (tab.kind === "mcp") {
-              return (
-                <div
-                  key={tab.id}
-                  className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-                  style={{ display: isActive ? "flex" : "none" }}
-                >
-                  <McpPanel tabId={tab.id} />
-                </div>
-              );
-            }
-            if (tab.kind === "graphql") {
-              return (
-                <div
-                  key={tab.id}
-                  className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-                  style={{ display: isActive ? "flex" : "none" }}
-                >
-                  <GraphqlComingSoon />
-                </div>
-              );
-            }
-            return (
-              <div
-                key={tab.id}
-                className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-                style={{ display: isActive ? "flex" : "none" }}
-              >
-                <UrlBar />
-                {hasUrl ? (
-                  <>
-                    <div
-                      style={editorHeight ? { height: editorHeight, flexShrink: 0 } : undefined}
-                      className={
-                        editorHeight
-                          ? "flex min-w-0 flex-col overflow-hidden"
-                          : "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-                      }
-                    >
-                      <RequestEditor tabId={tab.id} />
-                    </div>
-                    <ResponsePanel
-                      tabId={tab.id}
-                      onResizeReset={() => {
-                        setEditorHeights((prev) => {
-                          const next = { ...prev };
-                          delete next[tab.id];
-                          return next;
-                        });
-                      }}
-                      onResizeStart={(e) => {
-                        e.preventDefault();
-                        const startY = e.clientY;
-                        const handle = e.currentTarget as HTMLElement;
-                        const responsePanel = handle.parentElement;
-                        const editorPanel =
-                          responsePanel?.previousElementSibling as HTMLElement | null;
-                        const startHeight =
-                          editorPanel?.getBoundingClientRect().height ?? editorHeight ?? 200;
-                        const splitHeight =
-                          startHeight + (responsePanel?.getBoundingClientRect().height ?? 0);
-                        const maxEditorHeight = Math.max(
-                          MIN_EDITOR_HEIGHT,
-                          splitHeight - MIN_RESPONSE_HEIGHT,
-                        );
-                        const onMove = (ev: MouseEvent) => {
-                          const delta = ev.clientY - startY;
-                          setEditorHeights((prev) => ({
-                            ...prev,
-                            [tab.id]: Math.min(
-                              maxEditorHeight,
-                              Math.max(MIN_EDITOR_HEIGHT, startHeight + delta),
-                            ),
-                          }));
-                        };
-                        const onUp = () => {
-                          document.removeEventListener("mousemove", onMove);
-                          document.removeEventListener("mouseup", onUp);
-                          document.body.style.cursor = "";
-                          document.body.style.userSelect = "";
-                        };
-                        document.addEventListener("mousemove", onMove);
-                        document.addEventListener("mouseup", onUp);
-                        document.body.style.cursor = "row-resize";
-                        document.body.style.userSelect = "none";
-                      }}
-                    />
-                  </>
-                ) : (
-                  <div className="flex min-h-0 flex-1 flex-col">
-                    <EmptyRequestState />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          ) : (
+            <ComingSoonWorkspace
+              kind="graphql"
+              title="GraphQL — coming soon"
+              description="A dedicated GraphQL workspace — query editor with schema introspection, variables, and response inspection — is on the roadmap. Until then, send GraphQL as HTTP with an application/graphql body."
+            />
+          )}
         </div>
-      </div>
+      ) : (
+        <div className="relative flex min-h-0 min-w-0 flex-1">
+          {sidebarCollapsed && (
+            <button
+              type="button"
+              data-testid="sidebar-expand"
+              onClick={() => setSidebarCollapsed(false)}
+              title="Show sidebar"
+              aria-label="Show sidebar"
+              className="absolute bottom-2 left-2 z-[var(--z-sticky)] flex h-7 w-7 items-center justify-center rounded border border-border bg-sidebar text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </button>
+          )}
+
+          <ResizablePanelGroup
+            id="workspace-layout"
+            orientation="horizontal"
+            defaultLayout={{ "sidebar-panel": 20, "main-panel": 80 }}
+            className="min-h-0 min-w-0 flex-1"
+            resizeTargetMinimumSize={{ coarse: 24, fine: 12 }}
+          >
+            {!sidebarCollapsed && (
+              <ResizablePanel
+                id="sidebar-panel"
+                minSize="180px"
+                maxSize="400px"
+                groupResizeBehavior="preserve-pixel-size"
+                className="flex min-h-0 min-w-0 flex-col"
+              >
+                <div className="flex h-full min-h-0 min-w-0 flex-shrink-0">
+                  <Sidebar
+                    onImportClick={() => setShowImportModal(true)}
+                    onCollapse={() => setSidebarCollapsed(true)}
+                    search={search}
+                  />
+                </div>
+              </ResizablePanel>
+            )}
+            {!sidebarCollapsed && (
+              <ResizableHandle withHandle id="sidebar-resize-handle" aria-label="Resize sidebar" />
+            )}
+
+            <ResizablePanel
+              id="main-panel"
+              minSize="300px"
+              className="flex min-h-0 min-w-0 flex-col"
+            >
+              <div
+                data-testid={prodActive ? "env-prod-indicator" : undefined}
+                className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background"
+              >
+                <TabStrip />
+
+                {tabs.map((tab) => {
+                  if (tab.kind !== "http") return null;
+                  const isActive = tab.id === activeTabId;
+                  const hasUrl = tab.request.url.trim().length > 0;
+                  return (
+                    <div
+                      key={tab.id}
+                      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                      style={{ display: isActive ? "flex" : "none" }}
+                    >
+                      <UrlBar />
+                      {hasUrl ? (
+                        <ResizablePanelGroup
+                          id={`response-split-${tab.id}`}
+                          orientation="vertical"
+                          defaultLayout={{
+                            [`request-panel-${tab.id}`]: 55,
+                            [`response-panel-${tab.id}`]: 45,
+                          }}
+                          className="min-h-0 flex-1"
+                          resizeTargetMinimumSize={{ coarse: 24, fine: 12 }}
+                        >
+                          <ResizablePanel
+                            id={`request-panel-${tab.id}`}
+                            defaultSize="55%"
+                            minSize="150px"
+                            className="flex min-h-0 min-w-0 flex-col"
+                          >
+                            <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+                              <RequestEditor tabId={tab.id} />
+                            </div>
+                          </ResizablePanel>
+                          <ResizableHandle
+                            withHandle
+                            id="response-resize-handle"
+                            aria-label="Resize request and response panels"
+                          />
+                          <ResizablePanel
+                            id={`response-panel-${tab.id}`}
+                            defaultSize="45%"
+                            minSize="160px"
+                            className="flex min-h-0 min-w-0 flex-col"
+                          >
+                            <ResponsePanel tabId={tab.id} />
+                          </ResizablePanel>
+                        </ResizablePanelGroup>
+                      ) : (
+                        <div className="flex min-h-0 flex-1 flex-col">
+                          <EmptyRequestState />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+      )}
 
       {/* Modals */}
       {showEnvModal && <EnvModal onClose={() => setShowEnvModal(false)} />}

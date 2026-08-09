@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { getInstallCmd } from "../lib/constants";
+import { downloadLatestUrl, getInstallCmd } from "../lib/constants";
 import { InstallBox } from "./CopyButton";
 
 const delay = (s: number): CSSProperties => ({ "--d": `${s}s` }) as CSSProperties;
@@ -30,6 +30,17 @@ export function DownloadSection() {
             <h3>macOS</h3>
             <p className="meta">Apple Silicon &amp; Intel · terminal install</p>
             <InstallBox command={installCmd} />
+            <p className="meta" style={{ marginTop: 14 }}>
+              or download the .dmg directly
+            </p>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+              <a className="btn btn-ghost" href={downloadLatestUrl("aarch64")}>
+                Apple Silicon
+              </a>
+              <a className="btn btn-ghost" href={downloadLatestUrl("x64")}>
+                Intel
+              </a>
+            </div>
             <p className="meta" style={{ marginTop: 14 }}>
               or via Homebrew
             </p>

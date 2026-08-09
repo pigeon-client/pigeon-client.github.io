@@ -4,10 +4,12 @@ export PATH := $(HOME)/.cargo/bin:$(PATH):/opt/homebrew/bin:/usr/local/bin
 
 # pnpm workspace: desktop app = `pigeon`, marketing site = `pigeon-site`.
 # All targets run from the repo root; root scripts delegate via `--filter`.
+# Marketing site deploys to Cloudflare R2 + Worker (trypigeon.dev) via Wrangler.
 
 .PHONY: all dev run build build-release clean install deps open \
         lint format format-check ci-check test e2e \
-        dev-site build-site preview-site bench-startup
+        dev-site build-site preview-site preview-site-worker deploy-site \
+        bench-startup
 
 all: build
 
@@ -55,7 +57,7 @@ open:
 bench-startup:
 	./scripts/bench-startup.sh --runs 25
 
-# ── Marketing site (apps/site) ──
+# ── Marketing site (apps/site → Cloudflare R2 + Worker / trypigeon.dev) ──
 dev-site:
 	pnpm --filter pigeon-site dev
 
@@ -65,7 +67,17 @@ build-site:
 preview-site:
 	pnpm run preview:site
 
+# Local Worker runtime (Wrangler) against R2 — syncs dist locally first.
+preview-site-worker:
+	pnpm run preview:site:worker
+
+# Needs Cloudflare auth: `pnpm --filter pigeon-site exec wrangler login`
+# or CLOUDFLARE_API_TOKEN (+ CLOUDFLARE_ACCOUNT_ID) in the environment.
+deploy-site:
+	pnpm run deploy:site
+
 # ── Housekeeping ──
 clean:
-	rm -rf apps/desktop/dist apps/desktop/src-tauri/target apps/site/dist \
+	rm -rf apps/desktop/dist apps/desktop/src-tauri/target \
+	       apps/site/dist apps/site/.astro apps/site/.wrangler \
 	       node_modules apps/desktop/node_modules apps/site/node_modules

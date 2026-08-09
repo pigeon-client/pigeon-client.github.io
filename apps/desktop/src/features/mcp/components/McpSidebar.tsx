@@ -44,7 +44,7 @@ export function McpSidebar() {
 
   if (mcp.status !== "connected") {
     return (
-      <aside className="flex w-full min-w-0 flex-col border-r border-border bg-sidebar text-sidebar-foreground min-h-0">
+      <aside className="flex w-full min-w-0 flex-col bg-sidebar text-sidebar-foreground min-h-0">
         <div className="flex flex-1 items-center justify-center p-5 text-center text-xs text-muted-foreground">
           Connect to an MCP server to see its tools here.
         </div>
@@ -53,7 +53,7 @@ export function McpSidebar() {
   }
 
   return (
-    <aside className="flex w-full min-w-0 flex-col overflow-y-auto border-r border-border bg-sidebar p-2 text-sidebar-foreground min-h-0">
+    <aside className="flex w-full min-w-0 flex-col overflow-y-auto bg-sidebar p-2 text-sidebar-foreground min-h-0">
       <div className="mb-1.5 flex items-center justify-between px-1">
         <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
           Tools

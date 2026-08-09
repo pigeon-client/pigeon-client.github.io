@@ -1,0 +1,45 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
+
+interface Props {
+  title: string;
+  description: string;
+  canonicalPath: string;
+  ogType?: "website" | "article";
+  ogImage?: string;
+  noindex?: boolean;
+  bodyClass?: string;
+  softwareSchema?: boolean;
+}
+
+const {
+  title,
+  description,
+  canonicalPath,
+  ogType = "website",
+  ogImage,
+  noindex = false,
+  bodyClass = "",
+  softwareSchema = false,
+} = Astro.props;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  ogType={ogType}
+  ogImage={ogImage}
+  noindex={noindex}
+  bodyClass={bodyClass}
+  softwareSchema={softwareSchema}
+>
+  <Fragment slot="head">
+    <slot name="head" />
+  </Fragment>
+  <Header client:load />
+  <slot />
+  <Footer client:load />
+</BaseLayout>

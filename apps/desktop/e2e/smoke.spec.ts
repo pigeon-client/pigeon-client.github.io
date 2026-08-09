@@ -43,6 +43,7 @@ test.describe("smoke", () => {
     page,
   }) => {
     await openApp(page);
+
     await typeUrl(page, "https://api.example.com/users");
 
     const handle = page.getByTestId("response-resize-handle");

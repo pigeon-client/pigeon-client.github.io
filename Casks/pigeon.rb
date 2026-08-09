@@ -8,7 +8,7 @@ cask "pigeon" do
   url "https://github.com/pigeon-client/pigeon/releases/download/v#{version}/Pigeon_#{version}_#{arch}.dmg"
   name "Pigeon"
   desc "Fast, native, private API client (Tauri + Rust)"
-  homepage "https://pigeon-client.github.io"
+  homepage "https://trypigeon.dev"
 
   app "Pigeon.app"
 

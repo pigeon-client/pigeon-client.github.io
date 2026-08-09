@@ -67,6 +67,86 @@
   background: var(--muted-foreground);
 }
 
+/* Tab strip needs compact horizontal scrollbar; 10px default consumes too much tab height. */
+.pg-tab-strip {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  scrollbar-gutter: stable;
+}
+.pg-tab-strip::-webkit-scrollbar {
+  height: 8px;
+}
+.pg-tab-strip::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+.pg-tab-strip::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 2px solid var(--bg-surface);
+}
+.pg-tab-strip:hover {
+  scrollbar-color: var(--muted-foreground) var(--bg-surface);
+}
+.pg-tab-strip:hover::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+.pg-tab-strip:hover::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+}
+.pg-tab-scroll-button {
+  display: flex;
+  width: 30px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.pg-tab-strip-shell:hover .pg-tab-scroll-button,
+.pg-tab-strip-shell:focus-within .pg-tab-scroll-button {
+  opacity: 1;
+  pointer-events: auto;
+}
+.pg-tab-scroll-button:hover:not([aria-disabled="true"]) {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+.pg-tab-scroll-button[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.3;
+}
+
+/* react-resizable-panels v4 exposes orientation through aria-orientation. Keep handles
+   visibly grabbable instead of relying on a one-pixel separator. */
+.pg-resizable-handle[aria-orientation="vertical"] {
+  min-width: 1px;
+  cursor: col-resize;
+}
+.pg-resizable-handle[aria-orientation="horizontal"] {
+  min-height: 1px;
+  cursor: row-resize;
+}
+.pg-resizable-handle-grip {
+  width: 5px;
+  height: 28px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.pg-resizable-handle[aria-orientation="horizontal"] .pg-resizable-handle-grip {
+  width: 28px;
+  height: 5px;
+}
+.pg-resizable-handle:hover .pg-resizable-handle-grip,
+.pg-resizable-handle:focus-visible .pg-resizable-handle-grip {
+  opacity: 1;
+}
+
 ::selection {
   background: var(--hljs-select);
 }

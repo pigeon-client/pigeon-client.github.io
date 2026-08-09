@@ -6,6 +6,7 @@ export function Footer() {
       <div className="wrap foot">
         <p>© 2026 Pigeon contributors · MIT License</p>
         <nav aria-label="Footer">
+          <a href="/blog">Blog</a>
           <a href={REPO_URL}>GitHub</a>
           <a href={ISSUES_URL}>Issues</a>
           <a href={RELEASES_URL}>Releases</a>

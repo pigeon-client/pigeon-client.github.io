@@ -8,7 +8,7 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 pub fn open_workspace_window(app: AppHandle, kind: String) -> Result<(), String> {
     let (label, title, width, height) = match kind.as_str() {
         "rest" => ("main", "Pigeon - API Tester", 1280.0, 800.0),
-        "mcp" => ("mcp", "Pigeon - MCP Bench", 1100.0, 720.0),
+        "mcp" => ("mcp", "Pigeon - MCP", 1100.0, 720.0),
         "graphql" => ("graphql", "Pigeon - GraphQL", 1100.0, 720.0),
         other => return Err(format!("Unknown workspace kind: {}", other)),
     };
