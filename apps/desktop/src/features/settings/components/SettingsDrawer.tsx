@@ -52,9 +52,7 @@ function ThemeSwatch({
       aria-pressed={active}
       className={cn(
         "flex-1 overflow-hidden rounded border-2 transition-colors",
-        active
-          ? "border-primary shadow-[0_0_0_1px_color-mix(in_oklch,var(--primary)_40%,transparent)]"
-          : "border-transparent hover:border-border",
+        active ? "border-primary ring-2 ring-ring/40" : "border-transparent hover:border-border",
       )}
     >
       <div className={cn("rounded p-2", swatchClass)}>

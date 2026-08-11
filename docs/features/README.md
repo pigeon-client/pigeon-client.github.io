@@ -39,6 +39,7 @@ Update these docs when behavior changes.
 | [settings.md](./settings.md) | Theme, request options, updates, data | Shipped | `src/features/settings` |
 | [persistence.md](./persistence.md) | SQLite vs localStorage dual backend | Shipped | `src/core/persistence` |
 | [shared-ui.md](./shared-ui.md) | Shared composites + `@pigeon/ui` | Shipped | `src/shared/ui`, `packages/ui` |
+| [ui-package.md](./ui-package.md) | `@pigeon/ui` primitive API notes | Shipped | `packages/ui` |
 
 ### Coming soon / retained
 

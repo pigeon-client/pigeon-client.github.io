@@ -76,6 +76,12 @@
   --status-4xx: #c2410c;
   --status-5xx: #dc2626;
 
+  /* Semantic feedback — aliased onto status accents */
+  --success: var(--status-2xx);
+  --success-foreground: oklch(1 0 0);
+  --warning: var(--status-4xx);
+  --warning-foreground: oklch(1 0 0);
+
   /* ── Semantic surface + text aliases ──
    * Consumed by inline styles as var(--bg-*) / var(--text-*). Aliased onto the
    * shadcn palette so they resolve per-theme automatically (no .dark duplication).
@@ -177,6 +183,11 @@
   --status-4xx: #fb923c;
   --status-5xx: #f87171;
 
+  --success: var(--status-2xx);
+  --success-foreground: oklch(0.1908 0.002 106.5859);
+  --warning: var(--status-4xx);
+  --warning-foreground: oklch(0.1908 0.002 106.5859);
+
   --hljs-base: #e8eaef;
   --hljs-attr: #8ab4f8;
   --hljs-string: #7ec699;
@@ -216,6 +227,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

@@ -1,3 +1,4 @@
+import { Button } from "@pigeon/ui";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 
@@ -64,35 +65,41 @@ export function FindBar({
       >
         {query ? (matchCount > 0 ? `${index + 1}/${matchCount}` : "0/0") : ""}
       </span>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         data-testid={`${testId}-prev`}
         onClick={onPrev}
         disabled={matchCount === 0}
         aria-label="Previous match"
-        className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:opacity-40"
+        className="h-6 w-6 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
       >
         <ChevronUp className="h-3.5 w-3.5" />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         data-testid={`${testId}-next`}
         onClick={onNext}
         disabled={matchCount === 0}
         aria-label="Next match"
-        className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:opacity-40"
+        className="h-6 w-6 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
       >
         <ChevronDown className="h-3.5 w-3.5" />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         data-testid={`${testId}-close`}
         onClick={onClose}
         aria-label="Close find"
-        className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="h-6 w-6 text-muted-foreground hover:bg-accent hover:text-foreground"
       >
         <X className="h-3.5 w-3.5" />
-      </button>
+      </Button>
     </search>
   );
 }

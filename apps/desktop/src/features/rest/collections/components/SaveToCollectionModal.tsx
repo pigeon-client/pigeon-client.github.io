@@ -1,7 +1,6 @@
-import { Button } from "@pigeon/ui";
+import { Alert, Button, Input, Label, Modal, ModalFooter, ModalHeader, Select } from "@pigeon/ui";
 import { useMemo, useState } from "react";
 import type { RequestConfig } from "@/shared/types";
-import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
 import { useCollectionStore } from "../store";
 import type { CollectionNode } from "../types";
 
@@ -78,70 +77,71 @@ export function SaveToCollectionModal({ request, onClose, onSaved }: SaveToColle
       <ModalHeader title="Save to Collection" onClose={onClose} />
       <div className="flex flex-col gap-4 px-5 py-5">
         {collections.length === 0 ? (
-          <div className="rounded border border-border bg-background/40 px-3 py-3 text-xs text-muted-foreground">
-            Create a collection first, then save this request.
-          </div>
+          <Alert>Create a collection first, then save this request.</Alert>
         ) : (
           <>
-            <label className="flex flex-col gap-2">
-              <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="save-collection" variant="field" className="mb-0">
                 Collection
-              </span>
-              <select
+              </Label>
+              <Select
+                id="save-collection"
+                size="lg"
                 value={collectionId}
                 onChange={(e) => {
                   setCollectionId(e.target.value);
                   setFolderId("__root__");
                 }}
-                className="h-9 w-full rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
               >
                 {collections.map((collection) => (
                   <option key={collection.id} value={collection.id}>
                     {collection.name}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </div>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="save-folder" variant="field" className="mb-0">
                 Folder
-              </span>
-              <select
+              </Label>
+              <Select
+                id="save-folder"
+                size="lg"
                 value={folderId}
                 onChange={(e) => setFolderId(e.target.value)}
-                className="h-9 w-full rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
               >
                 {folders.map((folder) => (
                   <option key={folder.id ?? "__root__"} value={folder.id ?? "__root__"}>
                     {folder.label}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </div>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="save-request-name" variant="field" className="mb-0">
                 Request Name
-              </span>
-              <input
+              </Label>
+              <Input
+                id="save-request-name"
+                size="lg"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSave();
                   if (e.key === "Escape") onClose();
                 }}
-                className="h-9 w-full rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
               />
-            </label>
+            </div>
           </>
         )}
 
-        {error && (
-          <div className="rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        {error ? (
+          <Alert variant="destructive" role="alert">
             {error}
-          </div>
-        )}
+          </Alert>
+        ) : null}
       </div>
       <ModalFooter>
         <Button variant="ghost" size="sm" onClick={onClose}>
