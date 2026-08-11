@@ -1,12 +1,12 @@
 import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getCachedUpdateResult, onUpdateCacheChange } from "@/features/settings";
+import { getCachedUpdateResult, onUpdateCacheChange, type SettingsTab } from "@/features/settings";
 
 /**
  * In-app toast shown when the startup update check finds a newer version.
- * Appears once per app launch (dismissible); "Update" opens Settings.
+ * Appears once per app launch (dismissible); "Update" opens Settings → About.
  */
-export function UpdateToast({ onOpenSettings }: { onOpenSettings: () => void }) {
+export function UpdateToast({ onOpenSettings }: { onOpenSettings: (tab?: SettingsTab) => void }) {
   const [version, setVersion] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
@@ -35,7 +35,7 @@ export function UpdateToast({ onOpenSettings }: { onOpenSettings: () => void }) 
         type="button"
         onClick={() => {
           setDismissed(true);
-          onOpenSettings();
+          onOpenSettings("About");
         }}
         className="ml-1 rounded bg-primary px-3 py-1.5 text-2xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
       >

@@ -15,6 +15,16 @@ interface TreeRowProps {
   count?: number;
   /** Folder rows only: shows a dot on the gear icon when set. */
   hasConfig?: boolean;
+  /** Highlight as an active drop target. */
+  dropActive?: boolean;
+  /** Dim / grab cursor while this row is being dragged. */
+  isDragging?: boolean;
+  /** Show grab cursor (draggable request rows). */
+  grab?: boolean;
+  /** Ref from @dnd-kit useDraggable / useDroppable. */
+  setRowRef?: (node: HTMLDivElement | null) => void;
+  /** Spread onto the row (dnd-kit attributes + listeners). */
+  dragProps?: React.HTMLAttributes<HTMLDivElement>;
   onClick?: () => void;
   onDelete?: () => void;
   onRename?: () => void;
@@ -35,6 +45,11 @@ export function TreeRow({
   showCount,
   count,
   hasConfig,
+  dropActive = false,
+  isDragging = false,
+  grab = false,
+  setRowRef,
+  dragProps,
   onClick,
   onDelete,
   onRename,
@@ -64,8 +79,13 @@ export function TreeRow({
     return guides;
   }, [depth]);
 
+  const { style: dragStyle, ...restDragProps } = dragProps ?? {};
+
   return (
     <div
+      ref={setRowRef}
+      data-testid={dropActive ? "tree-row-drop-active" : undefined}
+      {...restDragProps}
       role="treeitem"
       tabIndex={0}
       onClick={onClick}
@@ -82,13 +102,22 @@ export function TreeRow({
         alignItems: "center",
         height: 28,
         borderRadius: "var(--radius)",
-        cursor: "pointer",
+        cursor: grab ? (isDragging ? "grabbing" : "grab") : "pointer",
+        userSelect: "none",
         paddingLeft: 4 + depth * 14,
         paddingRight: 10,
-        background: hovered ? "var(--bg-elevated)" : "transparent",
+        opacity: isDragging ? 0.45 : 1,
+        background: dropActive
+          ? "color-mix(in oklch, var(--primary) 18%, transparent)"
+          : hovered
+            ? "var(--bg-elevated)"
+            : "transparent",
+        outline: dropActive ? "1px solid var(--primary)" : undefined,
+        outlineOffset: dropActive ? -1 : undefined,
         transition: "background 0.1s",
         margin: "0 4px",
         minWidth: depth >= 5 ? "max-content" : undefined,
+        ...(dragStyle as React.CSSProperties | undefined),
       }}
     >
       {/* Depth guides */}
@@ -290,6 +319,13 @@ export function RowIconButton({
       onClick={(e) => {
         e.stopPropagation();
         onClick();
+      }}
+      onMouseDown={(e) => {
+        // Keep row drag from starting when using action buttons.
+        e.stopPropagation();
+      }}
+      onPointerDown={(e) => {
+        e.stopPropagation();
       }}
       style={{
         flexShrink: 0,

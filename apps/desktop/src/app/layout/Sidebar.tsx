@@ -25,7 +25,7 @@ interface SidebarProps {
 export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
   const addTab = useTabStore((s) => s.addTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const updateTabRequest = useTabStore((s) => s.updateTabRequest);
+  const loadTabRequest = useTabStore((s) => s.loadTabRequest);
   const updateTabResponse = useTabStore((s) => s.updateTabResponse);
   const activeTabId = useTabStore((s) => s.activeTabId);
   const tabs = useTabStore((s) => s.tabs);
@@ -40,14 +40,17 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
     return tab?.request.url ? tab.request : null;
   }, [activeTabId, tabs]);
 
-  const loadRequest = (req: RequestConfig): string => {
+  const loadRequest = (
+    req: RequestConfig,
+    origin?: { collectionId: string; nodeId: string },
+  ): string => {
     if (tabs.length === 1 && !tabs[0].request.url) {
-      updateTabRequest(tabs[0].id, req);
+      loadTabRequest(tabs[0].id, req, origin ?? null);
       setActiveTab(tabs[0].id);
       return tabs[0].id;
     }
     const id = addTab();
-    updateTabRequest(id, req);
+    loadTabRequest(id, req, origin ?? null);
     setActiveTab(id);
     return id;
   };

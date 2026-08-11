@@ -27,7 +27,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const tabs = useTabStore((s) => s.tabs);
   const addTab = useTabStore((s) => s.addTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const updateTabRequest = useTabStore((s) => s.updateTabRequest);
+  const loadTabRequest = useTabStore((s) => s.loadTabRequest);
   const updateTabResponse = useTabStore((s) => s.updateTabResponse);
 
   const items = useMemo(
@@ -55,13 +55,17 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
 
   const openResult = (result: PaletteResult) => {
     const req = result.request;
+    const origin =
+      result.source === "collection" && result.collectionId && result.nodeId
+        ? { collectionId: result.collectionId, nodeId: result.nodeId }
+        : null;
     let id: string;
     if (tabs.length === 1 && !tabs[0].request.url) {
       id = tabs[0].id;
-      updateTabRequest(id, req);
+      loadTabRequest(id, req, origin);
     } else {
       id = addTab();
-      updateTabRequest(id, req);
+      loadTabRequest(id, req, origin);
     }
     setActiveTab(id);
     if (result.source === "history" && result.snapshot) {

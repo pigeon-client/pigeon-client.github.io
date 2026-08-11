@@ -1,16 +1,115 @@
-import { Button } from "@pigeon/ui";
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
+  PointerSensor,
+  pointerWithin,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { Button, METHOD_COLORS } from "@pigeon/ui";
 import { Plus } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTabStore } from "@/features/rest/request-builder";
 import type { RequestConfig } from "@/shared/types";
 import { ConfirmModal, type ConfirmModalState } from "@/shared/ui/ConfirmModal";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { TreeRow } from "@/shared/ui/TreeRow";
 import { resolveInheritedRequest } from "../lib/inheritance";
 import { countRequests, findAncestors } from "../lib/tree";
-import { useCollectionStore } from "../store";
+import { findNode, useCollectionStore } from "../store";
 import type { CollectionNode, FolderConfig } from "../types";
 import { FolderConfigModal, type FolderConfigModalState } from "./FolderConfigModal";
 import { NameModal, type NameModalState } from "./NameModal";
+
+/** Floating preview that follows the pointer while dragging a request. */
+function RequestDragPreview({ name, method }: { name: string; method?: string }) {
+  const mc = method ? (METHOD_COLORS[method] ?? METHOD_COLORS.GET) : undefined;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0,
+        height: 28,
+        minWidth: 160,
+        maxWidth: 260,
+        padding: "0 10px",
+        borderRadius: "var(--radius)",
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 8px 24px color-mix(in oklch, var(--text-primary) 18%, transparent)",
+        cursor: "grabbing",
+        pointerEvents: "none",
+      }}
+    >
+      {method && mc ? (
+        <span
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--text-xs)",
+            fontWeight: 600,
+            color: mc,
+            flexShrink: 0,
+            width: 52,
+          }}
+        >
+          {method}
+        </span>
+      ) : null}
+      <span
+        style={{
+          flex: 1,
+          minWidth: 0,
+          fontFamily: "var(--font-mono)",
+          fontSize: "var(--text-xs)",
+          color: "var(--text-primary)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {name}
+      </span>
+    </div>
+  );
+}
+
+/** Draggable request id: `drag:<collectionId>:<nodeId>` */
+function dragId(collectionId: string, nodeId: string): string {
+  return `drag:${collectionId}:${nodeId}`;
+}
+
+/** Droppable folder/root id: `drop:<collectionId>:<folderId|root>` */
+function dropId(collectionId: string, parentId: string | null): string {
+  return `drop:${collectionId}:${parentId ?? "root"}`;
+}
+
+function parseDragId(id: string): { collectionId: string; nodeId: string } | null {
+  if (!id.startsWith("drag:")) return null;
+  const rest = id.slice("drag:".length);
+  const sep = rest.indexOf(":");
+  if (sep <= 0) return null;
+  const collectionId = rest.slice(0, sep);
+  const nodeId = rest.slice(sep + 1);
+  if (!(collectionId && nodeId)) return null;
+  return { collectionId, nodeId };
+}
+
+function parseDropId(id: string): { collectionId: string; parentId: string | null } | null {
+  if (!id.startsWith("drop:")) return null;
+  const rest = id.slice("drop:".length);
+  const sep = rest.indexOf(":");
+  if (sep <= 0) return null;
+  const collectionId = rest.slice(0, sep);
+  const parentKey = rest.slice(sep + 1);
+  if (!(collectionId && parentKey)) return null;
+  return { collectionId, parentId: parentKey === "root" ? null : parentKey };
+}
 
 function hasFolderConfig(config: FolderConfig | undefined): boolean {
   return !!config && (!!config.headers?.length || (!!config.auth && config.auth.type !== "none"));
@@ -20,6 +119,154 @@ function matchesSearch(text: string, search: string): boolean {
   return !search || text.toLowerCase().includes(search.toLowerCase());
 }
 
+function DraggableRequestRow({
+  node,
+  depth,
+  collectionId,
+  onSelect,
+  onRename,
+  onDelete,
+}: {
+  node: CollectionNode;
+  depth: number;
+  collectionId: string;
+  onSelect: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: dragId(collectionId, node.id),
+    data: { collectionId, nodeId: node.id, type: "request" as const },
+  });
+
+  return (
+    <TreeRow
+      depth={depth}
+      isFolder={false}
+      label={node.name}
+      method={node.method}
+      grab
+      isDragging={isDragging}
+      setRowRef={setNodeRef}
+      dragProps={{ ...attributes, ...listeners }}
+      onClick={onSelect}
+      onRename={onRename}
+      onDelete={onDelete}
+    />
+  );
+}
+
+function DroppableFolderRow({
+  node,
+  depth,
+  collectionId,
+  expanded,
+  dropActive,
+  onToggle,
+  onExpand,
+  onAddRequest,
+  onAddFolder,
+  onEditConfig,
+  onRename,
+  onDelete,
+}: {
+  node: CollectionNode;
+  depth: number;
+  collectionId: string;
+  expanded: boolean;
+  dropActive: boolean;
+  onToggle: () => void;
+  onExpand: () => void;
+  onAddRequest?: () => void;
+  onAddFolder: () => void;
+  onEditConfig: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: dropId(collectionId, node.id),
+    data: { collectionId, parentId: node.id, type: "folder" as const },
+  });
+
+  // Open the folder while hovering a drag so nested targets are reachable.
+  useEffect(() => {
+    if (isOver || dropActive) onExpand();
+  }, [isOver, dropActive, onExpand]);
+
+  return (
+    <TreeRow
+      depth={depth}
+      isFolder
+      label={node.name}
+      expanded={expanded}
+      showCount={depth === 0}
+      count={(node.children ?? []).length}
+      hasConfig={hasFolderConfig(node.folderConfig)}
+      dropActive={dropActive || isOver}
+      setRowRef={setNodeRef}
+      onClick={onToggle}
+      onAddRequest={onAddRequest}
+      onAddFolder={onAddFolder}
+      onEditConfig={onEditConfig}
+      onRename={onRename}
+      onDelete={onDelete}
+    />
+  );
+}
+
+function DroppableCollectionRow({
+  collectionId,
+  name,
+  expanded,
+  requestCount,
+  dropActive,
+  onToggle,
+  onExpand,
+  onAddRequest,
+  onAddFolder,
+  onRename,
+  onDelete,
+}: {
+  collectionId: string;
+  name: string;
+  expanded: boolean;
+  requestCount: number;
+  dropActive: boolean;
+  onToggle: () => void;
+  onExpand: () => void;
+  onAddRequest?: () => void;
+  onAddFolder: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: dropId(collectionId, null),
+    data: { collectionId, parentId: null, type: "root" as const },
+  });
+
+  useEffect(() => {
+    if (isOver || dropActive) onExpand();
+  }, [isOver, dropActive, onExpand]);
+
+  return (
+    <TreeRow
+      depth={0}
+      isFolder
+      label={name}
+      expanded={expanded}
+      showCount
+      count={requestCount}
+      dropActive={dropActive || isOver}
+      setRowRef={setNodeRef}
+      onClick={onToggle}
+      onAddRequest={onAddRequest}
+      onAddFolder={onAddFolder}
+      onRename={onRename}
+      onDelete={onDelete}
+    />
+  );
+}
+
 /* ── Nested collection tree node ── */
 function CollectionTreeNode({
   node,
@@ -27,6 +274,7 @@ function CollectionTreeNode({
   onSelect,
   collectionId,
   activeRequest,
+  dropTargetKey,
   onRenameNode,
   onAddFolder,
   onAddRequest,
@@ -38,6 +286,7 @@ function CollectionTreeNode({
   onSelect: (req: RequestConfig, nodeId: string) => void;
   collectionId?: string;
   activeRequest?: RequestConfig | null;
+  dropTargetKey: string | null;
   onRenameNode: (collectionId: string, node: CollectionNode) => void;
   onAddFolder: (collectionId: string, parentId: string | null) => void;
   onAddRequest: (collectionId: string, parentId: string | null, request: RequestConfig) => void;
@@ -46,23 +295,24 @@ function CollectionTreeNode({
 }) {
   // Folders start collapsed by default.
   const [expanded, setExpanded] = useState(false);
+  const expandFolder = useCallback(() => setExpanded(true), []);
 
   if (!collectionId) return null;
 
   if (node.type === "request") {
     return (
-      <TreeRow
+      <DraggableRequestRow
+        node={node}
         depth={depth}
-        isFolder={false}
-        label={node.name}
-        method={node.method}
-        onClick={() => node.request && onSelect(node.request, node.id)}
+        collectionId={collectionId}
+        onSelect={() => node.request && onSelect(node.request, node.id)}
         onRename={() => onRenameNode(collectionId, node)}
         onDelete={() => onDeleteNode(collectionId, node)}
       />
     );
   }
 
+  const folderDropKey = dropId(collectionId, node.id);
   const handleAddFolder = () => {
     onAddFolder(collectionId, node.id);
     setExpanded(true);
@@ -75,15 +325,14 @@ function CollectionTreeNode({
 
   return (
     <>
-      <TreeRow
+      <DroppableFolderRow
+        node={node}
         depth={depth}
-        isFolder
-        label={node.name}
+        collectionId={collectionId}
         expanded={expanded}
-        showCount={depth === 0}
-        count={(node.children ?? []).length}
-        hasConfig={hasFolderConfig(node.folderConfig)}
-        onClick={() => setExpanded((e) => !e)}
+        dropActive={dropTargetKey === folderDropKey}
+        onToggle={() => setExpanded((e) => !e)}
+        onExpand={expandFolder}
         onAddRequest={activeRequest?.url ? handleAddRequest : undefined}
         onAddFolder={handleAddFolder}
         onEditConfig={() => onEditFolderConfig(collectionId, node)}
@@ -99,6 +348,7 @@ function CollectionTreeNode({
             onSelect={onSelect}
             collectionId={collectionId}
             activeRequest={activeRequest}
+            dropTargetKey={dropTargetKey}
             onRenameNode={onRenameNode}
             onAddFolder={onAddFolder}
             onAddRequest={onAddRequest}
@@ -118,7 +368,7 @@ export function CollectionsTab({
 }: {
   search: string;
   activeRequest: RequestConfig | null;
-  onSelect: (req: RequestConfig) => void;
+  onSelect: (req: RequestConfig, origin?: { collectionId: string; nodeId: string }) => void;
 }) {
   const collections = useCollectionStore((s) => s.collections);
   const addCollection = useCollectionStore((s) => s.addCollection);
@@ -129,20 +379,103 @@ export function CollectionsTab({
   const addFolder = useCollectionStore((s) => s.addFolder);
   const addRequest = useCollectionStore((s) => s.addRequest);
   const setFolderConfig = useCollectionStore((s) => s.setFolderConfig);
+  const moveNode = useCollectionStore((s) => s.moveNode);
 
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [nameModal, setNameModal] = useState<NameModalState | null>(null);
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState | null>(null);
   const [folderConfigModal, setFolderConfigModal] = useState<FolderConfigModalState | null>(null);
+  const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
+  const [activeDrag, setActiveDrag] = useState<{
+    collectionId: string;
+    name: string;
+    method?: string;
+  } | null>(null);
+
+  // Distance threshold so a click still opens/selects; drag starts after a small move.
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+  );
 
   /* Merge ancestor folder headers/auth into the request before opening it. */
   const selectWithInheritance = useCallback(
     (collectionId: string, req: RequestConfig, nodeId: string) => {
       const collection = collections.find((c) => c.id === collectionId);
       const ancestors = collection ? findAncestors(collection.root, nodeId) : [];
-      onSelect(resolveInheritedRequest(ancestors, req));
+      onSelect(resolveInheritedRequest(ancestors, req), { collectionId, nodeId });
     },
     [collections, onSelect],
+  );
+
+  const clearDragUi = useCallback(() => {
+    setDropTargetKey(null);
+    setActiveDrag(null);
+  }, []);
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      setDropTargetKey(null);
+      const drag = parseDragId(String(event.active.id));
+      if (!drag) {
+        setActiveDrag(null);
+        return;
+      }
+      const collection = collections.find((c) => c.id === drag.collectionId);
+      const node = collection ? findNode(collection.root, drag.nodeId) : null;
+      if (node?.type === "request") {
+        setActiveDrag({
+          collectionId: drag.collectionId,
+          name: node.name,
+          method: node.method,
+        });
+      } else {
+        setActiveDrag(null);
+      }
+    },
+    [collections],
+  );
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const overId = event.over?.id;
+    if (typeof overId !== "string" || !overId.startsWith("drop:")) {
+      setDropTargetKey(null);
+      return;
+    }
+    setDropTargetKey(overId);
+  }, []);
+
+  const handleDragCancel = useCallback(() => {
+    clearDragUi();
+  }, [clearDragUi]);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      clearDragUi();
+      const { active, over } = event;
+      if (!over) return;
+
+      const drag = parseDragId(String(active.id));
+      const drop = parseDropId(String(over.id));
+      if (!(drag && drop)) return;
+      if (drop.parentId === drag.nodeId) return;
+
+      const sameCollection = drag.collectionId === drop.collectionId;
+      void moveNode(
+        drag.collectionId,
+        drag.nodeId,
+        drop.parentId,
+        sameCollection ? undefined : drop.collectionId,
+      ).then((ok) => {
+        if (!ok) {
+          alert("Could not move that item here.");
+          return;
+        }
+        setExpandedCollections((prev) => new Set(prev).add(drop.collectionId));
+      });
+    },
+    [clearDragUi, moveNode],
   );
 
   /* Recursive collection tree filter — keeps ancestors of matching nodes */
@@ -230,8 +563,14 @@ export function CollectionsTab({
       initialValue: request.name || request.url,
       onSubmit: (name) => {
         addRequest(collectionId, parentId, name, request)
-          .then((ok) => {
-            if (ok) setExpandedCollections((prev) => new Set(prev).add(collectionId));
+          .then((nodeId) => {
+            if (!nodeId) return;
+            setExpandedCollections((prev) => new Set(prev).add(collectionId));
+            // Link the active editor tab so ⌘S updates this node in place.
+            const tabId = useTabStore.getState().activeTabId;
+            if (tabId) {
+              useTabStore.getState().setTabCollectionRef(tabId, { collectionId, nodeId });
+            }
           })
           .catch((err) => alert(`Failed to save request: ${String(err)}`));
       },
@@ -326,53 +665,76 @@ export function CollectionsTab({
           sub={search ? "Try a different search term" : undefined}
         />
       )}
-      {filteredCollections.map((collection) => {
-        const id = collection.id as string;
-        const isExpanded = expandedCollections.has(id);
-        return (
-          <div key={id}>
-            <TreeRow
-              depth={0}
-              isFolder
-              label={collection.name}
-              expanded={isExpanded}
-              showCount
-              count={countRequests(collection.root)}
-              onClick={() =>
-                setExpandedCollections((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(id)) next.delete(id);
-                  else next.add(id);
-                  return next;
-                })
-              }
-              onAddRequest={
-                activeRequest?.url ? () => openAddRequestModal(id, null, activeRequest) : undefined
-              }
-              onAddFolder={() => openAddFolderModal(id, null)}
-              onRename={() => openRenameCollectionModal(id, collection.name)}
-              onDelete={() => openDeleteCollectionModal(id, collection.name)}
-            />
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        {filteredCollections.map((collection) => {
+          const id = collection.id as string;
+          const isExpanded = expandedCollections.has(id);
+          const rootDropKey = dropId(id, null);
+          return (
+            <div key={id}>
+              <DroppableCollectionRow
+                collectionId={id}
+                name={collection.name}
+                expanded={isExpanded}
+                requestCount={countRequests(collection.root)}
+                dropActive={dropTargetKey === rootDropKey}
+                onToggle={() =>
+                  setExpandedCollections((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                  })
+                }
+                onExpand={() =>
+                  setExpandedCollections((prev) => {
+                    if (prev.has(id)) return prev;
+                    return new Set(prev).add(id);
+                  })
+                }
+                onAddRequest={
+                  activeRequest?.url
+                    ? () => openAddRequestModal(id, null, activeRequest)
+                    : undefined
+                }
+                onAddFolder={() => openAddFolderModal(id, null)}
+                onRename={() => openRenameCollectionModal(id, collection.name)}
+                onDelete={() => openDeleteCollectionModal(id, collection.name)}
+              />
 
-            {isExpanded &&
-              collection.root.map((node) => (
-                <CollectionTreeNode
-                  key={node.id}
-                  node={node}
-                  depth={1}
-                  onSelect={(req, nodeId) => selectWithInheritance(id, req, nodeId)}
-                  collectionId={collection.id}
-                  activeRequest={activeRequest}
-                  onRenameNode={openRenameNodeModal}
-                  onAddFolder={openAddFolderModal}
-                  onAddRequest={openAddRequestModal}
-                  onDeleteNode={openDeleteNodeModal}
-                  onEditFolderConfig={openFolderConfigModal}
-                />
-              ))}
-          </div>
-        );
-      })}
+              {isExpanded &&
+                collection.root.map((node) => (
+                  <CollectionTreeNode
+                    key={node.id}
+                    node={node}
+                    depth={1}
+                    onSelect={(req, nodeId) => selectWithInheritance(id, req, nodeId)}
+                    collectionId={collection.id}
+                    activeRequest={activeRequest}
+                    dropTargetKey={dropTargetKey}
+                    onRenameNode={openRenameNodeModal}
+                    onAddFolder={openAddFolderModal}
+                    onAddRequest={openAddRequestModal}
+                    onDeleteNode={openDeleteNodeModal}
+                    onEditFolderConfig={openFolderConfigModal}
+                  />
+                ))}
+            </div>
+          );
+        })}
+        <DragOverlay dropAnimation={null}>
+          {activeDrag ? (
+            <RequestDragPreview name={activeDrag.name} method={activeDrag.method} />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
       {nameModal && <NameModal state={nameModal} onClose={() => setNameModal(null)} />}
       {confirmModal && <ConfirmModal state={confirmModal} onClose={() => setConfirmModal(null)} />}
       {folderConfigModal && (

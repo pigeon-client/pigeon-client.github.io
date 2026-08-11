@@ -1,7 +1,7 @@
 # Testing
 
-Three layers: unit/integration (Vitest), browser E2E (Playwright), and **feature QA** (automation
-and manual user-like passes). One project agent owns all three.
+Three layers: unit/integration (Vitest), browser E2E (Playwright), and manual feature QA against
+the checklists in `docs/features/*.md`.
 
 ## Unit / integration — Vitest
 
@@ -29,17 +29,15 @@ pnpm e2e:report  # open last report
   `playwright.config.ts`.
 - Drives the **browser build** (no Tauri) on browser adapters: DB → `localStorage`
   (`src/core/persistence/browserTable.ts`), send → `BrowserHttpClient` (fetch, in `src/core/http`).
-  Specs stub the network
-  with `page.route` (`mockJson`) — no real APIs, no CORS.
+  Specs stub the network with `page.route` (`mockJson`) — no real APIs, no CORS.
 - Covers UI + JS against a mock backend — **not** the real Rust send/SQLite (that needs
   `tauri-driver`, Linux/Windows only).
 
 ## Feature QA — automation + manual
 
-**`.claude/agents/feature-qa.md`** is the sole project agent. It owns Vitest unit/store tests,
-Playwright E2E, manual full-app / per-feature QA, documentation updates, and reports in
-`docs/qa/<date>-report.md` (or `05-test-report.md` / `06-bugs.json` for historical workflow
-folders).
+Use each feature doc's **Manual test checklist** and **Acceptance criteria** in
+[`docs/features/`](./features/README.md). File findings in issues or a short note under
+`docs/` if you need a durable report.
 
 Mandatory edge cases (always on full / request-builder passes):
 
@@ -49,7 +47,8 @@ Mandatory edge cases (always on full / request-builder passes):
 4. Sidebar resize + narrow window — no page overflow.
 5. Keyboard chords and modal Space-does-not-close.
 
-See checklists inside each `docs/features/*.md`.
+Canonical chords: [`docs/features/keyboard-shortcuts.md`](./features/keyboard-shortcuts.md)
+(source of truth: `AppContent.tsx`).
 
 ## Test ids
 
@@ -70,6 +69,3 @@ helpers.
 `.github/workflows/e2e.yml` — on push/PR to `main` (ignoring `apps/site/**`, `**.md`): install →
 Vitest → install chromium → Playwright → upload HTML report artifact
 (`apps/desktop/playwright-report/`).
-
-Note: Claude Code loads agents at session start — restart session after adding/editing
-`.claude/agents/*`.

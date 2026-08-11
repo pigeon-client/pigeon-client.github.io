@@ -48,7 +48,7 @@ and Params.
 
 ## Acceptance criteria
 
-- [ ] New tab via `+` or `⌘⇧N` shows editor (not a blank/hidden workspace).
+- [ ] New tab via `+`, `⌘T`, or `⌘⇧N` shows editor (not a blank/hidden workspace).
 - [ ] Typing `?a=1&b=2` in the URL fills Params; editing Params rewrites the URL query.
 - [ ] URL ≥ ~2KB: caret, End key, and horizontal wheel reach the end; tint overlay stays aligned.
 - [ ] Headers: 20+ rows → vertical scrollbar scrolls the list; long value scrolls horizontally.
@@ -94,8 +94,11 @@ and Params.
 
 ## Keyboard
 
-- `⌘⇧N` new tab · `⌘⇧W` close tab · `⌘⇧1–9` switch tab N
-- `⌘↵` send · `⌘⇧S` save to collection
+Canonical list: [keyboard-shortcuts.md](./keyboard-shortcuts.md). Tab strip details:
+[tabs.md](./tabs.md).
+
+- `⌘T` / `⌘⇧N` new tab · `⌘W` close tab · `⌘1–9` switch tab N
+- `⌘↵` send · `⌘S` save (in-place if linked) · `⌘⇧S` save as · `⌘L` focus URL
 - `⌘F` contextual find: in the Body editor / response panel it opens an in-panel find bar;
   anywhere else it focuses the header search
 - Double-click tab label → rename (Enter commit, Esc cancel)
@@ -112,7 +115,7 @@ and Params.
 
 ## Manual test checklist
 
-- [ ] Create 3 tabs; switch with click and `⌘⇧1–3`; close middle tab.
+- [ ] Create 3 tabs; switch with click and `⌘1–3`; close middle tab.
 - [ ] Rename tab; change URL path — name stays locked; clear rename — unlocks.
 - [ ] Clear URL → empty state shows Try an example only.
 - [ ] Paste long URL (~3KB); End key + horizontal scroll; overlay matches caret.

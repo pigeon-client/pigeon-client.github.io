@@ -281,7 +281,6 @@ function MarkedCodeBlock({
   // Re-center the active match every time it moves (Enter / arrows / retyping the
   // query) — `current` is the real trigger; `markedHtml` just needs to have committed
   // to the DOM first, which it has by the time this effect runs.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: current is the intentional trigger
   useEffect(() => {
     containerRef.current
       ?.querySelector('[data-find-current="1"]')

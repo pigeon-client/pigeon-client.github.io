@@ -13,6 +13,6 @@ export {
   relabelLeaves,
   type UrlTreeReq,
 } from "./lib/tree";
-export { findNode, useCollectionStore } from "./store";
+export { findNode, findUniqueSavedRequest, useCollectionStore } from "./store";
 export type { Collection, CollectionNode, FolderConfig } from "./types";
 export { MAX_NESTING_DEPTH } from "./types";

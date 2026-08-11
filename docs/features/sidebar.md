@@ -2,22 +2,20 @@
 
 ## Overview
 
-Left navigation shell tying History, Drafts, and Collections together, plus New Request / Import.
-Search lives in the **header** (`⌘F`) and filters the active sidebar pane. Implemented in layout
-(`Sidebar.tsx`), not a feature module — still a primary UX surface. For a global search across
-*all* panes at once, see `⌘⇧K` — [command-palette.md](./command-palette.md).
+Left navigation for the **REST** workbench: New Request, Import, and three panes — History,
+Draft, Collections. Search lives in the **header** (`⌘F`) and filters the active sidebar pane.
+Implemented in layout (`Sidebar.tsx`), not a feature module — still a primary UX surface.
 
-**Kind-aware since 2026-07-31**: this document covers the REST sidebar specifically. `AppContent.tsx`
-swaps the whole sidebar slot based on the active tab's kind — `Sidebar` (this doc) for `"http"`
-tabs, `McpSidebar` (see [mcp.md](./mcp.md)) for `"mcp"` tabs. In the desktop app each
-kind is also its own singleton OS window (`open_workspace_window`), so in practice a REST window's
-sidebar is always this one and an MCP window's is always `McpSidebar` — the active-tab check is
-what makes it also work correctly in the browser/E2E build, where both kinds share one window.
+For global search across all panes at once, see `⌘K` — [command-palette.md](./command-palette.md).
+
+MCP / GraphQL workbenches do **not** show this sidebar (coming-soon panes hide it). Retained
+`McpSidebar` exists under `features/mcp` for later enablement — see [mcp.md](./mcp.md) and
+[workspaces.md](./workspaces.md).
 
 ## Problem / job to be done
 
-Users need one place to create requests, import curl, find past work, and open saved trees —
-resizable (or collapsible) beside the workspace without crushing the URL bar.
+Users need one place to create requests, import curl/Postman, find past work, and open saved
+trees — resizable or collapsible beside the workspace without crushing the URL bar.
 
 ## User stories
 
@@ -28,23 +26,25 @@ resizable (or collapsible) beside the workspace without crushing the URL bar.
 
 ## Functional requirements
 
-1. Primary actions: New Request, Import cURL.
-2. Three content tabs: History | Draft | Collections.
-3. Header search (`data-header-search`) filters active pane.
-4. Horizontal resize 180–480px; layout uses `min-w-0` so URL bar still shrinks correctly.
-5. Collapse / expand controls (`sidebar-collapse` / `sidebar-expand`).
-6. Selecting an item loads into a tab (reuse empty or open new).
+1. Primary actions: New Request, Import (opens Import modal — cURL + Postman modes).
+2. Three content tabs: History | Draft | Collections. **Default tab: Draft**.
+3. Header search (`data-header-search`) filters the active pane.
+4. Horizontal resize ~180–400px; layout uses `min-w-0` so the URL bar still shrinks correctly.
+5. Collapse / expand controls (`sidebar-collapse` / `sidebar-expand`); `⌘\` toggles collapse.
+6. Selecting an item loads into a tab (reuse empty or open new). History rows restore response
+   snapshots when present.
 7. Shared `TreeRow` spacing/depth across draft and collection trees.
+8. Footer counts for the active domain where shown.
 
 ## Non-functional requirements
 
 - Folder/hover accents use `var(--primary)`, not `--accent` surface tint.
-- Collapse/expand must not leave layout gaps (past tab-visibility bugs).
+- Collapse/expand must not leave layout gaps.
 
 ## Acceptance criteria
 
 - [ ] New Request opens empty tab editor (visible).
-- [ ] Import opens modal; Import submit creates new tab.
+- [ ] Import opens modal; cURL submit creates new tab; Postman submit creates collection.
 - [ ] Tab switch History↔Draft↔Collections preserves main workspace.
 - [ ] Search filters; clear restores list.
 - [ ] Resize sidebar min/max; no horizontal page overflow; long URL still scrolls inside URL bar.
@@ -68,52 +68,51 @@ Search field is in the app **header**, not inside the sidebar body.
 ## UX / interactions
 
 See child feature docs for pane-specific empty states and row actions.
-Draft trees use `collections/lib/tree.ts` helpers rendered via `AutoTree`.
+Draft trees use `collections/lib/tree.ts` helpers rendered via draft components.
 
 ## Keyboard
 
-`⌘F` focus header search (when focus is *not* inside the body editor or response panel — those
-open their own in-panel find bar) · `⌘⇧N` new request (global) · Import via control (no dedicated
-chord).
+| Chord | Action |
+|-------|--------|
+| `⌘F` | Focus header search (when body/response FindBar does not intercept) |
+| `⌘T` / `⌘⇧N` | New request tab (global) |
+| `⌘\` | Collapse / expand sidebar |
+| `⌘⌥1` | Focus New Request or Expand control |
+
+Import has no dedicated chord.
 
 ## States & edge cases
 
-- Each pane empty state documented in history-drafts / collections docs.
+- Each pane empty state documented in [history-drafts.md](./history-drafts.md) /
+  [collections.md](./collections.md).
 - Inactive workspace tabs elsewhere must not steal sidebar testids.
+- Coming-soon workbenches: sidebar unmounted.
 
 ## Manual test checklist
 
-- [ ] New Request; Import flow.
+- [ ] New Request; Import cURL + Postman flows.
 - [ ] Switch three sidebar tabs; open items from each.
 - [ ] Search across history and drafts.
-- [ ] Drag resize to 180px and 480px; URL bar long-string still OK.
+- [ ] Drag resize to ~180px and ~400px; URL bar long-string still OK.
 - [ ] Collapse sidebar → expand; layout aligned.
 - [ ] Light + Dark icon contrast check.
 
 ## Automation coverage
 
-- Playwright: `e2e/smoke.spec.ts` plus feature specs using sidebar testids; `e2e/sidebar-search.spec.ts`
-  — `⌘F` filters both History (flat list) and Draft (auto-tree, filtered leaf count) by name/URL
-  (2026-07-26 QA pass).
-- Not driven in the 2026-07-26 QA pass: sidebar drag-resize to 180/480px bounds, light/dark icon
-  contrast (visual-only, no automated check planned).
+- Playwright: `e2e/smoke.spec.ts`, `e2e/sidebar-search.spec.ts` — `⌘F` filters History and Draft.
+- Visual-only (no automated check planned): light/dark icon contrast, exact resize pixels.
 
 ## Test ids
 
-`sidebar-new-request`, `sidebar-import`, `sidebar-tab-history|draft|collections`,
-`sidebar-collapse`, `sidebar-expand`. Header search: `data-header-search` (attribute).
+`sidebar-new-request`, `sidebar-import`, `sidebar-tab-history`, `sidebar-tab-draft`,
+`sidebar-tab-collections`, `sidebar-collapse`, `sidebar-expand`.
 
 ## Key files
 
-`src/app/layout/Sidebar.tsx` (thin shell: New Request/Import buttons, tab switcher, status bar).
-The tab sections live in their owning features and are composed via barrels:
-`src/features/rest/history/components/{HistoryTab,DraftTab}.tsx`,
-`src/features/rest/collections/components/{CollectionsTab,NameModal}.tsx`
-(each tab section is self-contained — reads its own store slice, owns its own local state).
-Generic presentational pieces are shared: `src/shared/ui/{TreeRow,EmptyState,ConfirmModal}.tsx`.
-`Header.tsx`, `AppContent.tsx` (resize + shortcuts).
-Tree helpers: `src/features/rest/collections/lib/tree.ts`.
+`apps/desktop/src/app/layout/Sidebar.tsx` plus
+`features/rest/history/components/{HistoryTab,DraftTab}.tsx`,
+`features/rest/collections/components/CollectionsTab.tsx`.
 
 ## Open risks
 
-- Resize + long URL + many tabs is a compound layout risk (mandatory with request-builder QA).
+- Sidebar is still a large layout component — decompose carefully without changing testids.

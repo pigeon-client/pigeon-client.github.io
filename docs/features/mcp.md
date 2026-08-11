@@ -1,8 +1,12 @@
 # MCP Bench
 
 > **UI status (current):** header / `⌘⇧M` opens a **coming-soon** pane
-> (`ComingSoonWorkspace`, testid `mcp-coming-soon`). The MCP bench implementation under
-> `src/features/mcp` is retained for when this ships; docs below describe that target UX.
+> (`ComingSoonWorkspace`, testid `mcp-coming-soon`). No sidebar swap, no `McpPanel` mount, no
+> kind tab. See [workspaces.md](./workspaces.md).
+>
+> **Code status:** the full bench under `src/features/mcp` (panel, sidebar, session, OAuth) is
+> **retained** for re-enablement. Everything below the Overview describes that **target** UX — not
+> the live shell.
 
 ## Overview
 
@@ -24,17 +28,12 @@ just enough to poke at an MCP server's tools during development, nothing more.
 
 ## Functional requirements
 
-1. **Desktop app**: opened via the header's "MCP bench" icon button (`Plug` icon,
-   `header-open-mcp`) or `⌘⇧M` — a separate, singleton **OS window** (label `"mcp"`,
-   `open_workspace_window` in `src-tauri/src/windows.rs` — re-triggering focuses the existing window
-   instead of opening a duplicate). That window keeps its own multi-tab strip, but every tab in
-   it is MCP-kind (`Tab.kind === "mcp"`) — REST gets its own window the same
-   way (see `docs/features/sidebar.md` and the "Workspace windows" note below).
-   **Browser/E2E build**: no OS windows exist, so the same button/shortcut instead opens an
-   in-page MCP tab in the single combined window (`openKindTab("mcp")`, singleton within that
-   page) — this is what `e2e/mcp.spec.ts` drives.
-   Either way the tab hosts `McpPanel` full-pane with no URL bar/request editor/response panel,
-   and the sidebar swaps to `McpSidebar` (see UI below) whenever the active tab is MCP-kind.
+1. **Live UI today:** `header-open-mcp` / `⌘⇧M` → in-place coming-soon only.
+   **Target (retained code):** host `McpPanel` full-pane (no URL bar/request editor/response panel)
+   with `McpSidebar` listing tools/resources. Historical designs used singleton OS windows
+   (`open_workspace_window`) and/or `openKindTab("mcp")`; re-enablement should pick one model and
+   update [workspaces.md](./workspaces.md) + e2e accordingly. Older `e2e/mcp.spec.ts` targeted the
+   enabled bench — expect updates when the UI ships again.
 2. Connect form: server URL + optional headers (shared `KeyValueEditor` rows, same primitive
    `RequestEditor` uses for REST headers), both run through the environments resolver **strictly**
    (`interpolateStrict` — same strictness as `execution.md`'s send path; an unresolved `{{var}}`
@@ -168,19 +167,13 @@ tool-chaining, no scripting, no session save/restore.)
 
 ## Automation coverage
 
-- Playwright: `e2e/mcp.spec.ts` — stubbed server: connect → tools listed → call `echo` with a
-  string arg → result rendered; a hard network failure → in-pane error, panel still usable. (No
-  OAuth coverage here — the browser build can't open a system browser or a loopback listener.)
-- Vitest: `src/features/mcp/lib/jsonRpc.test.ts` (request/notification framing, bare-JSON and
-  SSE-framed response parsing), `lib/toolSchema.test.ts` (simple-schema detection, arg coercion),
-  `lib/interpolate.test.ts` (strict resolve + header-line parsing), `services/McpSession.test.ts`
-  (full lifecycle against a fake transport: session-id capture, tools/resources list, tool call,
-  protocol-error/transport-error mapping, the 401 → `McpAuthRequiredError` path, and
-  `setAuthorizationHeader`). OAuth pure-logic tests (no real network/Tauri, matching project
-  convention): `oauth/pkce.test.ts` (RFC 7636 Appendix B vector), `oauth/canonicalUri.test.ts`
-  (spec's valid/invalid URI examples), `oauth/metadata.test.ts` (`WWW-Authenticate` parsing, RFC
-  8414 well-known URL construction, PRM/AS metadata validation), `oauth/OauthFlow.test.ts` (the
-  pure authorize-URL / token-request-body / registration-body builders).
+- Playwright: `e2e/mcp.spec.ts` — **coming-soon only**: header opens `mcp-coming-soon` in place
+  (no URL bar, no tabs, no sidebar); REST restores previous tabs. Full bench e2e (stubbed
+  connect → tools → call → result) is not active while the UI is disabled — re-add when the
+  bench is re-wired.
+- Vitest (retained bench code): `src/features/mcp/lib/jsonRpc.test.ts`, `lib/toolSchema.test.ts`,
+  `services/McpSession.test.ts`, OAuth pure-logic tests under `oauth/*.test.ts`. (No
+  `lib/interpolate.test.ts` in this feature — interpolation uses `@/core/interpolation`.)
 
 ## Test ids
 
@@ -209,19 +202,16 @@ POST, no JSON-RPC awareness), `open_workspace_window` in `src-tauri/src/windows.
 (singleton-per-kind window creation/focus); `src-tauri/src/oauth.rs` (`oauth_http_request`,
 `open_external_url`, `oauth_loopback_open`/`oauth_loopback_wait`); `mcp_oauth` table + CRUD in
 `src-tauri/src/db/mcp_oauth.rs` (added via the `MIGRATIONS` schema-version runner in
-`src-tauri/src/db/mod.rs`). Wired via header buttons (`header-open-mcp` etc.) in
-`src/app/layout/Header.tsx`, dispatched from `src/app/AppContent.tsx`'s `openWorkspace()` helper
-(`invoke("open_workspace_window", ...)` in Tauri, `openKindTab()` in the browser build). Window
-kind itself is resolved once via `src/shared/lib/windowKind.ts`.
+`src-tauri/src/db/mod.rs`). Wired historically via header buttons (`header-open-mcp`) in `Header.tsx` / `AppContent.tsx`.
+**Live UI today** routes those controls to `ComingSoonWorkspace` only — see
+[workspaces.md](./workspaces.md). Re-enablement must re-wire panel + sidebar (and choose
+in-page vs OS-window hosting).
 
 ## Open risks
 
-- **Resolved (2026-07-29):** MCP is now a real tab-store tab (`Tab.kind = "http" | "mcp"`,
-  `openKindTab` singleton-focus) — the earlier modal compromise is gone.
-- **Resolved (2026-07-31):** MCP now opens as its own singleton OS window in the desktop app
-  (`open_workspace_window`), with its own multi-tab strip — multiple concurrent MCP connections
-  work today (one tab per connection, per-tab state in `features/mcp/store.ts`). Browser/E2E build
-  still uses the single in-page tab (no OS windows there).
+- **UI disabled (current):** coming-soon pane only. Retained bench + OAuth code may drift from
+  shell assumptions (OS window / kind tabs / `openKindTab`) documented in older "Resolved" notes —
+  treat those as historical, not live.
 - No SSE *streaming* tool results (long-running tool calls that emit multiple `data:` frames) — only
   the last frame is read. Fine for request/response-style tools; would need real stream handling
   for progress-reporting tools.

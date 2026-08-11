@@ -55,7 +55,6 @@ export function EnvModal({ onClose }: EnvModalProps) {
   }, [isGlobals, selectedEnv]);
 
   // Seed the editor (with a trailing blank) whenever the selection changes.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reseed on selection only, not on every store write
   useEffect(() => {
     setEditItems(withBlank(vars));
   }, [selectedId]);

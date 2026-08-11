@@ -36,9 +36,7 @@ in the run.
 
 ## Open known issues
 
-- **`docs/qa/2026-07-26-launch-report.md`** — one major bug found and fixed during the Phase 5
-  sweep (browser transport missing auto `Content-Type`, see that report and `history-drafts.md`
-  isn't affected — it was in `execution`). A handful of manual checks were explicitly marked
+- **Pre-launch QA leftovers** — a handful of manual checks were explicitly marked
   **unverified** rather than claimed-and-wrong: real file-picker multipart/binary upload, HTML
   preview sandbox visual check, word-wrap-persists-across-reload, response-headers-tab scroll,
   sidebar drag-resize bounds, light/dark icon contrast. None of these are launch blockers on their

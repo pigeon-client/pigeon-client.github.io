@@ -129,7 +129,6 @@ export function KeyValueEditor({
 
   // Re-sync overlays after value text changes (paste / store write) — caret scroll
   // may land before the overlay's content width updates.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional sync on values
   useEffect(() => {
     requestAnimationFrame(() => {
       for (let i = 0; i < items.length; i++) syncValueOverlayScroll(i);

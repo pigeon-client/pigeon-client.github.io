@@ -9,17 +9,20 @@ const SECTIONS: { label: string; shortcuts: { keys: string[]; action: string }[]
     label: "Requests",
     shortcuts: [
       { keys: ["⌘", "Enter"], action: "Send request" },
-      { keys: ["⌘", "⇧", "N"], action: "New tab" },
-      { keys: ["⌘", "⇧", "W"], action: "Close tab" },
-      { keys: ["⌘", "⇧", "1–9"], action: "Switch to tab" },
+      { keys: ["⌘", "T"], action: "New tab" },
+      { keys: ["⌘", "W"], action: "Close tab" },
+      { keys: ["⌘", "1–9"], action: "Switch to tab" },
+      { keys: ["⌘", "S"], action: "Save (update if already in collection)" },
+      { keys: ["⌘", "⇧", "S"], action: "Save as… to collection" },
+      { keys: ["⌘", "L"], action: "Focus URL bar" },
     ],
   },
   {
     label: "Navigation",
     shortcuts: [
-      { keys: ["⌘", "⇧", "K"], action: "Open command palette" },
-      { keys: ["⌘", "F"], action: "Find in focused panel / sidebar search" },
-      { keys: ["⌘", "⇧", "S"], action: "Save to collection" },
+      { keys: ["⌘", "K"], action: "Open command palette" },
+      { keys: ["⌘", "F"], action: "Focus header search / find in panel" },
+      { keys: ["⌘", "\\"], action: "Toggle sidebar" },
       { keys: ["Tab"], action: "Navigate between fields" },
       { keys: ["Esc"], action: "Close modal / blur focus" },
     ],
@@ -27,15 +30,16 @@ const SECTIONS: { label: string; shortcuts: { keys: string[]; action: string }[]
   {
     label: "Workbenches",
     shortcuts: [
-      { keys: ["⌘", "⇧", "M"], action: "Open MCP tab (coming soon)" },
-      { keys: ["⌘", "⇧", "G"], action: "Open GraphQL tab (coming soon)" },
+      { keys: ["⌘", "⇧", "R"], action: "REST workbench" },
+      { keys: ["⌘", "⇧", "M"], action: "MCP (coming soon)" },
+      { keys: ["⌘", "⇧", "G"], action: "GraphQL (coming soon)" },
     ],
   },
   {
     label: "Other",
     shortcuts: [
       { keys: ["⌘", "⇧", "/"], action: "Show keyboard shortcuts" },
-      { keys: ["⌘", "⇧", ","], action: "Open settings" },
+      { keys: ["⌘", ","], action: "Open settings" },
       { keys: ["⌘", "⇧", "E"], action: "Open environment manager" },
     ],
   },

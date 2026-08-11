@@ -31,6 +31,8 @@ export interface Tab {
   request: RequestConfig;
   response: ApiResponse | null;
   isLoading: boolean;
+  /** When set, ⌘S updates this collection node in place instead of opening the save modal. */
+  collectionRef?: { collectionId: string; nodeId: string } | null;
 }
 
 interface TabState {
@@ -53,6 +55,13 @@ interface TabState {
   setTabLoading: (id: string, loading: boolean) => void;
   setTabName: (id: string, name: string) => void;
   setTabNameLocked: (id: string, locked: boolean) => void;
+  setTabCollectionRef: (id: string, ref: { collectionId: string; nodeId: string } | null) => void;
+  /** Load a full request into a tab and set/clear its collection link atomically. */
+  loadTabRequest: (
+    id: string,
+    req: RequestConfig,
+    collectionRef?: { collectionId: string; nodeId: string } | null,
+  ) => void;
 }
 
 const defaultRequest = (): RequestConfig => ({
@@ -147,6 +156,7 @@ function persistTabs(state: Pick<TabState, "tabs" | "activeTabId">): void {
           name: tab.name,
           nameLocked: tab.nameLocked,
           request: persistableRequest(tab.request),
+          collectionRef: tab.collectionRef ?? null,
         })),
       }),
     );
@@ -193,6 +203,18 @@ function restoreTabs(): Pick<TabState, "tabs" | "activeTabId"> | null {
           },
           response: null,
           isLoading: false,
+          collectionRef: (() => {
+            const ref = savedTab.collectionRef;
+            if (
+              ref &&
+              typeof ref === "object" &&
+              typeof ref.collectionId === "string" &&
+              typeof ref.nodeId === "string"
+            ) {
+              return { collectionId: ref.collectionId, nodeId: ref.nodeId };
+            }
+            return null;
+          })(),
         },
       ];
     });
@@ -257,6 +279,8 @@ export const useTabStore = create<TabState>((set, get) => ({
       request,
       response: null,
       isLoading: false,
+      // Duplicate is a new copy — not linked to the source collection node.
+      collectionRef: null,
     };
     set((s) => ({
       tabs: [...s.tabs, tab],
@@ -354,6 +378,29 @@ export const useTabStore = create<TabState>((set, get) => ({
           ? { ...t, nameLocked: locked, request: { ...t.request, nameLocked: locked } }
           : t,
       ),
+    })),
+
+  setTabCollectionRef: (id, ref) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) => (t.id === id ? { ...t, collectionRef: ref } : t)),
+    })),
+
+  loadTabRequest: (id, req, collectionRef = null) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) => {
+        if (t.id !== id) return t;
+        const nextLocked = req.nameLocked ?? t.nameLocked;
+        let name = req.name ?? t.name;
+        if (!nextLocked && req.url !== undefined) name = pathFromUrl(req.url);
+        const newRequest = { ...t.request, ...req, name, nameLocked: nextLocked };
+        return {
+          ...t,
+          request: newRequest,
+          name,
+          nameLocked: nextLocked,
+          collectionRef: collectionRef ?? null,
+        };
+      }),
     })),
 }));
 

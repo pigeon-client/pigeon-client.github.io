@@ -1,5 +1,5 @@
 /*
- * @pigeon/ui design tokens — spec in TOKENS.md at the repo root.
+ * @pigeon/ui design tokens — spec in docs/tokens.md.
  * Consumers: `@import "@pigeon/ui/tokens.css";` after `@import "tailwindcss";`,
  * plus an `@source` line pointing at this package's `src` (Tailwind 4 does not
  * auto-scan outside the consuming app's own tree).
@@ -38,7 +38,7 @@
   --font-sans: Inter, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: Geist Mono, ui-monospace, monospace;
-  --radius: 0.375rem; /* 6px — single source; was 0.25rem (see TOKENS.md) */
+  --radius: 0.375rem; /* 6px — single source; was 0.25rem (see docs/tokens.md) */
   --shadow-x: 0;
   --shadow-y: 1px;
   --shadow-blur: 3px;

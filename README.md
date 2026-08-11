@@ -3,9 +3,13 @@
 
   <h1>Pigeon</h1>
 
-  <p><strong>Never save a request again.</strong><br/>
-  Pigeon names, files, and remembers every request automatically — and finds any of them in
-  3 keystrokes. Local, private, no account.</p>
+  <p><strong>Never save a request again.</strong></p>
+
+  <p>
+    Pigeon names, files, and remembers every request automatically — and finds any of them in
+    3 keystrokes.<br />
+    Local, private, no account.
+  </p>
 
   <p>
     <img src="https://img.shields.io/badge/license-MIT-c96442?style=flat-square" alt="MIT License" />
@@ -13,116 +17,75 @@
     <img src="https://img.shields.io/badge/price-free_forever-72b872?style=flat-square" alt="free" />
   </p>
 
-  <a href="https://trypigeon.dev/#download"><strong>Download for macOS →</strong></a>
+  <p>
+    <a href="https://trypigeon.dev"><strong>trypigeon.dev</strong></a>
+    ·
+    <a href="https://trypigeon.dev/#download"><strong>Download for macOS</strong></a>
+    ·
+    <a href="https://github.com/pigeon-client/pigeon"><strong>GitHub</strong></a>
+  </p>
+
+  <p><em>macOS · Apple Silicon &amp; Intel · free forever</em></p>
 </div>
 
 ---
 
 ## What is Pigeon?
 
-Pigeon is a desktop API client — like Postman or Insomnia, but lighter, native, and
-self-organizing. You send HTTP requests and inspect responses; Pigeon handles the filing.
+Pigeon is a free, open-source desktop API client for macOS — a lighter, native alternative to
+tools like Postman or Insomnia. You build and send HTTP requests, inspect responses, manage
+environments, and keep collections — the same core job as any API client.
 
-The difference is what happens **after** you hit Send. Other clients make you name every
-request, pick a folder, and click "Save." Pigeon does that work for you:
+The difference is what happens **after** you hit Send. Other apps make you name every request,
+pick a folder, and click Save. Pigeon does that work for you:
 
-- **Tabs name themselves** from the URL path, and follow it as you type. Rename one by hand and
-  your name locks in.
-- **Requests file themselves** — every send is auto-saved and dropped into a tidy tree, one folder
-  per domain, grouped by endpoint. No "Save as…" dialog, ever.
-- **History writes itself** — a time-bucketed log (Today, Yesterday, This Week) of everything you
-  sent, with method, name, and status — including a snapshot of the response, so reopening an old
-  request shows you what it returned without sending it again.
-- **⌘⇧K finds anything** — one query across history, drafts, and every collection at once. Type a
-  few letters of a URL, name, or even a past response body and jump straight to it.
+- **Tabs name themselves** from the URL path (rename once and your name locks in)
+- **Requests file themselves** into a tidy tree by domain and endpoint
+- **History writes itself**, with a snapshot of the response so you can reopen without re-sending
+- **⌘K finds anything** — history, drafts, and collections in one query
 
-Everything lives on your machine. There's no sign-up, no workspace invite, and nothing syncs to
-anyone's cloud.
+**Send it. It sorts itself.** Everything lives on your disk. There’s no account wall, no workspace
+invite, and nothing syncs to anyone’s cloud — built for developers who want speed and privacy
+without the housekeeping.
 
 ---
 
-## Features
+## Highlights
 
 | | |
 |---|---|
-| **Self-organizing workspace** | Auto-named tabs, auto-filed drafts, and an auto-written history — zero manual housekeeping |
-| **⌘⇧K command palette** | One query across history, drafts, and every collection — ranked, with response-body search |
-| **Request builder** | Params, headers, body (JSON, form-data, multipart, file), and auth (Bearer, Basic, API Key) |
-| **Environments** | `{{variable}}` sets for dev / staging / prod, with secret masking and red production guardrails |
-| **Collections** | Curate requests into nested folders when you want deliberate structure — stored locally |
-| **cURL in & out** | Paste any `curl` command to build a request instantly; copy any request back out as cURL |
-| **SSE streaming** | Live event streams render as they arrive, newest on top, with a Stop control |
-| **MCP bench** | Connect to an MCP server, list its tools/resources, call one, inspect the result — no separate client |
-| **Native speed** | A Rust engine sends the request — no CORS limits, full control over redirects, SSL, and proxies |
-| **Syntax-highlighted responses** | Pretty-printed JSON/XML/HTML with per-theme colors; Raw mode for plain text |
-| **Keyboard-first** | Send, search, save, switch tabs, and manage environments without touching the mouse |
-| **Themes** | Dark and Light, persisted across sessions |
-| **Auto-updates** | Checks for new releases on launch |
+| **Self-organizing workspace** | Auto-named tabs, auto-filed drafts, time-bucketed history |
+| **Command palette** | One search across history, drafts, and collections |
+| **Request builder** | Params, headers, body, auth (Bearer, Basic, API key) |
+| **Environments** | `{{variables}}` for dev / staging / prod, with production guardrails |
+| **Collections** | Nested folders when you want deliberate structure |
+| **cURL & Postman** | Paste cURL to build a request; import Postman Collection v2.1; copy as cURL |
+| **SSE streaming** | Live event streams with a Stop control |
+| **Native engine** | Rust transport — no CORS limits; redirects, SSL, and proxy control |
+| **Keyboard-first** | Send, search, save, and switch tabs without the mouse |
 
 ---
 
-## Install
+## Tech stack
 
-**macOS (Apple Silicon & Intel)** — one command:
+| Layer | Stack |
+|-------|--------|
+| Desktop shell | [Tauri v2](https://tauri.app) (Rust) |
+| UI | React 19, Zustand, Tailwind CSS 4 |
+| HTTP | Rust `reqwest` on desktop · `fetch` in the browser/dev build |
+| Data | SQLite (desktop) · localStorage (browser) |
+| Marketing site | Astro on Cloudflare Workers — [trypigeon.dev](https://trypigeon.dev) |
+| Monorepo | pnpm workspaces · `@pigeon/ui` · `@pigeon/brand` |
 
-```bash
-curl -fsSL https://trypigeon.dev/install.sh | sh
-```
-
-Or grab the `.dmg` from [trypigeon.dev/download/latest/aarch64](https://trypigeon.dev/download/latest/aarch64) (Apple Silicon) or [Intel](https://trypigeon.dev/download/latest/x64).
-
-Or via Homebrew, once the tap is published (see `docs/release.md`):
-
-```bash
-brew tap pigeon-client/pigeon
-brew install --cask pigeon
-```
-
-> **Windows & Linux** builds are paused in CI — only macOS `.dmg` artifacts are published today.
-> Re-enable the matrix rows in `.github/workflows/release.yml` when those platforms are ready.
+No Electron. No cloud backend. Feature specs and architecture notes live in
+[`docs/`](docs/README.md).
 
 ---
-
-## Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `⌘ N` | New tab |
-| `⌘ W` | Close tab |
-| `⌘ Enter` | Send request |
-| `⌘ K` | Open command palette |
-| `⌘ F` | Focus sidebar search |
-| `⌘ S` | Save to collection |
-| `⌘ ,` | Open settings |
-| `⌘ ⇧ E` | Open environment manager |
-| `⌘ ⇧ 1–9` | Switch to tab by number |
-| `?` | Show all shortcuts |
-
----
-
-## How it's built
-
-Pigeon is a Tauri v2 (Rust) + React 19 desktop app — no Electron, no cloud backend. A few notes
-for the curious:
-
-- **PM-style feature docs.** Every feature — request builder, environments, command palette, MCP
-  bench, and more — has a written spec in [`docs/features/`](docs/features/README.md): problem,
-  functional requirements, acceptance criteria, edge cases, and the exact `data-testid`s used to
-  test it. It's the same shape a PM/eng pair would use to scope real work, kept honest against the
-  actual code as it changes.
-- **A dedicated QA agent.** [`.claude/agents/feature-qa.md`](.claude/agents/feature-qa.md) runs
-  Vitest + Playwright, does manual exploratory passes against the feature docs' checklists, files
-  bugs with repro steps, and updates the docs when behavior drifts from what's written.
-- **Real transport ports, real tests.** HTTP (`features/execution`) and MCP
-  (`features/mcp`) both go through a small transport interface — Tauri's Rust `reqwest` on
-  desktop, `fetch` in the browser build — so the same request/response and JSON-RPC logic is unit
-  tested without a live server, and Playwright can stub the network deterministically in CI.
 
 ## Contributing
 
-Pigeon is built in the open and welcomes contributions. Found a bug or want a feature? Open an
-[issue](https://github.com/pigeon-client/pigeon/issues). Want to send a patch? Good-first-issues are
-labeled. Build and workflow details for contributors live in [`CLAUDE.md`](CLAUDE.md).
+Bugs and ideas: [open an issue](https://github.com/pigeon-client/pigeon/issues).
+Patches welcome — good-first-issues are labeled.
 
 ---
 

@@ -19,6 +19,9 @@ export interface PaletteItem {
   responseTime?: number;
   /** History only — the captured response snapshot, if any (Phase 6). */
   snapshot?: ResponseSnapshot;
+  /** Collection only — used to link the opened tab for in-place ⌘S. */
+  collectionId?: string;
+  nodeId?: string;
 }
 
 export interface PaletteResult extends PaletteItem {
@@ -28,21 +31,24 @@ export interface PaletteResult extends PaletteItem {
 
 function walkCollectionRequests(
   nodes: CollectionNode[],
+  collectionId: string,
   collectionName: string,
   out: PaletteItem[],
 ): void {
   for (const n of nodes) {
     if (n.type === "folder") {
-      walkCollectionRequests(n.children ?? [], collectionName, out);
+      walkCollectionRequests(n.children ?? [], collectionId, collectionName, out);
     } else if (n.request) {
       out.push({
-        key: `collection:${collectionName}:${n.id}`,
+        key: `collection:${collectionId}:${n.id}`,
         source: "collection",
         sourceLabel: collectionName,
         method: n.method ?? n.request.method,
         name: n.name,
         url: n.url ?? n.request.url,
         request: n.request,
+        collectionId,
+        nodeId: n.id,
       });
     }
   }
@@ -81,7 +87,8 @@ export function collectPaletteItems(opts: {
     });
   });
   for (const c of opts.collections) {
-    walkCollectionRequests(c.root ?? [], c.name, items);
+    if (!c.id) continue;
+    walkCollectionRequests(c.root ?? [], c.id, c.name, items);
   }
   return items;
 }

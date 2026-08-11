@@ -31,16 +31,51 @@
   },
   "linter": {
     "enabled": true,
+    "domains": {
+      "react": "recommended",
+      "test": "recommended",
+      "project": "recommended",
+      "tailwind": "recommended",
+      "playwright": "recommended",
+      "types": "recommended",
+      "qwik": "none",
+      "solid": "none",
+      "next": "none",
+      "svelte": "none",
+      "vue": "none",
+      "reactNative": "none",
+      "drizzle": "none",
+      "turborepo": "none"
+    },
     "rules": {
       "preset": "recommended",
+      "a11y": {
+        "preset": "recommended"
+      },
+      "complexity": {
+        "preset": "recommended",
+        "noBannedTypes": "error",
+        "noUselessConstructor": "error",
+        "noUselessSwitchCase": "error",
+        "noUselessTernary": "error",
+        "useSimplifiedLogicExpression": "error"
+      },
       "correctness": {
+        "preset": "recommended",
         "noUnusedVariables": "error",
         "noUnusedImports": "error",
         "useExhaustiveDependencies": "error",
         "useJsxKeyInIterable": "error",
-        "noChildrenProp": "warn"
+        "noChildrenProp": "error"
+      },
+      "performance": {
+        "preset": "recommended"
+      },
+      "security": {
+        "preset": "recommended"
       },
       "style": {
+        "preset": "recommended",
         "useConst": "error",
         "useTemplate": "error",
         "useSingleVarDeclarator": "off",
@@ -81,22 +116,18 @@
           }
         }
       },
-      "complexity": {
-        "noBannedTypes": "error",
-        "noUselessConstructor": "error",
-        "noUselessSwitchCase": "error",
-        "noUselessTernary": "error",
-        "useSimplifiedLogicExpression": "warn"
-      },
       "suspicious": {
+        "preset": "recommended",
         "noDebugger": "error",
         "noDoubleEquals": "error",
         "noImplicitAnyLet": "error",
         "noVar": "error",
-        "noConsole": { "level": "warn", "options": { "allow": ["log"] } }
-      },
-      "a11y": {
-        "useButtonType": "error"
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": ["warn", "error"]
+          }
+        }
       }
     }
   },
@@ -135,6 +166,16 @@
         "rules": {
           "style": {
             "noDescendingSpecificity": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/desktop/scripts/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
           }
         }
       }

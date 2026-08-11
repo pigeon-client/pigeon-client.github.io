@@ -32,7 +32,8 @@ const THEMES: { id: AppTheme; label: string }[] = [
 ];
 
 const TABS = ["General", "Requests", "Data", "About"] as const;
-type Tab = (typeof TABS)[number];
+export type SettingsTab = (typeof TABS)[number];
+type Tab = SettingsTab;
 
 function ThemeSwatch({
   active,
@@ -83,7 +84,13 @@ function ThemeSwatch({
   );
 }
 
-export function SettingsDrawer({ onClose }: { onClose: () => void }) {
+export function SettingsDrawer({
+  onClose,
+  initialTab = "General",
+}: {
+  onClose: () => void;
+  initialTab?: SettingsTab;
+}) {
   const history = useHistoryStore((s) => s.history);
   const drafts = useHistoryStore((s) => s.drafts);
   const collections = useCollectionStore((s) => s.collections);
@@ -101,7 +108,7 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
     for (const e of [...environments]) await deleteEnvironment(e.id);
   };
 
-  const [activeTab, setActiveTab] = useState<Tab>("General");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [theme, setThemeState] = useState<AppTheme>(
     () => (localStorage.getItem("pg_theme") as AppTheme) ?? "dark",
   );

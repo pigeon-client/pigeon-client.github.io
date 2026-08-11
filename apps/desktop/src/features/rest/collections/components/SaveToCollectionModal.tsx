@@ -8,6 +8,8 @@ import type { CollectionNode } from "../types";
 interface SaveToCollectionModalProps {
   request: RequestConfig;
   onClose: () => void;
+  /** Called after a successful new save so the active tab can link to the node. */
+  onSaved?: (origin: { collectionId: string; nodeId: string }) => void;
 }
 
 interface FolderOption {
@@ -25,7 +27,7 @@ function collectFolders(nodes: CollectionNode[], depth = 0): FolderOption[] {
   return folders;
 }
 
-export function SaveToCollectionModal({ request, onClose }: SaveToCollectionModalProps) {
+export function SaveToCollectionModal({ request, onClose, onSaved }: SaveToCollectionModalProps) {
   const collections = useCollectionStore((s) => s.collections);
   const addRequest = useCollectionStore((s) => s.addRequest);
   const firstCollectionId = collections[0]?.id ?? "";
@@ -54,16 +56,17 @@ export function SaveToCollectionModal({ request, onClose }: SaveToCollectionModa
         name: name.trim(),
         nameLocked: edited ? true : (request.nameLocked ?? false),
       };
-      const ok = await addRequest(
+      const nodeId = await addRequest(
         collectionId,
         folderId === "__root__" ? null : folderId,
         name.trim(),
         savedRequest,
       );
-      if (!ok) {
+      if (!nodeId) {
         setError("Could not save request to that folder.");
         return;
       }
+      onSaved?.({ collectionId, nodeId });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

@@ -75,6 +75,8 @@ describe("collectPaletteItems", () => {
     const nested = items.find((i) => i.source === "collection");
     expect(nested?.sourceLabel).toBe("My API");
     expect(nested?.url).toBe("https://api.example.com/users");
+    expect(nested?.collectionId).toBe("c1");
+    expect(nested?.nodeId).toBe("r1");
   });
 });
 

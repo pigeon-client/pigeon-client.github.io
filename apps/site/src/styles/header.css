@@ -21,11 +21,16 @@ header.nav .wrap {
   width: 100%;
   max-width: 100%;
   min-height: calc(100vh - 62px);
-  min-height: calc(100dvh - 62px);
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+}
+
+@supports (height: 100dvh) {
+  .hero-screen {
+    min-height: calc(100dvh - 62px);
+  }
 }
 
 .hero-screen .wrap {

@@ -14,8 +14,7 @@
 }
 
 body.page-blog {
-  --font-prose:
-    "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-prose: "Avenir Next", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 .blog-kicker {

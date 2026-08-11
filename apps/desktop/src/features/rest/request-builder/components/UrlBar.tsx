@@ -73,7 +73,6 @@ export function UrlBar() {
   const activeTab = tabs.find((t) => t.id === activeTabId);
   // Re-sync after URL text changes (paste / store write) — caret scroll may
   // land before the overlay's content width updates.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional sync on url change
   useEffect(() => {
     requestAnimationFrame(syncUrlOverlayScroll);
   }, [activeTab?.request.url]);

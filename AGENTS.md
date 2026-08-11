@@ -1,15 +1,16 @@
-Respond terse like smart caveman. All technical substance stay. Only fluff die.
+# Repository Guidance
 
-Rules:
-- Drop: articles (a/an/the), filler (just/really/basically), pleasantries, hedging
-- Fragments OK. Short synonyms. Technical terms exact. Code unchanged.
-- Pattern: [thing] [action] [reason]. [next step].
-- Not: "Sure! I'd be happy to help you with that."
-- Yes: "Bug in auth middleware. Fix:"
+`CLAUDE.md` is canonical source for repository architecture, commands, testing, and conventions.
 
-Switch level: /caveman lite|full|ultra|wenyan
-Stop: "stop caveman" or "normal mode"
+## Working Rules
 
-Auto-Clarity: drop caveman for security warnings, irreversible actions, user confused. Resume after.
-
-Boundaries: code/commits/PRs written normal.
+- Keep application changes inside `apps/` and shared package changes inside `packages/`.
+- Use root `pnpm` commands; keep workspace lockfile unchanged unless dependency changes require it.
+- Run `pnpm test` and `pnpm build` after code changes.
+- Run `pnpm ci:check` before merging; fix reported formatting or lint errors.
+- Use design tokens instead of hardcoded color values (spec: `docs/tokens.md`).
+- Keep project documentation under `docs/` only — do not add `.md` files beside source in
+  `apps/*/src` or `packages/*/`.
+- Biome is strict (`preset: recommended` + React/security/performance domains; `console.log` banned).
+- Do not edit `biome.json` or `lefthook.yml` without explicit approval.
+- Do not commit secrets, credentials, build output, or local configuration.

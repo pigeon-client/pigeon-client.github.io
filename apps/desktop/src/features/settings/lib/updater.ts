@@ -145,13 +145,13 @@ export async function checkForUpdates(silent = true): Promise<UpdateCheckResult>
     await installUpdate(result.update, (event) => {
       switch (event.event) {
         case "Started":
-          console.log(`[Pigeon] Downloading ${event.data.contentLength} bytes`);
+          console.warn(`[Pigeon] Downloading ${event.data.contentLength} bytes`);
           break;
         case "Progress":
-          console.log(`[Pigeon] Downloaded chunk: ${event.data.chunkLength}`);
+          console.warn(`[Pigeon] Downloaded chunk: ${event.data.chunkLength}`);
           break;
         case "Finished":
-          console.log("[Pigeon] Download finished, installing...");
+          console.warn("[Pigeon] Download finished, installing...");
           break;
       }
     });

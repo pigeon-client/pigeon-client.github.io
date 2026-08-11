@@ -2,8 +2,9 @@
 
 ## Overview
 
-`⌘⇧K` opens a centered overlay that searches every request Pigeon knows about — History, Drafts,
-and every request in every Collection — in one query, and opens the match in a tab.
+`⌘K` (also `⌘⇧K` / `⌘⇧P`) opens a centered overlay that searches every request Pigeon knows
+about — History, Drafts, and every request in every Collection — in one query, and opens the
+match in a tab.
 
 ## Problem / job to be done
 
@@ -13,7 +14,7 @@ that requirement: one query, every source, ranked.
 
 ## User stories
 
-- As a developer, I want to hit `⌘⇧K` and type a few letters of a URL/name/body and jump straight
+- As a developer, I want to hit `⌘K` and type a few letters of a URL/name/body and jump straight
   to that request, regardless of which sidebar pane it lives in.
 - As a developer, I want the result to show me the method, name, host, and where it came from
   before I commit to opening it.
@@ -21,7 +22,7 @@ that requirement: one query, every source, ranked.
 
 ## Functional requirements
 
-1. `⌘⇧K` opens the palette; `⌘F` is unchanged (still sidebar-pane filtering).
+1. `⌘K` / `⌘⇧K` / `⌘⇧P` toggle the palette; `⌘F` is unchanged (still sidebar-pane filtering).
 2. One query searches history, drafts, and every request in every collection (tree walked via
    `src/features/rest/collections/lib/tree.ts`-adjacent recursion in
    `command-palette/lib/search.ts#collectPaletteItems`).
@@ -52,13 +53,13 @@ that requirement: one query, every source, ranked.
 
 ## Acceptance criteria
 
-- [ ] `⌘⇧K` opens the palette from anywhere in the app (not just when a tab is focused).
+- [ ] `⌘K` opens the palette from anywhere in the app (not just when a tab is focused).
 - [ ] Typing a body fragment unique to one saved collection request surfaces that row with the
   correct method and collection-name source badge.
 - [ ] Typing a URL fragment from a sent request surfaces a History row; opening it loads the exact
   method + URL.
 - [ ] `Esc` closes the palette and leaves the previously active tab untouched.
-- [ ] `⌘F` sidebar search still works and is unaffected by `⌘⇧K`.
+- [ ] `⌘F` sidebar search still works and is unaffected by `⌘K`.
 
 ## UI
 
@@ -75,8 +76,8 @@ that requirement: one query, every source, ranked.
 
 ## Keyboard
 
-`⌘⇧K` opens/closes (toggle). Inside: `↑`/`↓` navigate, `Enter` opens, `Esc` closes. While the
-palette is open, every other global shortcut (`⌘F`, `⌘⇧N`, `⌘⇧S`, …) is suppressed in
+`⌘K` / `⌘⇧K` / `⌘⇧P` open/close (toggle). Inside: `↑`/`↓` navigate, `Enter` opens, `Esc` closes.
+While the palette is open, every other global shortcut (`⌘F`, `⌘T`, `⌘S`, …) is suppressed in
 `AppContent.tsx`'s keydown handler so they can't fire underneath it.
 
 ## States & edge cases
@@ -89,7 +90,7 @@ palette is open, every other global shortcut (`⌘F`, `⌘⇧N`, `⌘⇧S`, …)
 
 ## Manual test checklist
 
-- [ ] `⌘⇧K` from the empty-request state, from a tab with a URL, and from inside another modal.
+- [ ] `⌘K` from the empty-request state, from a tab with a URL, and from inside another modal.
 - [ ] Search a body fragment unique to a draft; a URL fragment unique to a collection request;
   a name fragment unique to a history row — each finds only the expected row(s).
 - [ ] Arrow through results with the mouse never touching the list; `Enter` opens the highlighted
@@ -114,7 +115,7 @@ palette is open, every other global shortcut (`⌘F`, `⌘⇧N`, `⌘⇧S`, …)
 
 `apps/desktop/src/features/command-palette/lib/search.ts` (pure search/ranking, unit-tested),
 `components/CommandPalette.tsx` (overlay + keyboard nav), `index.ts` (barrel). Wired into
-`src/app/AppContent.tsx` (⌘⇧K handler + render) and listed in
+`src/app/AppContent.tsx` (`⌘K` / `⌘⇧K` / `⌘⇧P` handler + render) and listed in
 `src/features/settings/components/KeyboardShortcutsModal.tsx`.
 
 ## Open risks

@@ -3,12 +3,12 @@ import { Button, Tooltip } from "@pigeon/ui";
 import { Braces, Check, Globe, Plug, Search, Settings, Terminal, X } from "lucide-react";
 import { type RefObject, useEffect, useState } from "react";
 import { EnvSelector } from "@/features/environments";
-import { getCachedUpdateResult, onUpdateCacheChange } from "@/features/settings";
+import { getCachedUpdateResult, onUpdateCacheChange, type SettingsTab } from "@/features/settings";
 import { cn } from "@/shared/lib/utils";
 import type { WindowKind } from "@/shared/lib/windowKind";
 
 interface HeaderProps {
-  onOpenSettings: () => void;
+  onOpenSettings: (tab?: SettingsTab) => void;
   onExportCurl: () => void;
   onManageEnv: () => void;
   onOpenRest: () => void;
@@ -180,8 +180,13 @@ export function Header({
             )}
           </Button>
         </Tooltip>
-        <Tooltip label="Settings (⌘⇧,)">
-          <Button variant="ghost-icon" size="icon" onClick={onOpenSettings} aria-label="Settings">
+        <Tooltip label="Settings (⌘,)">
+          <Button
+            variant="ghost-icon"
+            size="icon"
+            onClick={() => onOpenSettings(updateAvailable ? "About" : undefined)}
+            aria-label="Settings"
+          >
             <span className="relative">
               <Settings className="h-4 w-4" />
               {updateAvailable && (

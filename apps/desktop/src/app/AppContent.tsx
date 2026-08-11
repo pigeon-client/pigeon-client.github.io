@@ -1,10 +1,15 @@
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@pigeon/ui";
 import { invoke } from "@tauri-apps/api/core";
 import { PanelLeftOpen } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CommandPalette } from "@/features/command-palette";
 import { EnvModal, selectActiveEnv, useEnvStore } from "@/features/environments";
-import { SaveToCollectionModal, useCollectionStore } from "@/features/rest/collections";
+import {
+  findNode,
+  findUniqueSavedRequest,
+  SaveToCollectionModal,
+  useCollectionStore,
+} from "@/features/rest/collections";
 import { useHistoryStore } from "@/features/rest/history";
 import { generateCurl, ImportModal } from "@/features/rest/import-export";
 import {
@@ -21,6 +26,7 @@ import {
   getStoredTheme,
   KeyboardShortcutsModal,
   SettingsDrawer,
+  type SettingsTab,
 } from "@/features/settings";
 import { ComingSoonWorkspace } from "@/features/workspaces";
 import { isTauri } from "@/shared/lib/platform";
@@ -34,7 +40,7 @@ import { UpdateToast } from "./layout/UpdateToast";
 function focusRestWindow() {
   if (!isTauri()) return;
   invoke("open_workspace_window", { kind: "rest" }).catch((e) =>
-    console.log(`[Pigeon] Failed to focus REST workspace: ${e}`),
+    console.error(`[Pigeon] Failed to focus REST workspace: ${e}`),
   );
 }
 
@@ -64,8 +70,11 @@ export function AppContent() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [curlCopied, setCurlCopied] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveToast, setSaveToast] = useState(false);
+  const saveToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("General");
   const [showPalette, setShowPalette] = useState(false);
 
   const tabs = useTabStore((s) => s.tabs);
@@ -73,12 +82,17 @@ export function AppContent() {
   const addTab = useTabStore((s) => s.addTab);
   const closeTab = useTabStore((s) => s.closeTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const updateTabRequest = useTabStore((s) => s.updateTabRequest);
+  const setTabCollectionRef = useTabStore((s) => s.setTabCollectionRef);
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
   // Only http tabs have an exportable/saveable request.
   const activeRequest = activeTab && activeTab.kind === "http" ? activeTab.request : null;
   const prodActive = useEnvStore((s) => selectActiveEnv(s)?.isProduction ?? false);
   const showComingSoon = workbench === "mcp" || workbench === "graphql";
+
+  const openSettings = (tab: SettingsTab = "General") => {
+    setSettingsTab(tab);
+    setShowSettings(true);
+  };
 
   const openWorkbench = (kind: WindowKind) => {
     setWorkbench(kind);
@@ -91,6 +105,47 @@ export function AppContent() {
     setCurlCopied(true);
     setTimeout(() => setCurlCopied(false), 2000);
   };
+
+  const flashSaveToast = useCallback(() => {
+    setSaveToast(true);
+    if (saveToastTimer.current) clearTimeout(saveToastTimer.current);
+    saveToastTimer.current = setTimeout(() => setSaveToast(false), 2000);
+  }, []);
+
+  /** ⌘S: update existing collection node when linked; otherwise open save modal. */
+  const handleSaveRequest = useCallback(() => {
+    if (!(activeRequest?.url.trim() && activeTab)) return;
+
+    const collections = useCollectionStore.getState().collections;
+    let ref = activeTab.collectionRef ?? null;
+
+    // Stale or missing link — try to recover a unique method+url match.
+    if (ref) {
+      const collection = collections.find((c) => c.id === ref?.collectionId);
+      const node = collection ? findNode(collection.root, ref.nodeId) : null;
+      if (node?.type !== "request") {
+        ref = null;
+        setTabCollectionRef(activeTab.id, null);
+      }
+    }
+    if (!ref) {
+      ref = findUniqueSavedRequest(collections, activeRequest.method, activeRequest.url);
+      if (ref) setTabCollectionRef(activeTab.id, ref);
+    }
+
+    if (ref) {
+      void useCollectionStore
+        .getState()
+        .updateRequest(ref.collectionId, ref.nodeId, activeRequest, activeTab.name)
+        .then((ok) => {
+          if (ok) flashSaveToast();
+          else setShowSaveModal(true);
+        });
+      return;
+    }
+
+    setShowSaveModal(true);
+  }, [activeRequest, activeTab, flashSaveToast, setTabCollectionRef]);
 
   // Keyboard shortcuts follow Postman's core desktop bindings where this app has
   // an equivalent action. Matching uses e.code because Shift changes e.key.
@@ -195,13 +250,12 @@ export function AppContent() {
       }
       if (meta && !e.shiftKey && e.code === "KeyS") {
         e.preventDefault();
-        if (activeRequest?.url.trim()) {
-          setShowSaveModal(true);
-        }
+        handleSaveRequest();
         return;
       }
       if (metaShift && e.code === "KeyS") {
         e.preventDefault();
+        // Save As — always pick collection/folder.
         if (activeRequest?.url.trim()) {
           setShowSaveModal(true);
         }
@@ -215,7 +269,7 @@ export function AppContent() {
       }
       if (meta && e.code === "Comma") {
         e.preventDefault();
-        setShowSettings(true);
+        openSettings("General");
         return;
       }
       if (meta && e.altKey && e.code === "Digit1") {
@@ -265,6 +319,7 @@ export function AppContent() {
     return () => window.removeEventListener("keydown", handler);
   }, [
     activeTabId,
+    activeTab,
     tabs,
     addTab,
     closeTab,
@@ -277,13 +332,15 @@ export function AppContent() {
     showSettings,
     showPalette,
     activeRequest,
+    openSettings,
+    handleSaveRequest,
   ]);
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground">
       {/* Topbar */}
       <Header
-        onOpenSettings={() => setShowSettings(true)}
+        onOpenSettings={openSettings}
         onExportCurl={handleExportCurl}
         onManageEnv={() => setShowEnvModal(true)}
         onOpenRest={() => openWorkbench("rest")}
@@ -438,22 +495,36 @@ export function AppContent() {
           onClose={() => setShowImportModal(false)}
           onImportRequest={(parsed) => {
             const id = addTab();
-            updateTabRequest(id, parsed);
+            useTabStore.getState().loadTabRequest(id, parsed, null);
             setActiveTab(id);
           }}
         />
       )}
       {showSaveModal && activeRequest && (
-        <SaveToCollectionModal request={activeRequest} onClose={() => setShowSaveModal(false)} />
+        <SaveToCollectionModal
+          request={activeRequest}
+          onClose={() => setShowSaveModal(false)}
+          onSaved={(origin) => {
+            if (activeTabId) setTabCollectionRef(activeTabId, origin);
+            flashSaveToast();
+          }}
+        />
       )}
       {showShortcutsModal && (
         <KeyboardShortcutsModal onClose={() => setShowShortcutsModal(false)} />
       )}
-      {showSettings && <SettingsDrawer onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <SettingsDrawer initialTab={settingsTab} onClose={() => setShowSettings(false)} />
+      )}
       {showPalette && <CommandPalette onClose={() => setShowPalette(false)} />}
 
       <MigrationToast />
-      <UpdateToast onOpenSettings={() => setShowSettings(true)} />
+      <UpdateToast onOpenSettings={openSettings} />
+      {saveToast && (
+        <div className="fixed bottom-4 right-4 z-[var(--z-toast)] rounded-lg border border-primary/40 bg-card px-4 py-3 text-xs font-medium text-foreground shadow-toast">
+          Saved to collection
+        </div>
+      )}
     </div>
   );
 }

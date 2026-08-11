@@ -47,7 +47,7 @@ test.describe("keyboard shortcuts", () => {
   test("⌘S opens Save to Collection for the active request", async ({ page }) => {
     await openApp(page);
     await typeUrl(page, "https://api.example.com/save-me");
-    await page.keyboard.press("ControlOrMeta+Shift+s");
+    await page.keyboard.press("ControlOrMeta+s");
     await expect(page.getByText("Save to Collection")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByText("Save to Collection")).not.toBeVisible();

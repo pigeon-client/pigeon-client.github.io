@@ -30,14 +30,23 @@ interface CollectionState {
     parentId: string | null,
     name: string,
     request: RequestConfig,
-  ) => Promise<boolean>;
+  ) => Promise<string | null>;
   removeNode: (collectionId: string, nodeId: string) => Promise<void>;
   renameNode: (collectionId: string, nodeId: string, name: string) => Promise<void>;
   setFolderConfig: (collectionId: string, nodeId: string, config: FolderConfig) => Promise<void>;
+  /** Overwrite an existing request node in place (no modal / no re-parent). */
+  updateRequest: (
+    collectionId: string,
+    nodeId: string,
+    request: RequestConfig,
+    name?: string,
+  ) => Promise<boolean>;
   moveNode: (
     collectionId: string,
     nodeId: string,
     targetParentId: string | null,
+    /** When set and different from `collectionId`, moves the node into that collection. */
+    targetCollectionId?: string,
   ) => Promise<boolean>;
 
   reorderCollections: (ids: string[]) => void;
@@ -46,6 +55,10 @@ interface CollectionState {
 function stripFiles(request: RequestConfig): RequestConfig {
   return {
     ...request,
+    // Don't persist headers that only exist via folder inheritance.
+    headers: request.headers
+      .filter((h) => !h.inherited)
+      .map((h) => ({ key: h.key, value: h.value, enabled: h.enabled })),
     file: null,
     multipart: request.multipart.map((f) => ({ ...f, file: null })),
   };
@@ -127,6 +140,33 @@ function setFolderConfigById(
   return found ? next : null;
 }
 
+function updateRequestById(
+  nodes: CollectionNode[],
+  id: string,
+  request: RequestConfig,
+  name: string,
+): CollectionNode[] | null {
+  let found = false;
+  const next = nodes.map((node) => {
+    if (node.id === id && node.type === "request") {
+      found = true;
+      return {
+        ...node,
+        name,
+        request,
+        method: request.method,
+        url: request.url,
+      };
+    }
+    if (node.type !== "folder") return node;
+    const children = updateRequestById(node.children ?? [], id, request, name);
+    if (!children) return node;
+    found = true;
+    return { ...node, children };
+  });
+  return found ? next : null;
+}
+
 function findParentId(
   nodes: CollectionNode[],
   nodeId: string,
@@ -146,6 +186,18 @@ function containsNode(root: CollectionNode, id: string): boolean {
   if (root.id === id) return true;
   if (root.type !== "folder") return false;
   return (root.children ?? []).some((child) => containsNode(child, id));
+}
+
+/** Depth of a node from the collection root (root children = 0). */
+function nestingDepthFromRoot(nodes: CollectionNode[], id: string, depth = 0): number | null {
+  for (const node of nodes) {
+    if (node.id === id) return depth;
+    if (node.type === "folder") {
+      const found = nestingDepthFromRoot(node.children ?? [], id, depth + 1);
+      if (found !== null) return found;
+    }
+  }
+  return null;
 }
 
 let nodeCounter = 0;
@@ -270,7 +322,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     const trimmed = name.trim() || request.name || request.url || "Untitled Request";
     const state = get();
     const collection = state.collections.find((c) => c.id === collectionId);
-    if (!collection) return false;
+    if (!collection) return null;
 
     const newRequest: CollectionNode = {
       id: genNodeId(),
@@ -284,9 +336,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     let root: CollectionNode[];
     if (parentId) {
       const parentNode = findNode(collection.root, parentId);
-      if (parentNode?.type !== "folder") return false;
+      if (parentNode?.type !== "folder") return null;
       const next = insertChild(collection.root, parentId, newRequest);
-      if (!next) return false;
+      if (!next) return null;
       root = next;
     } else {
       root = [...collection.root, newRequest];
@@ -297,7 +349,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     set((s) => ({
       collections: s.collections.map((c) => (c.id === collectionId ? updated : c)),
     }));
-    return true;
+    return newRequest.id;
   },
 
   removeNode: async (collectionId, nodeId) => {
@@ -348,36 +400,103 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     }));
   },
 
-  moveNode: async (collectionId, nodeId, targetParentId) => {
+  updateRequest: async (collectionId, nodeId, request, name) => {
     const state = get();
     const collection = state.collections.find((c) => c.id === collectionId);
     if (!collection) return false;
 
-    // Find and remove the node from its current location
-    const node = findNode(collection.root, nodeId);
-    if (!node) return false;
-    if (targetParentId === nodeId) return false;
-    if (targetParentId && node.type === "folder" && containsNode(node, targetParentId))
-      return false;
-    if (findParentId(collection.root, nodeId) === targetParentId) return true;
+    const existing = findNode(collection.root, nodeId);
+    if (existing?.type !== "request") return false;
 
-    const withoutNode = removeById(collection.root, nodeId);
-
-    let root: CollectionNode[];
-    if (targetParentId) {
-      const parentNode = findNode(withoutNode, targetParentId);
-      if (parentNode?.type !== "folder") return false;
-      const next = insertChild(withoutNode, targetParentId, node);
-      if (!next) return false;
-      root = next;
-    } else {
-      root = [...withoutNode, node];
-    }
+    const trimmed =
+      name?.trim() || request.name?.trim() || existing.name || request.url || "Untitled Request";
+    const root = updateRequestById(collection.root, nodeId, stripFiles(request), trimmed);
+    if (!root) return false;
 
     const updated = { ...collection, root };
     await dbUpdateCollection(updated);
     set((s) => ({
       collections: s.collections.map((c) => (c.id === collectionId ? updated : c)),
+    }));
+    return true;
+  },
+
+  moveNode: async (collectionId, nodeId, targetParentId, targetCollectionId) => {
+    const state = get();
+    const source = state.collections.find((c) => c.id === collectionId);
+    if (!source) return false;
+
+    const destId = targetCollectionId ?? collectionId;
+    const dest = state.collections.find((c) => c.id === destId);
+    if (!dest) return false;
+
+    const node = findNode(source.root, nodeId);
+    if (!node) return false;
+    if (targetParentId === nodeId) return false;
+
+    // Same-collection move
+    if (destId === collectionId) {
+      if (targetParentId && node.type === "folder" && containsNode(node, targetParentId))
+        return false;
+      if (findParentId(source.root, nodeId) === targetParentId) return true;
+
+      const withoutNode = removeById(source.root, nodeId);
+
+      let root: CollectionNode[];
+      if (targetParentId) {
+        const parentNode = findNode(withoutNode, targetParentId);
+        if (parentNode?.type !== "folder") return false;
+        const parentDepth = nestingDepthFromRoot(withoutNode, targetParentId);
+        if (parentDepth === null) return false;
+        // Node will sit at parentDepth+1; its subtree adds getDepth(node).
+        if (parentDepth + 1 + getDepth(node) > MAX_NESTING_DEPTH) return false;
+        const next = insertChild(withoutNode, targetParentId, node);
+        if (!next) return false;
+        root = next;
+      } else {
+        if (getDepth(node) > MAX_NESTING_DEPTH) return false;
+        root = [...withoutNode, node];
+      }
+
+      const updated = { ...source, root };
+      await dbUpdateCollection(updated);
+      set((s) => ({
+        collections: s.collections.map((c) => (c.id === collectionId ? updated : c)),
+      }));
+      return true;
+    }
+
+    // Cross-collection move: remove from source, insert into dest.
+    if (targetParentId) {
+      const parentNode = findNode(dest.root, targetParentId);
+      if (parentNode?.type !== "folder") return false;
+      const parentDepth = nestingDepthFromRoot(dest.root, targetParentId);
+      if (parentDepth === null) return false;
+      if (parentDepth + 1 + getDepth(node) > MAX_NESTING_DEPTH) return false;
+    } else if (getDepth(node) > MAX_NESTING_DEPTH) {
+      return false;
+    }
+
+    const sourceRoot = removeById(source.root, nodeId);
+    let destRoot: CollectionNode[];
+    if (targetParentId) {
+      const next = insertChild(dest.root, targetParentId, node);
+      if (!next) return false;
+      destRoot = next;
+    } else {
+      destRoot = [...dest.root, node];
+    }
+
+    const updatedSource = { ...source, root: sourceRoot };
+    const updatedDest = { ...dest, root: destRoot };
+    await dbUpdateCollection(updatedSource);
+    await dbUpdateCollection(updatedDest);
+    set((s) => ({
+      collections: s.collections.map((c) => {
+        if (c.id === collectionId) return updatedSource;
+        if (c.id === destId) return updatedDest;
+        return c;
+      }),
     }));
     return true;
   },
@@ -404,4 +523,37 @@ export function findNode(nodes: CollectionNode[], id: string): CollectionNode | 
     }
   }
   return null;
+}
+
+/** Locate a saved request by method+url. Returns null when zero or ambiguous matches. */
+export function findUniqueSavedRequest(
+  collections: Collection[],
+  method: string,
+  url: string,
+): { collectionId: string; nodeId: string } | null {
+  const needleMethod = method.toUpperCase();
+  const needleUrl = url.trim();
+  if (!needleUrl) return null;
+
+  const matches: { collectionId: string; nodeId: string }[] = [];
+  const walk = (collectionId: string, nodes: CollectionNode[]) => {
+    for (const node of nodes) {
+      if (node.type === "folder") {
+        walk(collectionId, node.children ?? []);
+        continue;
+      }
+      const nodeMethod = (node.method ?? node.request?.method ?? "").toUpperCase();
+      const nodeUrl = (node.url ?? node.request?.url ?? "").trim();
+      if (nodeMethod === needleMethod && nodeUrl === needleUrl) {
+        matches.push({ collectionId, nodeId: node.id });
+      }
+    }
+  };
+
+  for (const collection of collections) {
+    if (!collection.id) continue;
+    walk(collection.id, collection.root);
+  }
+
+  return matches.length === 1 ? matches[0] : null;
 }
