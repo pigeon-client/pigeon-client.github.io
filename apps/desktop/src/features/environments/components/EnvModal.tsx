@@ -1,9 +1,8 @@
-import { Button, Switch } from "@pigeon/ui";
+import { Button, Input, Modal, ModalHeader, Switch } from "@pigeon/ui";
 import { Check, Copy, Globe, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/shared/lib/utils";
 import type { KeyValue } from "@/shared/types";
-import { Modal, ModalHeader } from "@/shared/ui/Modal";
 import { selectActiveEnv, useEnvStore } from "../store";
 import type { EnvVariable } from "../types";
 import { GLOBALS_ID } from "../types";
@@ -92,13 +91,14 @@ export function EnvModal({ onClose }: EnvModalProps) {
         {/* Left — env list */}
         <div className="flex w-[220px] shrink-0 flex-col border-r border-border">
           <div className="flex gap-1.5 border-b border-border p-2.5">
-            <input
+            <Input
               ref={newRef}
+              size="md"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               placeholder="Environment name…"
-              className="h-8 w-0 min-w-0 flex-1 rounded border border-border bg-card px-2.5 text-xs text-foreground outline-none focus:border-primary"
+              className="w-0 min-w-0 flex-1"
             />
             <Button
               variant="default"
@@ -155,7 +155,9 @@ export function EnvModal({ onClose }: EnvModalProps) {
             ) : selectedEnv ? (
               <>
                 {renaming ? (
-                  <input
+                  <Input
+                    size="sm"
+                    mono={false}
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     onBlur={() => {
@@ -169,7 +171,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                       }
                       if (e.key === "Escape") setRenaming(false);
                     }}
-                    className="h-7 rounded border border-primary bg-card px-2 text-sm font-semibold text-foreground outline-none"
+                    className="border-primary text-sm font-semibold"
                   />
                 ) : (
                   <button

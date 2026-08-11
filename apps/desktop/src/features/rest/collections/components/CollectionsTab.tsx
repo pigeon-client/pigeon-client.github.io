@@ -11,13 +11,17 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Button, METHOD_COLORS } from "@pigeon/ui";
+import {
+  Button,
+  ConfirmModal,
+  type ConfirmModalState,
+  EmptyState,
+  METHOD_COLORS,
+} from "@pigeon/ui";
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTabStore } from "@/features/rest/request-builder";
 import type { RequestConfig } from "@/shared/types";
-import { ConfirmModal, type ConfirmModalState } from "@/shared/ui/ConfirmModal";
-import { EmptyState } from "@/shared/ui/EmptyState";
 import { TreeRow } from "@/shared/ui/TreeRow";
 import { resolveInheritedRequest } from "../lib/inheritance";
 import { countRequests, findAncestors } from "../lib/tree";

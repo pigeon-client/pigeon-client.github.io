@@ -1,6 +1,5 @@
-import { MethodBadge } from "@pigeon/ui";
+import { EmptyState, MethodBadge } from "@pigeon/ui";
 import { useMemo, useState } from "react";
-import { EmptyState } from "@/shared/ui/EmptyState";
 import { useHistoryStore } from "../store";
 import type { HistoryItem } from "../types";
 

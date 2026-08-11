@@ -1,7 +1,6 @@
-import { Button } from "@pigeon/ui";
+import { Button, Separator, TabButton } from "@pigeon/ui";
 import { WrapText } from "lucide-react";
 import { relativeTime } from "@/shared/lib/time";
-import { Tab } from "@/shared/ui/tabs-shim";
 import type { BodyViewMode } from "./types";
 
 /* ── Status bar (status/time/size, Body/Headers tabs, view-mode + actions) ── */
@@ -59,7 +58,7 @@ export function StatusLine({
           {response.status} {response.statusText}
         </span>
       </div>
-      <div className="h-4 w-px bg-border" />
+      <Separator orientation="vertical" />
       <div className="flex items-center gap-1.5 text-muted-foreground">
         {response.snapshotTimestamp !== undefined ? (
           <span data-testid="response-snapshot-label" className="font-mono text-code">
@@ -86,7 +85,7 @@ export function StatusLine({
           </>
         )}
       </div>
-      <span style={{ width: 1, height: 16, background: "var(--border)", margin: "0 16px" }} />
+      <Separator orientation="vertical" className="mx-4" />
       <div
         style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)" }}
       >
@@ -109,18 +108,18 @@ export function StatusLine({
         </span>
       </div>
       <div style={{ flex: 1 }} />
-      <Tab active={activeTab === "body"} onClick={() => setActiveTab("body")}>
+      <TabButton active={activeTab === "body"} onClick={() => setActiveTab("body")}>
         Body
-      </Tab>
-      <Tab active={activeTab === "headers"} onClick={() => setActiveTab("headers")}>
+      </TabButton>
+      <TabButton active={activeTab === "headers"} onClick={() => setActiveTab("headers")}>
         Headers
         {Object.keys(response.headers).length > 0 && (
           <span className="ml-0.5 text-2xs font-semibold text-muted-foreground">
             {Object.keys(response.headers).length}
           </span>
         )}
-      </Tab>
-      <div className="mx-2 h-4 w-px bg-border" />
+      </TabButton>
+      <Separator orientation="vertical" className="mx-2" />
       {!isSse && showText && (
         <div className="flex rounded border border-border bg-card p-0.5">
           {viewModes.map(({ val, label }) => (

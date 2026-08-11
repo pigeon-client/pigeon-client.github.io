@@ -1,4 +1,4 @@
-import { Modal, ModalHeader } from "@/shared/ui/Modal";
+import { Modal, ModalHeader } from "@pigeon/ui";
 
 interface KeyboardShortcutsModalProps {
   onClose: () => void;

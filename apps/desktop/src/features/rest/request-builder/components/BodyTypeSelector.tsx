@@ -1,4 +1,4 @@
-import { Button } from "@pigeon/ui";
+import { Button, Menu } from "@pigeon/ui";
 import { Check, ChevronDown, WrapText } from "lucide-react";
 import type { RefObject } from "react";
 import { BINARY_BODY_FORMATS, RAW_BODY_FORMATS } from "@/shared/lib/contentType";
@@ -89,7 +89,7 @@ export function BodyTypeSelector({
             </button>
 
             {rawFormatOpen && (
-              <div className="absolute left-0 top-8 z-[var(--z-dropdown)] max-h-72 w-[220px] overflow-auto rounded border border-border bg-popover p-1 shadow-lg">
+              <Menu className="absolute left-0 top-8 max-h-72 w-[220px]">
                 {RAW_BODY_FORMATS.map((f) => (
                   <Button
                     key={f.value}
@@ -106,7 +106,7 @@ export function BodyTypeSelector({
                     {f.value === rawFormat && <Check className="h-3 w-3 shrink-0" />}
                   </Button>
                 ))}
-              </div>
+              </Menu>
             )}
           </div>
         )}
@@ -128,7 +128,7 @@ export function BodyTypeSelector({
             </button>
 
             {binaryFormatOpen && (
-              <div className="absolute left-0 top-8 z-[var(--z-dropdown)] max-h-72 w-[220px] overflow-auto rounded border border-border bg-popover p-1 shadow-lg">
+              <Menu className="absolute left-0 top-8 max-h-72 w-[220px]">
                 {BINARY_BODY_FORMATS.map((f) => (
                   <Button
                     key={f.value}
@@ -145,7 +145,7 @@ export function BodyTypeSelector({
                     {f.value === binaryFormat && <Check className="h-3 w-3 shrink-0" />}
                   </Button>
                 ))}
-              </div>
+              </Menu>
             )}
           </div>
         )}

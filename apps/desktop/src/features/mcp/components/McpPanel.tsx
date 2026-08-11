@@ -1,3 +1,4 @@
+import { Input, Select, Textarea } from "@pigeon/ui";
 import { useEffect, useState } from "react";
 import { interpolateStrict, UnresolvedVariablesError } from "@/core/interpolation";
 import {
@@ -180,46 +181,49 @@ export function McpPanel({ tabId }: { tabId: string }) {
           </div>
           {manualRequired && (
             <>
-              <label className="flex flex-col gap-1.5">
+              <label htmlFor="mcp-oauth-client-id" className="flex flex-col gap-1.5">
                 <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Client ID
                 </span>
-                <input
+                <Input
+                  id="mcp-oauth-client-id"
                   data-testid="mcp-oauth-client-id"
+                  size="lg"
                   value={manualClientId}
                   onChange={(e) => setManualClientId(e.target.value)}
                   spellCheck={false}
                   autoCorrect="off"
                   autoCapitalize="off"
                   autoComplete="off"
-                  className="h-9 rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
                 />
               </label>
-              <label className="flex flex-col gap-1.5">
+              <label htmlFor="mcp-oauth-client-secret" className="flex flex-col gap-1.5">
                 <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Client Secret (optional)
                 </span>
-                <input
+                <Input
+                  id="mcp-oauth-client-secret"
                   data-testid="mcp-oauth-client-secret"
                   type="password"
+                  size="lg"
                   value={manualClientSecret}
                   onChange={(e) => setManualClientSecret(e.target.value)}
                   spellCheck={false}
                   autoComplete="off"
-                  className="h-9 rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
                 />
               </label>
-              <label className="flex flex-col gap-1.5">
+              <label htmlFor="mcp-oauth-scope" className="flex flex-col gap-1.5">
                 <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Scope (optional)
                 </span>
-                <input
+                <Input
+                  id="mcp-oauth-scope"
                   data-testid="mcp-oauth-scope"
+                  size="lg"
                   value={manualScope}
                   onChange={(e) => setManualScope(e.target.value)}
                   spellCheck={false}
                   autoComplete="off"
-                  className="h-9 rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
                 />
               </label>
             </>
@@ -254,12 +258,14 @@ export function McpPanel({ tabId }: { tabId: string }) {
         </div>
       ) : mcp.status !== "connected" ? (
         <div className="flex flex-1 flex-col gap-3 p-5">
-          <label className="flex flex-col gap-1.5">
+          <label htmlFor="mcp-connect-url" className="flex flex-col gap-1.5">
             <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               Server URL
             </span>
-            <input
+            <Input
+              id="mcp-connect-url"
               data-testid="mcp-connect-url"
+              size="lg"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://{{host}}/mcp"
@@ -267,7 +273,6 @@ export function McpPanel({ tabId }: { tabId: string }) {
               autoCorrect="off"
               autoCapitalize="off"
               autoComplete="off"
-              className="h-9 rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
             />
           </label>
           <div className="flex flex-col gap-1.5">
@@ -321,14 +326,14 @@ export function McpPanel({ tabId }: { tabId: string }) {
                           {tool.inputSchema?.required?.includes(key) && " *"}
                         </label>
                         {prop.enum ? (
-                          <select
+                          <Select
                             id={fieldId}
                             data-testid={`mcp-arg-${key}`}
+                            size="md"
                             value={mcp.argValues[key] ?? ""}
                             onChange={(e) =>
                               patch({ argValues: { ...mcp.argValues, [key]: e.target.value } })
                             }
-                            className="h-8 rounded border border-border bg-card px-2 font-mono text-xs text-foreground outline-none focus:border-primary"
                           >
                             <option value="" />
                             {prop.enum.map((opt) => (
@@ -336,17 +341,17 @@ export function McpPanel({ tabId }: { tabId: string }) {
                                 {String(opt)}
                               </option>
                             ))}
-                          </select>
+                          </Select>
                         ) : (
-                          <input
+                          <Input
                             id={fieldId}
                             data-testid={`mcp-arg-${key}`}
+                            size="md"
                             value={mcp.argValues[key] ?? ""}
                             onChange={(e) =>
                               patch({ argValues: { ...mcp.argValues, [key]: e.target.value } })
                             }
                             placeholder={prop.description}
-                            className="h-8 rounded border border-border bg-card px-2 font-mono text-xs text-foreground outline-none focus:border-primary"
                           />
                         )}
                       </div>
@@ -354,17 +359,18 @@ export function McpPanel({ tabId }: { tabId: string }) {
                   })}
                 </div>
               ) : (
-                <label className="flex flex-col gap-1">
+                <label htmlFor="mcp-raw-args" className="flex flex-col gap-1">
                   <span className="text-2xs text-muted-foreground">
                     Arguments (raw JSON — this tool's schema has non-scalar fields)
                   </span>
-                  <textarea
+                  <Textarea
+                    id="mcp-raw-args"
                     data-testid="mcp-raw-args"
                     value={mcp.rawArgsJson}
                     onChange={(e) => patch({ rawArgsJson: e.target.value })}
                     rows={6}
                     spellCheck={false}
-                    className="resize-none rounded border border-border bg-card px-3 py-2 font-mono text-xs text-foreground outline-none focus:border-primary"
+                    className="min-h-0"
                   />
                 </label>
               )}

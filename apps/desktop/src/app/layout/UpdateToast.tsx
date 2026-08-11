@@ -24,7 +24,7 @@ export function UpdateToast({ onOpenSettings }: { onOpenSettings: (tab?: Setting
   return (
     <div
       style={{ animation: "pgToast 200ms ease-out" }}
-      className="fixed bottom-4 right-4 z-[var(--z-toast)] flex items-center gap-3 rounded-lg border border-primary/40 bg-card px-4 py-3 shadow-toast"
+      className="fixed bottom-4 right-4 z-toast flex items-center gap-3 rounded-lg border border-primary/40 bg-card px-4 py-3 shadow-toast"
     >
       <Download className="h-4 w-4 shrink-0 text-primary" />
       <div className="flex flex-col">

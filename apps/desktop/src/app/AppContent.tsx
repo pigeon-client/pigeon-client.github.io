@@ -383,7 +383,7 @@ export function AppContent() {
               onClick={() => setSidebarCollapsed(false)}
               title="Show sidebar"
               aria-label="Show sidebar"
-              className="absolute bottom-2 left-2 z-[var(--z-sticky)] flex h-7 w-7 items-center justify-center rounded border border-border bg-sidebar text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
+              className="absolute bottom-2 left-2 z-sticky flex h-7 w-7 items-center justify-center rounded border border-border bg-sidebar text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
             >
               <PanelLeftOpen className="h-4 w-4" />
             </button>
@@ -521,7 +521,7 @@ export function AppContent() {
       <MigrationToast />
       <UpdateToast onOpenSettings={openSettings} />
       {saveToast && (
-        <div className="fixed bottom-4 right-4 z-[var(--z-toast)] rounded-lg border border-primary/40 bg-card px-4 py-3 text-xs font-medium text-foreground shadow-toast">
+        <div className="fixed bottom-4 right-4 z-toast rounded-lg border border-primary/40 bg-card px-4 py-3 text-xs font-medium text-foreground shadow-toast">
           Saved to collection
         </div>
       )}

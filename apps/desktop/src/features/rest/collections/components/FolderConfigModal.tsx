@@ -1,9 +1,17 @@
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@pigeon/ui";
+import {
+  Button,
+  Modal,
+  ModalFooter,
+  ModalHeader,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@pigeon/ui";
 import { useState } from "react";
 import { VarKeyValueEditor } from "@/features/environments";
 import type { AuthConfig, Header } from "@/shared/types";
 import { AuthEditor } from "@/shared/ui/AuthEditor";
-import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
 import type { FolderConfig } from "../types";
 
 const BLANK_AUTH: AuthConfig = {

@@ -1,5 +1,5 @@
 import pigeonLogo from "@pigeon/brand/pigeon-mark.svg";
-import { Button, Switch } from "@pigeon/ui";
+import { Button, Input, Modal, ModalHeader, Select, Switch } from "@pigeon/ui";
 import { AlertCircle, CheckCircle2, Download, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useEnvStore } from "@/features/environments";
@@ -12,7 +12,6 @@ import {
   useHistoryStore,
 } from "@/features/rest/history";
 import { cn } from "@/shared/lib/utils";
-import { Modal, ModalHeader } from "@/shared/ui/Modal";
 import { useWordWrap } from "../hooks/useWordWrap";
 import { type AppTheme, applyTheme } from "../lib/theme";
 import {
@@ -319,14 +318,15 @@ export function SettingsDrawer({
               )}
               <div className="flex items-center justify-between py-2">
                 <span className="text-code text-foreground">Proxy URL</span>
-                <input
+                <Input
+                  size="md"
                   value={proxyUrl}
                   onChange={(e) => {
                     setProxyUrl(e.target.value);
                     localStorage.setItem("pg_proxy_url", e.target.value);
                   }}
                   placeholder="http://proxy:8080"
-                  className="h-8 w-[170px] rounded border border-border bg-card px-2.5 font-mono text-xs text-foreground outline-none focus:border-primary"
+                  className="w-[170px]"
                 />
               </div>
             </>
@@ -381,7 +381,8 @@ export function SettingsDrawer({
                     Pruned once on app start; drafts and collections are never pruned
                   </div>
                 </div>
-                <select
+                <Select
+                  size="md"
                   data-testid="settings-retention"
                   value={retentionDays === null ? "forever" : String(retentionDays)}
                   onChange={(e) => {
@@ -391,14 +392,13 @@ export function SettingsDrawer({
                     setRetentionDaysState(next);
                     setRetentionDays(next);
                   }}
-                  className="h-8 rounded border border-border bg-card px-2 font-mono text-xs text-foreground outline-none focus:border-primary"
                 >
                   {RETENTION_OPTIONS.map((o) => (
                     <option key={o.label} value={o.value === null ? "forever" : String(o.value)}>
                       {o.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="flex gap-2">
                 <Button variant="danger-ghost" className="flex-1" onClick={clearHistory}>
