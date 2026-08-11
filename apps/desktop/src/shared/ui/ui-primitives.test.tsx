@@ -3,14 +3,14 @@
  * without adding a Testing Library dependency.
  */
 import { Button, EmptyState, Input, Modal, Select, TabButton, Textarea } from "@pigeon/ui";
-import { act, createElement } from "react";
+import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;
 
-function mount(node: React.ReactNode) {
+function mount(node: ReactNode) {
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);
@@ -32,7 +32,7 @@ afterEach(() => {
 describe("@pigeon/ui primitives", () => {
   it("Button fires click and respects disabled", () => {
     const onClick = vi.fn();
-    const el = mount(createElement(Button, { onClick }, "Save"));
+    const el = mount(<Button onClick={onClick}>Save</Button>);
     const btn = el.querySelector("button");
     expect(btn?.textContent).toBe("Save");
     act(() => {
@@ -44,24 +44,24 @@ describe("@pigeon/ui primitives", () => {
       root?.unmount();
     });
     host?.remove();
-    const el2 = mount(createElement(Button, { onClick, disabled: true }, "Nope"));
+    const el2 = mount(
+      <Button onClick={onClick} disabled>
+        Nope
+      </Button>,
+    );
     expect(el2.querySelector("button")?.disabled).toBe(true);
   });
 
   it("Input Select Textarea render form controls", () => {
     const el = mount(
-      createElement(
-        "div",
-        null,
-        createElement(Input, { "aria-label": "Name", defaultValue: "alpha" }),
-        createElement(
-          Select,
-          { "aria-label": "Method", defaultValue: "GET" },
-          createElement("option", { value: "GET" }, "GET"),
-          createElement("option", { value: "POST" }, "POST"),
-        ),
-        createElement(Textarea, { "aria-label": "Body", defaultValue: "{}" }),
-      ),
+      <div>
+        <Input aria-label="Name" defaultValue="alpha" />
+        <Select aria-label="Method" defaultValue="GET">
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+        </Select>
+        <Textarea aria-label="Body" defaultValue="{}" />
+      </div>,
     );
     expect((el.querySelector('input[aria-label="Name"]') as HTMLInputElement).value).toBe("alpha");
     expect((el.querySelector('select[aria-label="Method"]') as HTMLSelectElement).value).toBe(
@@ -75,7 +75,9 @@ describe("@pigeon/ui primitives", () => {
   it("Modal exposes dialog and backdrop close", () => {
     const onClose = vi.fn();
     const el = mount(
-      createElement(Modal, { onClose, width: 320 }, createElement("div", null, "Hi")),
+      <Modal onClose={onClose} width={320}>
+        <div>Hi</div>
+      </Modal>,
     );
     expect(el.querySelector('[role="dialog"]')).toBeTruthy();
     const backdrop = el.querySelector('[aria-label="Close modal"]') as HTMLElement;
@@ -88,11 +90,7 @@ describe("@pigeon/ui primitives", () => {
   it("EmptyState action invokes callback", () => {
     const onClick = vi.fn();
     const el = mount(
-      createElement(EmptyState, {
-        icon: "📭",
-        label: "Nothing here",
-        action: { label: "Create", onClick },
-      }),
+      <EmptyState icon="📭" label="Nothing here" action={{ label: "Create", onClick }} />,
     );
     const btn = el.querySelector("button");
     act(() => {
@@ -102,7 +100,11 @@ describe("@pigeon/ui primitives", () => {
   });
 
   it("TabButton sets data-state when active", () => {
-    const el = mount(createElement(TabButton, { active: true, variant: "sidebar" }, "History"));
+    const el = mount(
+      <TabButton active variant="sidebar">
+        History
+      </TabButton>,
+    );
     expect(el.querySelector("button")?.getAttribute("data-state")).toBe("active");
   });
 });

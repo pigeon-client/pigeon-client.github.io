@@ -495,7 +495,7 @@ export function AppContent() {
           onClose={() => setShowImportModal(false)}
           onImportRequest={(parsed) => {
             const id = addTab();
-            useTabStore.getState().loadTabRequest(id, parsed, null);
+            useTabStore.getState().updateTabRequest(id, parsed);
             setActiveTab(id);
           }}
         />
