@@ -1,6 +1,5 @@
-import { Button } from "@pigeon/ui";
+import { Button, Input, Label, Modal, ModalFooter, ModalHeader } from "@pigeon/ui";
 import { useEffect, useRef, useState } from "react";
-import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
 
 export interface NameModalState {
   title: string;
@@ -30,15 +29,13 @@ export function NameModal({ state, onClose }: { state: NameModalState; onClose: 
     <Modal onClose={onClose} width={420} animate={state.title !== "Create Collection"}>
       <ModalHeader title={state.title} onClose={onClose} />
       <div className="px-5 py-5">
-        <label
-          htmlFor="collection-name-modal-input"
-          className="mb-2 block text-2xs font-semibold uppercase tracking-wide text-muted-foreground"
-        >
+        <Label htmlFor="collection-name-modal-input" variant="field">
           {state.label}
-        </label>
-        <input
+        </Label>
+        <Input
           id="collection-name-modal-input"
           ref={inputRef}
+          size="lg"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
@@ -46,7 +43,6 @@ export function NameModal({ state, onClose }: { state: NameModalState; onClose: 
             if (e.key === "Escape") onClose();
           }}
           placeholder={state.placeholder}
-          className="h-9 w-full rounded border border-border bg-card px-3 font-mono text-xs text-foreground outline-none focus:border-primary"
         />
       </div>
       <ModalFooter>

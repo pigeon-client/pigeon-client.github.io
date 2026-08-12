@@ -14,8 +14,7 @@ const buttonVariants = cva(
         ghost: "bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground",
         "ghost-icon":
           "bg-transparent border border-border text-muted-foreground hover:text-foreground hover:bg-accent",
-        primary:
-          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_2px_12px_color-mix(in_oklch,var(--primary)_40%,transparent)]",
+        primary: "bg-primary text-primary-foreground shadow-md hover:bg-primary/90",
         "danger-ghost":
           "bg-transparent border border-border text-muted-foreground hover:border-destructive hover:text-destructive",
         "danger-filled":
@@ -24,10 +23,13 @@ const buttonVariants = cva(
       size: {
         icon: "h-7 w-7 p-0 rounded text-xs",
         xs: "h-7 px-2.5 rounded text-2xs",
+        /** Legacy alias of `md` (h-8). Prefer `md` in new code. */
         sm: "h-8 px-3 rounded text-xs",
+        md: "h-8 px-3 rounded text-xs",
+        lg: "h-10 px-5 rounded text-sm",
       },
     },
-    defaultVariants: { variant: "default", size: "sm" },
+    defaultVariants: { variant: "default", size: "md" },
   },
 );
 

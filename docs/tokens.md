@@ -35,9 +35,12 @@ Semantic surface/text aliases (consumed by inline styles as `var(--…)`):
 | `--text-secondary` | `--muted-foreground` | secondary text |
 | `--text-placeholder` | `--muted-foreground` @60% | placeholders |
 | `--color-scrim` / `--scrim` | `rgb(0 0 0 / .5)` | modal/drawer backdrop |
+| `--success` / `--warning` | status-2xx / status-4xx | feedback surfaces (`Alert`) |
 
 **Rule:** no hex or `rgba()` in components. Every hardcoded color maps to a token
-(see Migration Notes).
+(see Migration Notes). Use Tailwind semantic utilities (`bg-background`,
+`text-muted-foreground`, `z-modal`, `shadow-toast`) — not `z-[var(--z-modal)]`
+or arbitrary color classes.
 
 ## Type scale
 

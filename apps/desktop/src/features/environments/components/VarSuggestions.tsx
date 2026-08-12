@@ -1,3 +1,4 @@
+import { Menu } from "@pigeon/ui";
 import type React from "react";
 import { cn } from "@/shared/lib/utils";
 import type { VarSuggestion } from "../hooks/useVarAutocomplete";
@@ -22,13 +23,7 @@ export function VarSuggestions({
 }) {
   if (items.length === 0) return null;
   return (
-    <div
-      style={style}
-      className={cn(
-        "absolute z-[9999] max-h-56 w-[240px] overflow-y-auto rounded border border-border bg-popover p-1 shadow-lg",
-        className,
-      )}
-    >
+    <Menu style={style} className={cn("absolute z-popover max-h-56 w-[240px]", className)}>
       {items.map((item, i) => {
         const active = i === index;
         const random = item.kind === "random";
@@ -67,6 +62,6 @@ export function VarSuggestions({
           </button>
         );
       })}
-    </div>
+    </Menu>
   );
 }

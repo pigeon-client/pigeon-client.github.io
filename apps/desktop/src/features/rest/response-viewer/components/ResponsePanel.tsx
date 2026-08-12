@@ -175,7 +175,7 @@ function ResponseContent({
 
       <div className="relative flex-1 min-h-0" data-find-scope="response">
         {findOpen && (
-          <div className="absolute right-4 top-2 z-[var(--z-dropdown)]">
+          <div className="absolute right-4 top-2 z-dropdown">
             <FindBar
               testId="response-find"
               query={findQuery}

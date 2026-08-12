@@ -365,12 +365,12 @@ export function UrlBar() {
               autoCorrect="off"
               autoCapitalize="off"
               autoComplete="off"
-              className="absolute inset-0 z-[var(--z-raised)] bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
+              className="absolute inset-0 z-raised bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
             />
             <div
               ref={urlOverlayRef}
               aria-hidden
-              className="pointer-events-none absolute inset-0 z-[var(--z-raised)] overflow-hidden px-3"
+              className="pointer-events-none absolute inset-0 z-raised overflow-hidden px-3"
             >
               <div className="flex h-full min-w-max items-center whitespace-nowrap font-mono text-code">
                 {renderUrlSegments(request.url)}

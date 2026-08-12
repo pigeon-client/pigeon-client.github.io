@@ -2,8 +2,12 @@
 
 ## Overview
 
-Reusable UI used by two or more features: desktop composites under `apps/desktop/src/shared/ui`
-and package primitives under `packages/ui` (buttons, tooltips, tabs, switch, badges, tokens).
+Reusable UI used by two or more features:
+
+- **Package primitives** — `@pigeon/ui` (`packages/ui`): design tokens + interactive
+  primitives (Button, Input, Select, Textarea, Label, Modal, Tabs, Switch, Menu, …).
+- **Desktop composites** — `apps/desktop/src/shared/ui`: domain-aware editors that
+  compose package primitives (KeyValueEditor, AuthEditor, FindBar, highlight layers).
 
 ## Problem / job to be done
 
@@ -16,26 +20,38 @@ key/value editor, modal focus rules, find bar, and highlighted body — without 
 - As a developer, I want modals to trap focus and not close on Space inside inputs.
 - As a developer, I want syntax-highlighted JSON in REST responses (and future MCP results)
   from one highlighter.
+- As a developer, I want new screens to import form controls from `@pigeon/ui` instead of
+  hand-rolling `className` strings.
 
 ## Functional requirements
+
+### Package (`@pigeon/ui`)
+
+| Component | Role |
+|-----------|------|
+| `Button` | Primary actions — variants `default` / `outline` / `ghost` / `primary` / danger\* |
+| `Input` / `Textarea` / `Select` | Form controls — sizes `sm` / `md` / `lg`, mono by default |
+| `Label` | Field / helper / error label styles |
+| `Modal` / `ModalHeader` / `ModalFooter` / `ConfirmModal` | Centered dialog + right drawer |
+| `Tabs` / `TabButton` | Radix tabs + standalone tab buttons (sidebar / underline) |
+| `Menu` / `MenuItem` | Dropdown / suggestion panel surface |
+| `EmptyState` | Empty pane illustration + copy |
+| `Alert` / `Card` / `Separator` / `Kbd` | Feedback, surfaces, dividers, shortcuts |
+| `Switch` / `Tooltip` / badges / `Resizable*` | Existing chrome primitives |
+| tokens | `@pigeon/ui/tokens.css` — see [tokens.md](../tokens.md) |
 
 ### Desktop composites (`src/shared/ui`)
 
 | Component | Role |
 |-----------|------|
 | `KeyValueEditor` | Enable + key + value + delete rows; auto-append empty row; optional env autocomplete |
-| `AuthEditor` | Auth modes: `none` / `bearer` / `basic` / `api-key` (header or query) |
-| `Modal` / `ConfirmModal` | Centered dialog + scrim; confirm destructive actions |
-| `FindBar` | In-panel find (body editor, response) |
+| `AuthEditor` | Auth modes: `none` / `bearer` / `basic` / `api-key` (header or query) — uses `Input`/`Select` |
+| `FindBar` | In-panel find (body editor, response) — uses `Button` |
 | `HighlightedBody` / `HighlightedHtml` | hljs-themed code / HTML highlight |
 | `TreeRow` | Shared tree row spacing/depth for drafts & collections |
-| `EmptyState` | Empty pane illustration + copy |
-| `tabs-shim` | Local tabs helper where package tabs are insufficient |
 
-### Package (`@pigeon/ui`)
-
-- Buttons, Tooltip, Tabs, Switch, MethodBadge / status colors, Resizable panels
-- Design tokens: `@pigeon/ui/tokens.css` (see [tokens.md](../tokens.md))
+Thin re-exports (`Modal.tsx`, `EmptyState.tsx`, `ConfirmModal.tsx`, `tabs-shim.tsx`) remain for
+back-compat — prefer importing from `@pigeon/ui` directly.
 
 ### Rules
 
@@ -43,6 +59,8 @@ key/value editor, modal focus rules, find bar, and highlighted body — without 
 2. `KeyValueEditor` stays in desktop (depends on environments autocomplete), not in the pure UI
    package.
 3. Colors via tokens — no hardcoded hex in feature CSS.
+4. New form chrome must use `@pigeon/ui` primitives (`Input`, `Select`, `Textarea`, `Button`,
+   `Modal`, `Menu`) rather than duplicating border/bg/focus class strings.
 
 ## Non-functional requirements
 
@@ -56,6 +74,7 @@ key/value editor, modal focus rules, find bar, and highlighted body — without 
 - [ ] Modal Space in input does not dismiss.
 - [ ] FindBar next/prev wraps; Esc closes.
 - [ ] Dark + Light: tokens and hljs palettes readable.
+- [ ] Forms in settings / collections / env / MCP / import use package `Input`/`Select`/`Textarea`.
 
 ## UI
 
@@ -85,7 +104,8 @@ response-viewer docs.
 
 ## Automation coverage
 
-- Vitest around pure helpers (`contentType`, url, etc.).
+- Vitest around pure helpers (`contentType`, url, etc.) plus `shared/ui/ui-primitives.test.tsx`
+  for package primitive smoke coverage.
 - Playwright exercises KeyValueEditor via request-builder / environments specs.
 
 ## Test ids
@@ -95,12 +115,14 @@ label/role in e2e.
 
 ## Key files
 
+- `packages/ui/**`
 - `apps/desktop/src/shared/ui/**`
 - `apps/desktop/src/shared/lib/**`
-- `packages/ui/**`
 - [tokens.md](../tokens.md)
 
 ## Open risks
 
-- Duplicating tokens in `apps/site` historically caused drift — site should track shared tokens
-  where practical.
+- Marketing site keeps a permanently-dark bespoke palette (`apps/site/src/styles/tokens.css`) —
+  intentional; do not force desktop light/dark tokens onto the landing page.
+- Feature empty heroes (`EmptyRequestState`, `EmptyResponse`) stay feature-local — they are
+  branded canvases, not generic empty panes.

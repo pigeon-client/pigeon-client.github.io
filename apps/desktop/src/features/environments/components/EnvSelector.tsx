@@ -1,3 +1,4 @@
+import { Menu } from "@pigeon/ui";
 import { AlertTriangle, Check, ChevronDown, Globe, Settings2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/shared/lib/utils";
@@ -52,7 +53,7 @@ export function EnvSelector({ onManage }: { onManage: () => void }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-9 z-[var(--z-dropdown)] w-[220px] rounded border border-border bg-popover p-1 shadow-lg">
+        <Menu className="absolute right-0 top-9 w-[220px]">
           <EnvOption
             label="No environment"
             active={activeEnvId === null}
@@ -87,7 +88,7 @@ export function EnvSelector({ onManage }: { onManage: () => void }) {
             <Settings2 className="h-3.5 w-3.5" />
             Manage environments…
           </button>
-        </div>
+        </Menu>
       )}
     </div>
   );

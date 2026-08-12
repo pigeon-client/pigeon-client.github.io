@@ -1,4 +1,4 @@
-import { Button } from "@pigeon/ui";
+import { Button, TabButton } from "@pigeon/ui";
 import { PanelLeftClose, Plus, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CollectionsTab } from "@/features/rest/collections";
@@ -11,7 +11,6 @@ import {
 } from "@/features/rest/history";
 import { useTabStore } from "@/features/rest/request-builder";
 import type { RequestConfig } from "@/shared/types";
-import { Tab } from "@/shared/ui/tabs-shim";
 
 type SidebarTab = "history" | "draft" | "collections";
 
@@ -94,7 +93,7 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
       {/* Sidebar tabs — 3 equal columns */}
       <div className="grid grid-cols-3 gap-1 px-2 pt-1">
         {(["history", "draft", "collections"] as SidebarTab[]).map((t) => (
-          <Tab
+          <TabButton
             key={t}
             variant="sidebar"
             testId={`sidebar-tab-${t}`}
@@ -102,7 +101,7 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
             onClick={() => setActiveTabState(t)}
           >
             <span className="cursor-pointer">{t.charAt(0).toUpperCase() + t.slice(1)}</span>
-          </Tab>
+          </TabButton>
         ))}
       </div>
 

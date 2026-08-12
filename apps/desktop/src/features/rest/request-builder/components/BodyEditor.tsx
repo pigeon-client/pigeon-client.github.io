@@ -244,7 +244,7 @@ export function BodyEditor({
         {isCodeEditor && (
           <div className="relative flex min-h-0 flex-1">
             {findOpen && (
-              <div className="absolute right-3 top-1 z-[var(--z-dropdown)]">
+              <div className="absolute right-3 top-1 z-dropdown">
                 <FindBar
                   testId="body-find"
                   query={findQuery}
@@ -325,7 +325,7 @@ export function BodyEditor({
                 }
                 spellCheck={false}
                 className={cn(
-                  "absolute inset-0 z-[var(--z-raised)] resize-none overflow-auto bg-transparent px-4 pb-1.5 font-mono text-code leading-[21px] text-transparent caret-foreground outline-none",
+                  "absolute inset-0 z-raised resize-none overflow-auto bg-transparent px-4 pb-1.5 font-mono text-code leading-[21px] text-transparent caret-foreground outline-none",
                   wordWrap ? "whitespace-pre-wrap break-words" : "whitespace-pre",
                 )}
                 style={{ tabSize: 2 }}

@@ -1,3 +1,4 @@
+import { EmptyState } from "@pigeon/ui";
 import { useMemo, useState } from "react";
 import type { CollectionNode, FolderConfig, InternalNode } from "@/features/rest/collections";
 import {
@@ -12,7 +13,6 @@ import {
   resolveInheritedRequest,
 } from "@/features/rest/collections";
 import type { RequestConfig } from "@/shared/types";
-import { EmptyState } from "@/shared/ui/EmptyState";
 import { TreeRow } from "@/shared/ui/TreeRow";
 import { useHistoryStore } from "../store";
 

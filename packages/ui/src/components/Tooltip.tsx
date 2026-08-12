@@ -61,7 +61,7 @@ export function Tooltip({ label, children, side = "bottom", delay = 350 }: Toolt
           id={id}
           role="tooltip"
           className={cn(
-            "pointer-events-none absolute left-1/2 z-[var(--z-popover)] -translate-x-1/2 whitespace-nowrap rounded border border-border bg-popover px-2 py-1 text-2xs font-medium text-foreground shadow-lg",
+            "pointer-events-none absolute left-1/2 z-popover -translate-x-1/2 whitespace-nowrap rounded border border-border bg-popover px-2 py-1 text-2xs font-medium text-foreground shadow-lg",
             side === "bottom" ? "top-full mt-1.5" : "bottom-full mb-1.5",
           )}
           style={{ animation: "pgFade 100ms ease-out" }}

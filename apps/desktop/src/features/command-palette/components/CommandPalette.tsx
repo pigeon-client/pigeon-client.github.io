@@ -105,7 +105,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         }
       }}
       style={{ animation: "pgFade 120ms ease-out" }}
-      className="fixed inset-0 z-[var(--z-modal)] flex items-start justify-center bg-black/60 pt-[12vh] backdrop-blur-[8px]"
+      className="fixed inset-0 z-modal flex items-start justify-center bg-black/60 pt-[12vh] backdrop-blur-[8px]"
     >
       <div
         data-testid="command-palette"

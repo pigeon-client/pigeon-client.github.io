@@ -246,7 +246,7 @@ export function KeyValueEditor({
               <span className="text-2xs text-destructive">{rowError(index)}</span>
             )}
             {showForIndex === index && suggestions && suggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-[var(--z-popover)] max-h-[220px] overflow-y-auto rounded border border-border bg-popover shadow-lg">
+              <div className="absolute left-0 right-0 top-full z-popover max-h-[220px] overflow-y-auto rounded border border-border bg-popover shadow-lg">
                 {suggestions.map((s, i) => (
                   <button
                     type="button"
@@ -344,7 +344,7 @@ export function KeyValueEditor({
                         }
                       }}
                       className={cn(
-                        "relative z-[var(--z-raised)] w-full min-w-0 bg-transparent font-mono text-code outline-none",
+                        "relative z-raised w-full min-w-0 bg-transparent font-mono text-code outline-none",
                         overlay ? "text-transparent caret-foreground" : "text-foreground",
                         !item.enabled && "opacity-50",
                       )}

@@ -90,7 +90,7 @@ export function Header({
   ];
 
   return (
-    <div className="relative z-[var(--z-sticky)] grid h-11 flex-none grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-background/95 px-3.5 backdrop-blur">
+    <div className="relative z-sticky grid h-11 flex-none grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-background/95 px-3.5 backdrop-blur">
       {/* Brand */}
       <div className="flex items-center gap-2.5 justify-self-start">
         <img src={pigeonLogo} alt="Pigeon" className="h-7 w-7 rounded object-contain" />

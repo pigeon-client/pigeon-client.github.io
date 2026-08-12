@@ -1,3 +1,4 @@
+import { Menu } from "@pigeon/ui";
 import { ChevronDown } from "lucide-react";
 import type { RefObject } from "react";
 import { HTTP_METHODS, methodTextClass } from "@/shared/lib/httpMethod";
@@ -37,7 +38,7 @@ export function MethodSelector({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-10 z-[var(--z-dropdown)] w-[150px] rounded border border-border bg-popover p-1 shadow-lg">
+        <Menu className="absolute left-0 top-10 w-[150px]">
           {HTTP_METHODS.map((m) => (
             <MethodOption
               key={m}
@@ -49,7 +50,7 @@ export function MethodSelector({
               }}
             />
           ))}
-        </div>
+        </Menu>
       )}
     </div>
   );

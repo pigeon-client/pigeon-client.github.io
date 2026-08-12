@@ -1,10 +1,9 @@
-import { Button } from "@pigeon/ui";
+import { Button, Modal, ModalFooter, ModalHeader, Textarea } from "@pigeon/ui";
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { useCollectionStore } from "@/features/rest/collections";
 import { cn } from "@/shared/lib/utils";
 import type { RequestConfig } from "@/shared/types";
-import { Modal, ModalFooter, ModalHeader } from "@/shared/ui/Modal";
 import { parseCurl } from "../services/curlService";
 import { type ParsedPostmanCollection, parsePostmanCollection } from "../services/postmanImporter";
 
@@ -138,8 +137,9 @@ export function ImportModal({ onClose, onImportRequest }: ImportModalProps) {
             <div className="mb-2.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               cURL Command
             </div>
-            <textarea
+            <Textarea
               data-testid="import-curl-textarea"
+              size="md"
               value={raw}
               onChange={(e) => {
                 setRaw(e.target.value);
@@ -149,9 +149,6 @@ export function ImportModal({ onClose, onImportRequest }: ImportModalProps) {
                 "curl https://api.example.com/users \\\n  -H 'Authorization: Bearer token' \\\n  -d '{\"name\":\"John\"}'"
               }
               spellCheck={false}
-              className="h-[136px] w-full resize-none rounded border border-border bg-card px-3.5 py-3 font-mono text-xs leading-relaxed text-foreground outline-none focus:border-primary"
-              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "")}
             />
 
             {/* Parse preview */}
@@ -207,8 +204,9 @@ export function ImportModal({ onClose, onImportRequest }: ImportModalProps) {
                 }}
               />
             </div>
-            <textarea
+            <Textarea
               data-testid="import-postman-textarea"
+              size="md"
               value={postmanRaw}
               onChange={(e) => {
                 setPostmanRaw(e.target.value);
@@ -216,9 +214,6 @@ export function ImportModal({ onClose, onImportRequest }: ImportModalProps) {
               }}
               placeholder="Paste an exported Postman collection (Collection v2.1 JSON), or upload the file above"
               spellCheck={false}
-              className="h-[136px] w-full resize-none rounded border border-border bg-card px-3.5 py-3 font-mono text-xs leading-relaxed text-foreground outline-none focus:border-primary"
-              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "")}
             />
 
             {postmanPreview && !error && (
