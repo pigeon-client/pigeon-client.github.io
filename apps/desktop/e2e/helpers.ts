@@ -33,9 +33,9 @@ export async function typeUrl(page: Page, url: string) {
   await input.fill(url);
 }
 
-/** Click Send. */
+/** Click Send on the active tab. */
 export async function clickSend(page: Page) {
-  await page.locator("[data-send-btn]").click();
+  await page.locator("[data-send-btn]:visible").click();
 }
 
 /** Stub every request to `host` (substring match) with a JSON body. */

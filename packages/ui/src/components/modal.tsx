@@ -1,7 +1,16 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "../lib/cn";
 import { Button } from "./button";
 
-/** Shared modal shell — centered dialog or right drawer. */
+function ModalPortal({ children }: { children: React.ReactNode }) {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => setTarget(document.body), []);
+  if (!target) return null;
+  return createPortal(children, target);
+}
+
+/** Shared modal shell — centered dialog or right drawer. Portaled to `document.body`. */
 export function Modal({
   onClose,
   width = 600,
@@ -19,7 +28,60 @@ export function Modal({
 }) {
   if (position === "right") {
     return (
-      // biome-ignore lint/a11y/useSemanticElements: backdrop div must remain a div so click events propagate to onClick for click-outside-to-close
+      <ModalPortal>
+        {/* biome-ignore lint/a11y/useSemanticElements: backdrop div must remain a div so click events propagate to onClick for click-outside-to-close */}
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Close modal"
+          onClick={onClose}
+          onKeyDown={(e) => {
+            if (
+              e.target === e.currentTarget &&
+              (e.key === "Escape" || e.key === "Enter" || e.key === " ")
+            ) {
+              e.preventDefault();
+              onClose();
+            }
+          }}
+          className="fixed inset-0 z-modal bg-scrim backdrop-blur-[4px]"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                onClose();
+              }
+            }}
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width,
+              maxWidth: "90vw",
+              animation: animate
+                ? "pgSlideRight 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+                : "none",
+            }}
+            className={cn(
+              "flex flex-col overflow-hidden border-l border-border bg-card shadow-drawer",
+              className,
+            )}
+          >
+            {children}
+          </div>
+        </div>
+      </ModalPortal>
+    );
+  }
+
+  return (
+    <ModalPortal>
+      {/* biome-ignore lint/a11y/useSemanticElements: backdrop div must remain a div so click events propagate to onClick for click-outside-to-close */}
       <div
         role="button"
         tabIndex={0}
@@ -34,7 +96,8 @@ export function Modal({
             onClose();
           }
         }}
-        className="fixed inset-0 z-modal bg-black/45 backdrop-blur-[4px]"
+        style={{ animation: animate ? "pgFade 120ms ease-out" : "none" }}
+        className="fixed inset-0 z-modal flex items-center justify-center bg-scrim backdrop-blur-[8px]"
       >
         <div
           role="dialog"
@@ -47,67 +110,19 @@ export function Modal({
             }
           }}
           style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            bottom: 0,
             width,
-            maxWidth: "90vw",
-            animation: animate ? "pgSlideRight 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)" : "none",
+            maxWidth: "calc(100vw - 48px)",
+            animation: animate ? "pgPop 150ms ease-out" : "none",
           }}
           className={cn(
-            "flex flex-col overflow-hidden border-l border-border bg-card shadow-drawer",
+            "flex max-h-[calc(100vh-48px)] flex-col overflow-hidden rounded border border-border bg-card shadow-modal",
             className,
           )}
         >
           {children}
         </div>
       </div>
-    );
-  }
-
-  return (
-    // biome-ignore lint/a11y/useSemanticElements: backdrop div must remain a div so click events propagate to onClick for click-outside-to-close
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label="Close modal"
-      onClick={onClose}
-      onKeyDown={(e) => {
-        if (
-          e.target === e.currentTarget &&
-          (e.key === "Escape" || e.key === "Enter" || e.key === " ")
-        ) {
-          e.preventDefault();
-          onClose();
-        }
-      }}
-      style={{ animation: animate ? "pgFade 120ms ease-out" : "none" }}
-      className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 backdrop-blur-[8px]"
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            e.stopPropagation();
-            onClose();
-          }
-        }}
-        style={{
-          width,
-          maxWidth: "calc(100vw - 48px)",
-          animation: animate ? "pgPop 150ms ease-out" : "none",
-        }}
-        className={cn(
-          "flex flex-col overflow-hidden rounded border border-border bg-card shadow-modal",
-          className,
-        )}
-      >
-        {children}
-      </div>
-    </div>
+    </ModalPortal>
   );
 }
 

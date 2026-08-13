@@ -1,23 +1,13 @@
-import { cn } from "@/shared/lib/utils";
-
-interface TokenInfo {
-  name: string;
-  value: string | null;
-  random: boolean;
-}
-
-/* ── Below the URL row: cURL-import toast, unresolved-var error, hovered-token
- *  preview, and the resolved-URL preview — mutually exclusive, in that order. ── */
+/* ── Below the URL row: cURL-import toast, unresolved-var error, and the
+ *  resolved-URL preview when the URL contains {{tokens}}. ── */
 export function UrlBarStatusLine({
   curlToast,
   sendError,
-  hoveredToken,
   url,
   previewUrl,
 }: {
   curlToast: boolean;
   sendError: string | null;
-  hoveredToken: TokenInfo | null;
   url: string;
   previewUrl: string;
 }) {
@@ -76,35 +66,11 @@ export function UrlBarStatusLine({
     );
   }
 
-  // Only a URL with `{{tokens}}` can ever show a hover preview or a resolved
-  // preview below it — reserve the row's height for that case only, so a
-  // plain URL (the common case) keeps zero extra space. Reserving it once
-  // the URL has tokens (rather than only while actively hovering) stops the
-  // layout from jumping as the mouse moves between adjacent token chips.
-  if (!/\{\{[^}]*\}\}/.test(url)) return null;
+  if (!/\{\{[^}]*\}\}/.test(url) || previewUrl === url) return null;
 
   return (
     <div className="ml-0.5 mt-1 flex min-h-[21px] items-center gap-1.5 truncate text-2xs">
-      {hoveredToken ? (
-        <>
-          <span className="font-mono text-[color:var(--var-token)]">{`{{${hoveredToken.name}}}`}</span>
-          <span className="text-muted-foreground">→</span>
-          {hoveredToken.value === null ? (
-            <span className="text-destructive">unresolved</span>
-          ) : (
-            <span
-              className={cn(
-                "truncate font-mono",
-                hoveredToken.random ? "text-muted-foreground italic" : "text-foreground",
-              )}
-            >
-              {hoveredToken.value}
-            </span>
-          )}
-        </>
-      ) : (
-        previewUrl !== url && <span className="truncate text-muted-foreground">{previewUrl}</span>
-      )}
+      <span className="truncate text-muted-foreground">{previewUrl}</span>
     </div>
   );
 }

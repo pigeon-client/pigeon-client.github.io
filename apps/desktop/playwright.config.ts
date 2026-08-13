@@ -23,6 +23,7 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    launchOptions: process.env.SLOW_MO ? { slowMo: Number(process.env.SLOW_MO) || 400 } : undefined,
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {

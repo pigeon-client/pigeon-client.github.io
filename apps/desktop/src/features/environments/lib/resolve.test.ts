@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { resolveTemplate } from "@/shared/lib/template";
+import { beforeEach, describe, expect, it } from "vitest";
+import { clearRandomPreviewCache, resolveTemplate } from "@/shared/lib/template";
 import type { Environment, EnvVariable } from "../types";
 import { makeResolver, resolveForPreview } from "./resolve";
 
@@ -78,9 +78,18 @@ describe("resolveTemplate — strict resolution (R3b) + built-ins (R8)", () => {
 });
 
 describe("resolveForPreview", () => {
+  beforeEach(() => clearRandomPreviewCache());
+
   it("substitutes known tokens, leaves unknown intact", () => {
     expect(resolveForPreview("{{base}}/x/{{missing}}", env([v("base", "http://api")]), [])).toBe(
       "http://api/x/{{missing}}",
     );
+  });
+
+  it("keeps $ built-ins stable across preview calls", () => {
+    const a = resolveForPreview("{{$uuid}}", null, []);
+    const b = resolveForPreview("{{$uuid}}", null, []);
+    expect(a).toBe(b);
+    expect(a).toMatch(/^[0-9a-f-]{36}$/i);
   });
 });

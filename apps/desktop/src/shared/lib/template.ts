@@ -42,6 +42,21 @@ export function randomBuiltin(name: string): string | undefined {
   }
 }
 
+/** Stable preview values for `$` built-ins — one value per token until cleared. */
+const previewRandomCache = new Map<string, string>();
+
+export function randomBuiltinForPreview(name: string): string | undefined {
+  const cached = previewRandomCache.get(name);
+  if (cached !== undefined) return cached;
+  const value = randomBuiltin(name);
+  if (value !== undefined) previewRandomCache.set(name, value);
+  return value;
+}
+
+export function clearRandomPreviewCache(): void {
+  previewRandomCache.clear();
+}
+
 export interface ResolveResult {
   result: string;
   /** Unique names of tokens that could not be resolved. */
@@ -64,6 +79,29 @@ export function resolveTemplate(
     if (fromLookup !== undefined) return fromLookup;
     if (name.startsWith("$")) {
       const built = randomBuiltin(name);
+      if (built !== undefined) return built;
+    }
+    missing.add(name);
+    return match;
+  });
+  return { result, missing: [...missing] };
+}
+
+/**
+ * Like `resolveTemplate`, but `$` built-ins use stable preview values (not
+ * regenerated on every React render). Actual sends still use `resolveTemplate`.
+ */
+export function resolveTemplateForPreview(
+  str: string,
+  lookup: (name: string) => string | undefined,
+): ResolveResult {
+  const missing = new Set<string>();
+  const result = str.replace(/\{\{([^}]+)\}\}/g, (match, raw) => {
+    const name = raw.trim();
+    const fromLookup = lookup(name);
+    if (fromLookup !== undefined) return fromLookup;
+    if (name.startsWith("$")) {
+      const built = randomBuiltinForPreview(name);
       if (built !== undefined) return built;
     }
     missing.add(name);

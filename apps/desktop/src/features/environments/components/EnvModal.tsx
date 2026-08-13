@@ -89,23 +89,25 @@ export function EnvModal({ onClose }: EnvModalProps) {
 
       <div className="flex h-[460px] overflow-hidden">
         {/* Left — env list */}
-        <div className="flex w-[220px] shrink-0 flex-col border-r border-border">
-          <div className="flex gap-1.5 border-b border-border p-2.5">
+        <div className="flex w-[240px] shrink-0 flex-col border-r border-border">
+          <div className="flex flex-col gap-1.5 border-b border-border p-2.5">
             <Input
               ref={newRef}
               size="md"
+              mono={false}
+              autoComplete="off"
+              spellCheck={false}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               placeholder="Environment name…"
-              className="w-0 min-w-0 flex-1"
             />
             <Button
               variant="default"
               size="xs"
               onClick={handleAdd}
               disabled={!newName.trim()}
-              className="h-8 shrink-0 gap-1"
+              className="h-8 w-full gap-1"
             >
               <Plus className="h-3 w-3" /> Add
             </Button>
@@ -158,6 +160,8 @@ export function EnvModal({ onClose }: EnvModalProps) {
                   <Input
                     size="sm"
                     mono={false}
+                    autoComplete="off"
+                    spellCheck={false}
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     onBlur={() => {
@@ -171,7 +175,7 @@ export function EnvModal({ onClose }: EnvModalProps) {
                       }
                       if (e.key === "Escape") setRenaming(false);
                     }}
-                    className="border-primary text-sm font-semibold"
+                    className="max-w-[200px] font-semibold"
                   />
                 ) : (
                   <button
@@ -247,22 +251,75 @@ export function EnvModal({ onClose }: EnvModalProps) {
               onChange={commitVars}
               keyPlaceholder="VARIABLE_NAME"
               valuePlaceholder="value"
+              keyClassName="text-foreground"
               testId="env"
               addLabel="Add variable"
               secret
               rowError={rowError}
             />
-            <p className="mt-3 text-2xs text-muted-foreground">
-              Use <span className="font-mono">{"{{NAME}}"}</span> in URLs, headers, and body.
-              Built-ins: <span className="font-mono">{"{{$uuid}}"}</span>,{" "}
-              <span className="font-mono">{"{{$email}}"}</span>,{" "}
-              <span className="font-mono">{"{{$firstName}}"}</span>,{" "}
-              <span className="font-mono">{"{{$lastName}}"}</span>.
-            </p>
+            <EnvUsageTable />
           </div>
         </div>
       </div>
     </Modal>
+  );
+}
+
+function EnvUsageTable() {
+  const rows = [
+    {
+      token: "{{NAME}}",
+      where: "URL, headers, body",
+      note: "Active environment, then globals",
+    },
+    {
+      token: "{{$uuid}}",
+      where: "Any field",
+      note: "Random UUID — new value each send",
+    },
+    {
+      token: "{{$email}}",
+      where: "Any field",
+      note: "Random email — new value each send",
+    },
+    {
+      token: "{{$firstName}}",
+      where: "Any field",
+      note: "Random first name — new value each send",
+    },
+    {
+      token: "{{$lastName}}",
+      where: "Any field",
+      note: "Random last name — new value each send",
+    },
+  ] as const;
+
+  return (
+    <div className="mt-4 overflow-hidden rounded border border-border">
+      <div className="border-b border-border bg-muted/20 px-3 py-2">
+        <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Usage
+        </span>
+      </div>
+      <table className="w-full border-collapse text-2xs">
+        <thead>
+          <tr className="border-b border-border/60 text-left text-muted-foreground">
+            <th className="px-3 py-2 font-semibold uppercase tracking-wide">Token</th>
+            <th className="px-3 py-2 font-semibold uppercase tracking-wide">Use in</th>
+            <th className="px-3 py-2 font-semibold uppercase tracking-wide">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.token} className="border-b border-border/40 last:border-0">
+              <td className="px-3 py-2 font-mono text-var-token">{row.token}</td>
+              <td className="px-3 py-2 text-foreground">{row.where}</td>
+              <td className="px-3 py-2 text-muted-foreground">{row.note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

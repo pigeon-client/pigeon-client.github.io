@@ -1,9 +1,8 @@
 import { CountBadge, Tabs, TabsContent, TabsList, TabsTrigger } from "@pigeon/ui";
 import { useCallback, useState } from "react";
-import { VarKeyValueEditor } from "@/features/environments";
+import { VarAuthEditor, VarKeyValueEditor } from "@/features/environments";
 import { applyParamsToUrl } from "@/shared/lib/url";
 import type { AuthConfig, BodyType, Header, KeyValue } from "@/shared/types";
-import { AuthEditor } from "@/shared/ui/AuthEditor";
 import { useTabStore } from "../store";
 import { BodyEditor } from "./BodyEditor";
 import { HeadersEditor } from "./HeadersEditor";
@@ -133,7 +132,7 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
           />
         </TabsContent>
         <TabsContent value="auth" className="m-0 min-h-0 min-w-0 flex-1 overflow-auto px-4 py-4">
-          <AuthEditor auth={request.auth} onAuthChange={onAuthChange} />
+          <VarAuthEditor auth={request.auth} onAuthChange={onAuthChange} />
         </TabsContent>
       </Tabs>
     </div>

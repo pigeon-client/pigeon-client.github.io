@@ -16,6 +16,8 @@ import {
   VarSuggestions,
 } from "@/features/environments";
 import { parseCurl } from "@/features/rest/import-export";
+import { useInputCaretAnchor } from "@/shared/lib/inputCaretPosition";
+import { formatTokenTooltip, getTokenPreview } from "@/shared/lib/tokenPreview";
 import { extractEndpoint, splitUrlQuery } from "@/shared/lib/url";
 import { useSendRequest } from "../hooks/useSendRequest";
 import { useTabStore } from "../store";
@@ -41,7 +43,6 @@ export function UrlBar() {
   const [methodOpen, setMethodOpen] = useState(false);
   const [curlToast, setCurlToast] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const [hoveredToken, setHoveredToken] = useState<TokenInfo | null>(null);
   const va = useVarAutocomplete();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +72,12 @@ export function UrlBar() {
   }, [methodOpen]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
+  const varMenuAnchor = useInputCaretAnchor(
+    urlInputRef,
+    va.caret,
+    va.open,
+    activeTab?.request.url ?? "",
+  );
   // Re-sync after URL text changes (paste / store write) — caret scroll may
   // land before the overlay's content width updates.
   useEffect(() => {
@@ -89,16 +96,6 @@ export function UrlBar() {
     // updateTabRequest derives the tab name from the path when it isn't locked;
     // don't call setTabName here (that would lock it on the first keystroke).
     updateTabRequest(activeTab.id, { url: raw, params: kv });
-  };
-
-  /* ── {{variable}} autocomplete ── */
-  const applyUrlAt = (next: string, caret: number) => {
-    applyUrl(next);
-    requestAnimationFrame(() => {
-      urlInputRef.current?.focus();
-      urlInputRef.current?.setSelectionRange(caret, caret);
-      syncUrlOverlayScroll();
-    });
   };
 
   const handleSend = async () => {
@@ -186,11 +183,7 @@ export function UrlBar() {
 
   /* ── Resolve one token name for the hover preview ── */
   const resolve = makeResolver(activeEnv, globals);
-  const tokenInfo = (name: string): TokenInfo => {
-    if (name.startsWith("$")) return { name, value: "generated per send", random: true };
-    const value = resolve(name);
-    return { name, value: value ?? null, random: false };
-  };
+  const tokenInfo = (name: string) => getTokenPreview(name, resolve);
 
   /* Split text into plain spans + hoverable {{token}} chips. */
   const renderTokens = (text: string, className: string, startOffset = 0) => {
@@ -215,8 +208,7 @@ export function UrlBar() {
           key={`k-${i}`}
           token={part}
           missing={!info.random && info.value === null}
-          onEnter={() => setHoveredToken(info)}
-          onLeave={() => setHoveredToken((h) => (h?.name === info.name ? null : h))}
+          tooltip={formatTokenTooltip(info)}
           onMouseDown={() => {
             const input = urlInputRef.current;
             input?.focus();
@@ -345,19 +337,9 @@ export function UrlBar() {
               }}
               onBlur={() => setTimeout(va.close, 120)}
               onKeyDown={(e) => {
-                if (
-                  va.onKeyDown(
-                    e,
-                    e.currentTarget.value,
-                    e.currentTarget.selectionStart ?? 0,
-                    applyUrlAt,
-                  )
-                ) {
+                if (va.onKeyDown(e, e.currentTarget)) {
+                  syncUrlOverlayScroll();
                   return;
-                }
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                  e.preventDefault();
-                  handleSend();
                 }
               }}
               placeholder="https://api.example.com/endpoint"
@@ -379,21 +361,23 @@ export function UrlBar() {
           </div>
 
           {/* {{variable}} autocomplete */}
-          {va.open && (
+          {va.open && varMenuAnchor && (
             <VarSuggestions
               items={va.items}
               index={va.index}
               onHover={va.setIndex}
               onPick={(name) => {
                 const el = urlInputRef.current;
-                va.commit(
-                  name,
-                  el?.value ?? request.url,
-                  el?.selectionStart ?? request.url.length,
-                  applyUrlAt,
-                );
+                if (el) {
+                  va.commit(name, el);
+                  syncUrlOverlayScroll();
+                }
               }}
-              className="left-0 top-[calc(100%+4px)]"
+              style={{
+                position: "fixed",
+                top: varMenuAnchor.top,
+                left: varMenuAnchor.left,
+              }}
             />
           )}
         </div>
@@ -430,16 +414,9 @@ export function UrlBar() {
       <UrlBarStatusLine
         curlToast={curlToast}
         sendError={sendError}
-        hoveredToken={hoveredToken}
         url={request.url}
         previewUrl={previewUrl}
       />
     </div>
   );
-}
-
-interface TokenInfo {
-  name: string;
-  value: string | null;
-  random: boolean;
 }

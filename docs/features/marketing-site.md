@@ -6,10 +6,13 @@ Public site at [trypigeon.dev](https://trypigeon.dev): Astro on Cloudflare Worke
 Landing page + blog. Not part of the desktop feature modules; documented here so product and
 design stay aligned with the app.
 
+**Story & copy rules:** [marketing-page-story.md](../marketing-page-story.md) — how we build the
+page as a scroll narrative (not a feature spec). Read before adding sections or copy.
+
 ## Problem / job to be done
 
 Visitors need a clear brand story, proof the product is real, and a one-command or DMG download —
-without an account wall.
+without an account wall. They should **watch the story scroll**, not read a manual.
 
 ## User stories
 

@@ -15,7 +15,7 @@ Organized product and engineering reference for the monorepo.
 | **Launch readiness** | [`launch-readiness.md`](./launch-readiness.md) | Ship checklist |
 | **Security** | [`security-audit.md`](./security-audit.md) | Security notes |
 | **Specs** | [`specs/`](./specs/) | Narrow technical specs (e.g. environments v1) |
-| **Marketing drafts** | [`landing-page-plan.md`](./landing-page-plan.md), [`landing-page.html`](./landing-page.html) | Landing drafts (live site is `apps/site`) |
+| **Marketing drafts** | [`marketing-page-story.md`](./marketing-page-story.md), [`landing-page-plan.md`](./landing-page-plan.md), [`landing-page.html`](./landing-page.html) | Story-first page guide + SEO plan (live site is `apps/site`) |
 
 ## Start here
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { VarKeyValueEditor } from "@/features/environments";
+import { replaceRange } from "@/shared/lib/inputEdit";
 import type { Header } from "@/shared/types";
 
 interface HeadersEditorProps {
@@ -57,9 +58,15 @@ export function HeadersEditor({ headers, onHeadersChange }: HeadersEditorProps) 
   };
 
   const selectSuggestion = (index: number, header: string) => {
-    onHeadersChange(
-      headers.map((h, i) => (i === index ? { ...h, key: header, inherited: undefined } : h)),
-    );
+    const field = inputRefs.current[index];
+    if (field) {
+      replaceRange(field, 0, field.value.length, header);
+      field.focus();
+    } else {
+      onHeadersChange(
+        headers.map((h, i) => (i === index ? { ...h, key: header, inherited: undefined } : h)),
+      );
+    }
     setSuggestions([]);
     setShowForIndex(null);
     inputRefs.current[index + 1]?.focus();

@@ -30,6 +30,7 @@ import {
 } from "@/features/settings";
 import { ComingSoonWorkspace } from "@/features/workspaces";
 import { isTauri } from "@/shared/lib/platform";
+import { clickVisibleSendButton } from "@/shared/lib/sendButton";
 import { getWindowKind, type WindowKind } from "@/shared/lib/windowKind";
 import { Header } from "./layout/Header";
 import { MigrationToast } from "./layout/MigrationToast";
@@ -147,6 +148,19 @@ export function AppContent() {
     setShowSaveModal(true);
   }, [activeRequest, activeTab, flashSaveToast, setTabCollectionRef]);
 
+  // ⌘Enter must win over focused inputs (URL bar, editors) and autocomplete Enter.
+  useEffect(() => {
+    const onMetaEnter = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.code !== "Enter") return;
+      if (showPalette) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      clickVisibleSendButton();
+    };
+    window.addEventListener("keydown", onMetaEnter, true);
+    return () => window.removeEventListener("keydown", onMetaEnter, true);
+  }, [showPalette]);
+
   // Keyboard shortcuts follow Postman's core desktop bindings where this app has
   // an equivalent action. Matching uses e.code because Shift changes e.key.
   useEffect(() => {
@@ -175,12 +189,6 @@ export function AppContent() {
           e.preventDefault();
           setShowPalette(false);
         }
-        return;
-      }
-      if (meta && !e.shiftKey && e.key === "Enter") {
-        e.preventDefault();
-        const sendBtn = document.querySelector("[data-send-btn]") as HTMLButtonElement;
-        sendBtn?.click();
         return;
       }
       if (meta && !e.shiftKey && e.code === "KeyT") {

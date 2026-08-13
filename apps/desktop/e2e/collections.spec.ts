@@ -12,6 +12,10 @@ async function createCollection(page: import("@playwright/test").Page, name: str
   await page.getByRole("button", { name: "Create", exact: true }).click();
 }
 
+async function confirmDelete(page: import("@playwright/test").Page) {
+  await page.getByTestId("confirm-modal-confirm").click();
+}
+
 test.describe("collections", () => {
   test("creates a collection and persists it across reload", async ({ page }) => {
     await openApp(page);
@@ -27,8 +31,6 @@ test.describe("collections", () => {
   });
 
   test("rename, nested folder save/reopen, and delete (folder + collection)", async ({ page }) => {
-    // Confirm() dialogs default to dismiss under Playwright — accept them so
-    // delete flows actually run instead of silently no-op'ing.
     page.on("dialog", (d) => d.accept());
 
     await openApp(page);
@@ -68,14 +70,17 @@ test.describe("collections", () => {
     );
 
     // Delete the folder — its nested request goes with it.
+    await sidebarTab(page, "Collections");
     await folderRow.hover();
     await folderRow.getByRole("button", { name: "Delete" }).click();
+    await confirmDelete(page);
     await expect(sidebar.getByText("Auth", { exact: true })).not.toBeVisible();
     await expect(sidebar.getByText("Login", { exact: true })).not.toBeVisible();
 
     // Delete the (now-empty) collection.
     await renamedRow.hover();
     await renamedRow.getByRole("button", { name: "Delete" }).click();
+    await confirmDelete(page);
     await expect(sidebar.getByText("QA Nest Renamed", { exact: true })).not.toBeVisible();
   });
 });

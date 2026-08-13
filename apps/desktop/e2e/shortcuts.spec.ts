@@ -34,7 +34,7 @@ test.describe("keyboard shortcuts", () => {
     await typeUrl(page, "https://api.example.com/ping");
 
     await urlInput(page).focus();
-    await page.keyboard.press("ControlOrMeta+Enter");
+    await urlInput(page).press("ControlOrMeta+Enter");
     await expect(responseStatus(page)).toContainText("200");
   });
 

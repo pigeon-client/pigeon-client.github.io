@@ -1,4 +1,4 @@
-import { Button, Modal, ModalFooter, ModalHeader, Textarea } from "@pigeon/ui";
+import { Alert, Button, Modal, ModalFooter, ModalHeader, Textarea } from "@pigeon/ui";
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { useCollectionStore } from "@/features/rest/collections";
@@ -107,7 +107,7 @@ export function ImportModal({ onClose, onImportRequest }: ImportModalProps) {
         onClose={onClose}
       />
 
-      <div className="px-5 pt-5">
+      <div className="max-h-[min(480px,calc(100vh-180px))] overflow-y-auto px-5 pt-5 pb-4">
         <div className="mb-3.5 flex rounded border border-border bg-card p-0.5">
           {(
             [
@@ -242,35 +242,18 @@ export function ImportModal({ onClose, onImportRequest }: ImportModalProps) {
               </div>
             )}
             {postmanParseFailed && !error && (
-              <div className="mt-2.5 rounded border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-xs text-destructive">
+              <Alert variant="warning" className="mt-2.5">
                 Doesn't look like a Postman collection export yet — keep pasting or check the file.
-              </div>
+              </Alert>
             )}
           </>
         )}
 
         {error && (
-          <div className="mt-2.5 flex items-center gap-2 rounded border border-destructive/30 bg-destructive/10 px-3 py-2">
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="text-destructive"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span className="text-xs text-destructive">{error}</span>
-          </div>
+          <Alert variant="destructive" role="alert" className="mt-2.5">
+            {error}
+          </Alert>
         )}
-        <div className="h-5" />
       </div>
 
       <ModalFooter>

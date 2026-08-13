@@ -60,4 +60,32 @@ describe("resolveRequest — query handling", () => {
     const { url } = resolveRequest(makeConfig({ url: ":3000/api" }), () => undefined);
     expect(url).toBe("http://localhost:3000/api");
   });
+
+  it("resolves {{var}} tokens in bearer auth", () => {
+    const config = makeConfig({
+      auth: { ...makeConfig().auth, type: "bearer", token: "{{apiToken}}" },
+    });
+    const { headers } = resolveRequest(config, (name) =>
+      name === "apiToken" ? "secret-123" : undefined,
+    );
+    expect(headers).toContainEqual({ key: "Authorization", value: "Bearer secret-123" });
+  });
+
+  it("resolves {{var}} tokens in basic auth", () => {
+    const config = makeConfig({
+      auth: {
+        ...makeConfig().auth,
+        type: "basic",
+        username: "{{user}}",
+        password: "{{pass}}",
+      },
+    });
+    const resolve = (name: string) =>
+      name === "user" ? "alice" : name === "pass" ? "pw" : undefined;
+    const { headers } = resolveRequest(config, resolve);
+    expect(headers).toContainEqual({
+      key: "Authorization",
+      value: `Basic ${btoa("alice:pw")}`,
+    });
+  });
 });

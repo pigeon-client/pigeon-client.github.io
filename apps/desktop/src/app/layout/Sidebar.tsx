@@ -70,11 +70,11 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
       {/* New Request + Import */}
       <div className="flex flex-shrink-0 gap-2 px-2.5 pt-3 pb-1.5">
         <Button
-          variant="default"
+          variant="outline"
           size="sm"
           data-testid="sidebar-new-request"
           onClick={handleNewRequest}
-          className="flex-1 justify-center font-semibold"
+          className="flex-1 justify-center font-medium"
         >
           <Plus className="h-3.5 w-3.5" />
           New Request

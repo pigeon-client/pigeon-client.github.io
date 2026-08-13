@@ -1,5 +1,7 @@
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
+import { insertText, type TextField } from "@/shared/lib/inputEdit";
+import { formatVarToken, shouldWrapJsonString } from "@/shared/lib/jsonEditContext";
 import { selectActiveEnv, useEnvStore } from "../store";
 import { RANDOM_TOKENS } from "../types";
 
@@ -10,8 +12,10 @@ export interface VarSuggestion {
   value?: string;
 }
 
-/** Apply a replacement value + caret position back to the source input. */
-export type ApplyFn = (next: string, caret: number) => void;
+export interface VarCommitOptions {
+  /** When true, wrap the token in JSON quotes if not already inside a string. */
+  wrapJsonString?: boolean;
+}
 
 /**
  * `{{variable}}` autocomplete state, shared by the URL bar, key/value editors,
@@ -42,7 +46,7 @@ export function useVarAutocomplete() {
     return out;
   }, [activeEnv, globals]);
 
-  const [ac, setAc] = useState<{ query: string; start: number } | null>(null);
+  const [ac, setAc] = useState<{ query: string; start: number; caret: number } | null>(null);
   const [index, setIndex] = useState(0);
   const lastQuery = useRef<string | null>(null);
 
@@ -72,7 +76,7 @@ export function useVarAutocomplete() {
         setIndex(0);
         lastQuery.current = query;
       }
-      setAc({ query, start: caret - m[0].length });
+      setAc({ query, start: caret - m[0].length, caret });
     } else {
       lastQuery.current = null;
       if (ac) setAc(null);
@@ -84,13 +88,30 @@ export function useVarAutocomplete() {
     setAc(null);
   };
 
-  const commit = (name: string, value: string, caret: number, apply: ApplyFn) => {
+  const resolvedValueFor = (name: string): string | null => {
+    if (name.startsWith("$")) return null;
+    const match = varNames.find((v) => v.name === name);
+    if (!match?.value || match.value === "•••••") return null;
+    return match.value;
+  };
+
+  const commit = (name: string, field: TextField, options?: VarCommitOptions) => {
     if (!ac) return;
-    const token = `{{${name}}}`;
-    // Swallow an auto-closed `}}` right after the caret (BodyEditor auto-pairs).
-    const after = value.slice(caret);
-    const rest = after.startsWith("}}") ? after.slice(2) : after;
-    apply(value.slice(0, ac.start) + token + rest, ac.start + token.length);
+    const caret = field.selectionStart ?? field.value.length;
+    const wrap =
+      !!options?.wrapJsonString &&
+      shouldWrapJsonString(field.value, ac.start, caret, resolvedValueFor(name));
+    const token = formatVarToken(name, wrap);
+    // Swallow an auto-closed `}}` right after the caret (BodyEditor auto-pairs `{`).
+    const after = field.value.slice(caret);
+    const swallow = after.startsWith("}}") ? 2 : 0;
+
+    field.focus();
+    field.setSelectionRange(ac.start, caret + swallow);
+    insertText(field, token);
+    const end = ac.start + token.length;
+    field.setSelectionRange(end, end);
+
     lastQuery.current = null;
     setAc(null);
   };
@@ -98,9 +119,8 @@ export function useVarAutocomplete() {
   /** Handle nav/insert keys. Returns true if the key was consumed. */
   const onKeyDown = (
     e: React.KeyboardEvent,
-    value: string,
-    caret: number,
-    apply: ApplyFn,
+    field: TextField,
+    options?: VarCommitOptions,
   ): boolean => {
     if (!ac || items.length === 0) return false;
     if (e.key === "ArrowDown") {
@@ -115,7 +135,7 @@ export function useVarAutocomplete() {
     }
     if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
-      commit(items[index].name, value, caret, apply);
+      commit(items[index].name, field, options);
       return true;
     }
     if (e.key === "Escape") {
@@ -126,5 +146,15 @@ export function useVarAutocomplete() {
     return false;
   };
 
-  return { open: !!ac, items, index, setIndex, detect, close, onKeyDown, commit };
+  return {
+    open: !!ac,
+    caret: ac?.caret ?? 0,
+    items,
+    index,
+    setIndex,
+    detect,
+    close,
+    onKeyDown,
+    commit,
+  };
 }

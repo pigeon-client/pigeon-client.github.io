@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { cn } from "@/shared/lib/utils";
+import { maskVarTokensForHighlight } from "@/shared/lib/varTokenSegments";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { hljsHighlight, LINE_HEIGHT } from "../lib/bodyEditorHelpers";
 
@@ -14,7 +15,10 @@ export function HighlightLayer({
   wrap: boolean;
   scrollRef: React.RefObject<HTMLDivElement | null>;
 }) {
-  const highlighted = useMemo(() => hljsHighlight(code, language), [code, language]);
+  const highlighted = useMemo(
+    () => hljsHighlight(maskVarTokensForHighlight(code), language),
+    [code, language],
+  );
 
   return (
     <div

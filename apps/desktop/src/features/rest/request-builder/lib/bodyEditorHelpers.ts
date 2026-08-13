@@ -37,7 +37,6 @@ export function hljsHighlight(code: string, language: string): string {
   }
 }
 
-/** Measure each logical line's wrapped height so the gutter stays aligned. */
 export function measureWrappedLineHeights(text: string, widthPx: number): number[] {
   if (widthPx <= 0) return text.split("\n").map(() => LINE_HEIGHT);
   const measure = document.createElement("div");

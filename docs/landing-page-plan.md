@@ -2,6 +2,8 @@
 
 Single-page, dark developer aesthetic, SEO-first. Primary CTA: **Download for macOS** (Linux/Windows coming soon). Secondary CTA: **Star on GitHub**.
 
+**Narrative & copy:** [marketing-page-story.md](./marketing-page-story.md) — story beats, why not Postman, section recipe, momentum rules. This file is SEO/structure; that file is how we write.
+
 ## 1. Positioning
 
 - **What**: Pigeon — a free, open-source, lightweight desktop API client. The fast alternative to Postman.

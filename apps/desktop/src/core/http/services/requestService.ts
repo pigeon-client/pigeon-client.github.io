@@ -75,16 +75,18 @@ export function resolveRequest(config: RequestConfig, resolve: Resolver): Resolv
     .map((h) => ({ key: h.key, value: sub(h.value) }));
 
   if (config.auth.type === "basic" && config.auth.username) {
-    const encoded = btoa(`${config.auth.username}:${config.auth.password}`);
+    const encoded = btoa(`${sub(config.auth.username)}:${sub(config.auth.password)}`);
     headers.push({ key: "Authorization", value: `Basic ${encoded}` });
   } else if (config.auth.type === "bearer" && config.auth.token) {
-    headers.push({ key: "Authorization", value: `Bearer ${config.auth.token}` });
+    headers.push({ key: "Authorization", value: `Bearer ${sub(config.auth.token)}` });
   } else if (config.auth.type === "api-key" && config.auth.apiKey && config.auth.apiValue) {
+    const apiKey = sub(config.auth.apiKey);
+    const apiValue = sub(config.auth.apiValue);
     if (config.auth.apiAddTo === "header") {
-      headers.push({ key: config.auth.apiKey, value: config.auth.apiValue });
+      headers.push({ key: apiKey, value: apiValue });
     } else {
       const separator = url.includes("?") ? "&" : "?";
-      url += `${separator}${encodeURIComponent(config.auth.apiKey)}=${encodeURIComponent(config.auth.apiValue)}`;
+      url += `${separator}${encodeURIComponent(apiKey)}=${encodeURIComponent(apiValue)}`;
     }
   }
 

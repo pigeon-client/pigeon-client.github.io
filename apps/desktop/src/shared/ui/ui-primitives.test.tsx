@@ -25,6 +25,9 @@ afterEach(() => {
     root?.unmount();
   });
   host?.remove();
+  for (const el of document.body.querySelectorAll('[aria-label="Close modal"]')) {
+    el.remove();
+  }
   root = null;
   host = null;
 });
@@ -74,13 +77,13 @@ describe("@pigeon/ui primitives", () => {
 
   it("Modal exposes dialog and backdrop close", () => {
     const onClose = vi.fn();
-    const el = mount(
+    mount(
       <Modal onClose={onClose} width={320}>
         <div>Hi</div>
       </Modal>,
     );
-    expect(el.querySelector('[role="dialog"]')).toBeTruthy();
-    const backdrop = el.querySelector('[aria-label="Close modal"]') as HTMLElement;
+    expect(document.body.querySelector('[role="dialog"]')).toBeTruthy();
+    const backdrop = document.body.querySelector('[aria-label="Close modal"]') as HTMLElement;
     act(() => {
       backdrop.click();
     });

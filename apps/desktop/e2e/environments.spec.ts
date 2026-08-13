@@ -72,7 +72,7 @@ test.describe("environments", () => {
 
     await typeUrl(page, "https://{{host}}/ping");
     await page.getByTestId("env-token").first().hover();
-    await expect(page.getByText("api.example.com")).toBeVisible();
+    await expect(page.getByTestId("env-token-tooltip")).toHaveText("api.example.com");
   });
 
   test("typing {{ shows a variable autocomplete and inserts on select", async ({ page }) => {

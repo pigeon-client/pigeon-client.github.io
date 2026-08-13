@@ -1,4 +1,4 @@
-import { resolveTemplate } from "@/shared/lib/template";
+import { resolveTemplateForPreview } from "@/shared/lib/template";
 import type { Environment, EnvVariable } from "../types";
 
 /** Enabled, keyed variables → name→value map (first occurrence wins). */
@@ -30,5 +30,5 @@ export function resolveForPreview(
   active: Environment | null,
   globals: EnvVariable[],
 ): string {
-  return resolveTemplate(str, makeResolver(active, globals)).result;
+  return resolveTemplateForPreview(str, makeResolver(active, globals)).result;
 }

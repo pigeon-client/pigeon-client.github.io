@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useVarAutocomplete, VarKeyValueEditor, VarSuggestions } from "@/features/environments";
+import {
+  makeResolver,
+  selectActiveEnv,
+  useEnvStore,
+  useVarAutocomplete,
+  VarKeyValueEditor,
+  VarSuggestions,
+} from "@/features/environments";
 import { useWordWrap } from "@/features/settings";
 import { bodyUiGroup, highlightLanguageFor } from "@/shared/lib/contentType";
+import { insertText, replaceRange } from "@/shared/lib/inputEdit";
+import { formatJsonPreservingVars } from "@/shared/lib/jsonEditContext";
 import { findMatches } from "@/shared/lib/textFind";
 import { cn } from "@/shared/lib/utils";
 import type { BodyType, KeyValue } from "@/shared/types";
@@ -17,6 +26,7 @@ import {
 } from "../lib/bodyEditorHelpers";
 import { BinaryFilePane } from "./BinaryFilePane";
 import { BodyTypeSelector } from "./BodyTypeSelector";
+import { BodyVarOverlay } from "./BodyVarOverlay";
 import { HighlightLayer } from "./HighlightLayer";
 import { LineNumbers } from "./LineNumbers";
 
@@ -48,8 +58,11 @@ export function BodyEditor({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
+  const varOverlayRef = useRef<HTMLDivElement>(null);
   const editorPaneRef = useRef<HTMLDivElement>(null);
-  const { handleKeyDown } = useAutoClose(textareaRef);
+  const activeEnv = useEnvStore(selectActiveEnv);
+  const globals = useEnvStore((s) => s.globals);
+  const resolveToken = useMemo(() => makeResolver(activeEnv, globals), [activeEnv, globals]);
   const va = useVarAutocomplete();
   const { wordWrap, setWordWrap } = useWordWrap();
   const [lineHeights, setLineHeights] = useState<number[] | undefined>();
@@ -89,15 +102,11 @@ export function BodyEditor({
     setFindIndex(n);
     revealMatch(n);
   };
-  const applyBody = (next: string, caret: number) => {
-    onBodyChange(next);
-    requestAnimationFrame(() => {
-      const ta = textareaRef.current;
-      ta?.focus();
-      ta?.setSelectionRange(caret, caret);
-    });
-  };
   const activeRadio = radioFromBodyType(bodyType);
+  const { handleKeyDown } = useAutoClose(textareaRef, {
+    jsonBlockExpand: activeRadio === "json",
+    indent: 2,
+  });
   const [rawFormat, setRawFormat] = useState<BodyType>(() => defaultRawFormat(bodyType));
   const [binaryFormat, setBinaryFormat] = useState<BodyType>(() => defaultBinaryFormat(bodyType));
   const [rawFormatOpen, setRawFormatOpen] = useState(false);
@@ -109,13 +118,6 @@ export function BodyEditor({
     if (bodyUiGroup(bodyType) === "raw") setRawFormat(bodyType);
     if (bodyUiGroup(bodyType) === "binary") setBinaryFormat(bodyType);
   }, [bodyType]);
-
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.addEventListener("keydown", handleKeyDown);
-    return () => el.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
 
   useEffect(() => {
     if (!(rawFormatOpen || binaryFormatOpen)) return;
@@ -148,12 +150,16 @@ export function BodyEditor({
       body
     ) {
       try {
-        onBodyChange(JSON.stringify(JSON.parse(body), null, 2));
+        const ta = textareaRef.current;
+        const formatted = formatJsonPreservingVars(body);
+        if (ta) replaceRange(ta, 0, ta.value.length, formatted);
+        else onBodyChange(formatted);
       } catch {}
     }
   };
 
   const isCodeEditor = activeRadio === "json" || activeRadio === "raw";
+  const jsonVarCommit = activeRadio === "json" ? { wrapJsonString: true as const } : undefined;
   const lineCount = body ? body.split("\n").length : 1;
   const canPrettyJson =
     bodyType === "application/json" ||
@@ -189,6 +195,10 @@ export function BodyEditor({
     if (highlightRef.current) {
       highlightRef.current.scrollTop = ta.scrollTop;
       highlightRef.current.scrollLeft = ta.scrollLeft;
+    }
+    if (varOverlayRef.current) {
+      varOverlayRef.current.scrollTop = ta.scrollTop;
+      varOverlayRef.current.scrollLeft = ta.scrollLeft;
     }
   }, []);
 
@@ -269,7 +279,7 @@ export function BodyEditor({
                 onHover={va.setIndex}
                 onPick={(name) => {
                   const ta = textareaRef.current;
-                  va.commit(name, ta?.value ?? body, ta?.selectionStart ?? body.length, applyBody);
+                  if (ta) va.commit(name, ta, jsonVarCommit);
                 }}
                 className="left-[46px] top-2"
               />
@@ -280,6 +290,17 @@ export function BodyEditor({
                 language={language}
                 wrap={wordWrap}
                 scrollRef={highlightRef}
+              />
+              <BodyVarOverlay
+                code={body}
+                wrap={wordWrap}
+                scrollRef={varOverlayRef}
+                resolveToken={resolveToken}
+                onTokenFocus={(offset) => {
+                  const ta = textareaRef.current;
+                  ta?.focus();
+                  ta?.setSelectionRange(offset, offset);
+                }}
               />
               <textarea
                 ref={textareaRef}
@@ -295,29 +316,35 @@ export function BodyEditor({
                   va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0)
                 }
                 onBlur={() => setTimeout(va.close, 120)}
+                onPaste={(e) => {
+                  if (!canPrettyJson) return;
+                  const text = e.clipboardData.getData("text/plain");
+                  const trimmed = text.trim();
+                  if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) return;
+                  try {
+                    const formatted = formatJsonPreservingVars(text);
+                    e.preventDefault();
+                    const ta = e.currentTarget;
+                    const start = ta.selectionStart ?? ta.value.length;
+                    const end = ta.selectionEnd ?? start;
+                    replaceRange(ta, start, end, formatted);
+                    const caret = start + formatted.length;
+                    ta.setSelectionRange(caret, caret);
+                    handleScroll();
+                  } catch {
+                    // Fall back to the browser default paste.
+                  }
+                }}
                 onScroll={handleScroll}
                 onKeyDown={(e) => {
-                  if (
-                    va.onKeyDown(
-                      e,
-                      e.currentTarget.value,
-                      e.currentTarget.selectionStart ?? 0,
-                      applyBody,
-                    )
-                  ) {
+                  if (va.onKeyDown(e, e.currentTarget, jsonVarCommit)) return;
+                  if (handleKeyDown(e.nativeEvent)) {
+                    e.preventDefault();
                     return;
                   }
                   if (e.key === "Tab") {
                     e.preventDefault();
-                    const ta = textareaRef.current;
-                    if (!ta) return;
-                    const start = ta.selectionStart;
-                    const end = ta.selectionEnd;
-                    const newVal = `${body.slice(0, start)}  ${body.slice(end)}`;
-                    onBodyChange(newVal);
-                    requestAnimationFrame(() => {
-                      ta.selectionStart = ta.selectionEnd = start + 2;
-                    });
+                    insertText(e.currentTarget, "  ");
                   }
                 }}
                 placeholder={

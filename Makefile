@@ -1,47 +1,92 @@
-APP_NAME = Pigeon
-BUNDLE_ID = com.k1n1.pigeon
 export PATH := $(HOME)/.cargo/bin:$(PATH):/opt/homebrew/bin:/usr/local/bin
 
-# pnpm workspace: desktop app = `pigeon`, marketing site = `pigeon-site`.
-# All targets run from the repo root; root scripts delegate via `--filter`.
-# Marketing site deploys to Cloudflare R2 + Worker (trypigeon.dev) via Wrangler.
-
-.PHONY: all dev run build build-release clean install deps open \
-        lint format format-check ci-check test e2e \
+.PHONY: help install deps \
+        lint format ci-check \
+        test e2e e2e-ui e2e-headed e2e-watch e2e-install \
+        dev dev-web build build-release \
+        bench-startup \
         dev-site build-site preview-site preview-site-worker deploy-site \
-        bench-startup
+        clean
 
-all: build
+.DEFAULT_GOAL := help
+
+help:
+	@echo "Setup"
+	@echo "  install              All deps: pnpm workspace, Playwright Chromium, Rust crates"
+	@echo "  deps                 pnpm install --frozen-lockfile (JS only)"
+	@echo ""
+	@echo "Quality"
+	@echo "  lint                 Biome lint"
+	@echo "  format               Biome lint+format write"
+	@echo "  ci-check             Biome CI (merge gate)"
+	@echo ""
+	@echo "Tests"
+	@echo "  test                 Vitest (no browser)"
+	@echo "  e2e                  Playwright headless (starts Vite :1420)"
+	@echo "  e2e-ui               Playwright UI — pick a spec, Chromium opens"
+	@echo "  e2e-headed           Playwright with a visible window"
+	@echo "  e2e-watch            Slow headed run of send.spec — watch URL + Send"
+	@echo "  e2e-install          First-time Chromium for Playwright"
+	@echo ""
+	@echo "Desktop (Tauri)"
+	@echo "  dev                  tauri dev"
+	@echo "  dev-web              Vite browser app → http://localhost:1420"
+	@echo "  build                tauri build"
+	@echo "  build-release        tauri build — macOS .dmg"
+	@echo "  bench-startup        Launch-time bench (macOS, 25 runs)"
+	@echo ""
+	@echo "Marketing site (trypigeon.dev)"
+	@echo "  dev-site             Astro dev"
+	@echo "  build-site           Astro build"
+	@echo "  preview-site         Local static preview"
+	@echo "  preview-site-worker  Wrangler + R2 locally"
+	@echo "  deploy-site          Build → R2 → Worker"
+	@echo ""
+	@echo "  clean                Remove build artifacts and node_modules"
+
+# ── Setup ──
+install: deps e2e-install
+	cd apps/desktop/src-tauri && cargo fetch
 
 deps:
 	pnpm install --frozen-lockfile
 
-install: deps
-
-# ── Quality (Biome runs repo-wide from the root) ──
+# ── Quality ──
 lint:
 	pnpm run lint
 
 format:
 	pnpm run check:write
 
-format-check:
-	pnpm run format:check
-
 ci-check:
 	pnpm run ci:check
 
+# ── Tests ──
 test:
-	pnpm run test
+	pnpm test
 
 e2e:
-	pnpm run e2e
+	pnpm e2e
 
-# ── Desktop app (apps/desktop) ──
+e2e-ui:
+	pnpm e2e:ui
+
+e2e-headed:
+	pnpm --filter pigeon e2e -- --headed --workers=1
+
+# One Chromium window, slowed down, send-request spec only.
+e2e-watch:
+	SLOW_MO=400 pnpm --filter pigeon e2e -- --headed --workers=1 --timeout=120000 e2e/send.spec.ts
+
+e2e-install:
+	pnpm --filter pigeon exec playwright install chromium
+
+# ── Desktop (Tauri) ──
 dev:
 	pnpm run tauri dev
 
-run: dev
+dev-web:
+	pnpm dev
 
 build:
 	pnpm run tauri build
@@ -49,15 +94,10 @@ build:
 build-release:
 	pnpm run tauri build --bundles dmg
 
-open:
-	open apps/desktop/src-tauri/target/release/bundle/dmg/
-
-# Launch-time bench (macOS): process start → first window. Default 25 runs.
-# Needs Accessibility for Terminal. Prefer release .app for real numbers.
 bench-startup:
 	./scripts/bench-startup.sh --runs 25
 
-# ── Marketing site (apps/site → Cloudflare R2 + Worker / trypigeon.dev) ──
+# ── Marketing site ──
 dev-site:
 	pnpm --filter pigeon-site dev
 
@@ -67,12 +107,9 @@ build-site:
 preview-site:
 	pnpm run preview:site
 
-# Local Worker runtime (Wrangler) against R2 — syncs dist locally first.
 preview-site-worker:
 	pnpm run preview:site:worker
 
-# Needs Cloudflare auth: `pnpm --filter pigeon-site exec wrangler login`
-# or CLOUDFLARE_API_TOKEN (+ CLOUDFLARE_ACCOUNT_ID) in the environment.
 deploy-site:
 	pnpm run deploy:site
 

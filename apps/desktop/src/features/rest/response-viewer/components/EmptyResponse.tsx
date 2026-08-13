@@ -1,5 +1,6 @@
 import { Send } from "lucide-react";
 import { useTabStore } from "@/features/rest/request-builder";
+import { clickVisibleSendButton } from "@/shared/lib/sendButton";
 
 /* ── Empty state ── */
 export function EmptyResponse() {
@@ -60,7 +61,7 @@ export function EmptyResponse() {
         <button
           type="button"
           onClick={() => {
-            (document.querySelector("[data-send-btn]") as HTMLButtonElement | null)?.click();
+            clickVisibleSendButton();
           }}
           style={{
             display: "flex",

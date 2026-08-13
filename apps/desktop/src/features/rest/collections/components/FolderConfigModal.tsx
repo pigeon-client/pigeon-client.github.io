@@ -9,9 +9,8 @@ import {
   TabsTrigger,
 } from "@pigeon/ui";
 import { useState } from "react";
-import { VarKeyValueEditor } from "@/features/environments";
+import { VarAuthEditor, VarKeyValueEditor } from "@/features/environments";
 import type { AuthConfig, Header } from "@/shared/types";
-import { AuthEditor } from "@/shared/ui/AuthEditor";
 import type { FolderConfig } from "../types";
 
 const BLANK_AUTH: AuthConfig = {
@@ -60,37 +59,43 @@ export function FolderConfigModal({
   return (
     <Modal onClose={onClose} width={520}>
       <ModalHeader title={`"${state.folderName}" headers & auth`} onClose={onClose} />
-      <p className="px-5 pt-4 text-2xs text-muted-foreground">
-        Inherited by every request in this folder (and its subfolders). A request's own headers or
-        auth always take priority over what's set here.
-      </p>
-      <Tabs
-        value={tab}
-        onValueChange={(v) => setTab(v as "headers" | "auth")}
-        className="flex min-h-[280px] flex-col px-5 pt-2"
-      >
-        <TabsList variant="underline" className="w-full shrink-0 justify-start">
-          <TabsTrigger variant="underline" value="headers" data-testid="folder-config-tab-headers">
-            Headers
-          </TabsTrigger>
-          <TabsTrigger variant="underline" value="auth" data-testid="folder-config-tab-auth">
-            Auth
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="headers" className="m-0 flex-1 overflow-auto py-3">
-          <VarKeyValueEditor
-            items={headers}
-            onChange={(items) => setHeaders(withBlankRow(items as Header[]))}
-            keyPlaceholder="Header"
-            valuePlaceholder="Value"
-            testId="folder-header"
-            addLabel="Add header"
-          />
-        </TabsContent>
-        <TabsContent value="auth" className="m-0 flex-1 overflow-auto py-3">
-          <AuthEditor auth={auth} onAuthChange={setAuth} subject="This folder" />
-        </TabsContent>
-      </Tabs>
+      <div className="flex h-[440px] flex-col overflow-hidden">
+        <p className="shrink-0 px-5 pt-4 text-2xs text-muted-foreground">
+          Inherited by every request in this folder (and its subfolders). A request's own headers or
+          auth always take priority over what's set here.
+        </p>
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as "headers" | "auth")}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pt-2"
+        >
+          <TabsList variant="underline" className="w-full shrink-0 justify-start">
+            <TabsTrigger
+              variant="underline"
+              value="headers"
+              data-testid="folder-config-tab-headers"
+            >
+              Headers
+            </TabsTrigger>
+            <TabsTrigger variant="underline" value="auth" data-testid="folder-config-tab-auth">
+              Auth
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="headers" className="m-0 min-h-0 flex-1 overflow-y-auto py-3">
+            <VarKeyValueEditor
+              items={headers}
+              onChange={(items) => setHeaders(withBlankRow(items as Header[]))}
+              keyPlaceholder="Header"
+              valuePlaceholder="Value"
+              testId="folder-header"
+              addLabel="Add header"
+            />
+          </TabsContent>
+          <TabsContent value="auth" className="m-0 min-h-0 flex-1 overflow-y-auto py-3">
+            <VarAuthEditor auth={auth} onAuthChange={setAuth} subject="This folder" />
+          </TabsContent>
+        </Tabs>
+      </div>
       <ModalFooter>
         <Button variant="ghost" size="sm" onClick={onClose}>
           Cancel

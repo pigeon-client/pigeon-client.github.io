@@ -96,6 +96,9 @@
 
   /* Backdrop scrim for modals/drawers */
   --scrim: rgb(0 0 0 / 0.5);
+  /* Theme picker previews — fixed samples, independent of active theme */
+  --theme-swatch-light: oklch(0.9818 0.0054 95.0986);
+  --theme-swatch-dark: #0b0c0f;
 
   /* Syntax highlight palette — dark by default, overridden under .dark */
   --hljs-base: #12121e;
@@ -118,8 +121,8 @@
   --hljs-add-bg: rgba(22, 163, 74, 0.1);
   --hljs-del-bg: rgba(220, 38, 38, 0.1);
   --hljs-select: rgba(107, 80, 246, 0.2);
-  /* Light-primary tint for `{{variable}}` highlights (theme-aware). */
-  --var-token: color-mix(in oklch, var(--primary) 68%, var(--foreground) 32%);
+  /* Light primary tint for inline `{{variable}}` — softer than URL path primary. */
+  --var-token: color-mix(in oklch, var(--primary) 52%, var(--background) 48%);
 }
 
 .dark {
@@ -208,6 +211,7 @@
   --hljs-add-bg: rgba(126, 198, 153, 0.08);
   --hljs-del-bg: rgba(248, 113, 113, 0.08);
   --hljs-select: rgba(199, 146, 234, 0.28);
+  --var-token: color-mix(in oklch, var(--primary) 62%, var(--foreground) 38%);
 }
 
 @theme inline {
@@ -251,6 +255,7 @@
   --color-method-head: var(--method-head);
   --color-method-options: var(--method-options);
   --color-method-query: var(--method-query);
+  --color-var-token: var(--var-token);
 
   --color-status-2xx: var(--status-2xx);
   --color-status-3xx: var(--status-3xx);
@@ -292,6 +297,8 @@
 
   /* Scrim (backdrop) as a color token so `bg-scrim` works too */
   --color-scrim: var(--scrim);
+  --color-theme-swatch-light: var(--theme-swatch-light);
+  --color-theme-swatch-dark: var(--theme-swatch-dark);
 
   /* ── z-index scale ── replaces ad-hoc 1/10/40/50/90/100/999/1000 */
   --z-raised: 1;
@@ -301,4 +308,12 @@
   --z-overlay: 40;
   --z-modal: 50;
   --z-toast: 60;
+  /* Tailwind v4 z-* utilities read --z-index-* (not --z-*). */
+  --z-index-raised: var(--z-raised);
+  --z-index-dropdown: var(--z-dropdown);
+  --z-index-sticky: var(--z-sticky);
+  --z-index-popover: var(--z-popover);
+  --z-index-overlay: var(--z-overlay);
+  --z-index-modal: var(--z-modal);
+  --z-index-toast: var(--z-toast);
 }

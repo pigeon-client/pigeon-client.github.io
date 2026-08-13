@@ -42,18 +42,7 @@ export function VarSuggestions({
               active && "bg-primary/15",
             )}
           >
-            <span
-              className={cn(
-                "truncate",
-                // Highlighted row is clearly primary; otherwise user-defined vars
-                // and dynamic built-ins get distinct colors.
-                active
-                  ? "text-primary"
-                  : random
-                    ? "text-[color:var(--hljs-number)]"
-                    : "text-[color:var(--var-token)]",
-              )}
-            >
+            <span className={cn("truncate", active ? "text-primary" : "text-var-token")}>
               {item.name}
             </span>
             <span className="ml-2 max-w-[110px] shrink-0 truncate text-2xs text-muted-foreground">

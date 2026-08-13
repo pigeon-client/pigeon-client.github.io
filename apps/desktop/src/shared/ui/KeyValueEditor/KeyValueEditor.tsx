@@ -1,6 +1,7 @@
 import { Tooltip } from "@pigeon/ui";
 import { Eye, EyeOff, FolderTree, Lock, Paperclip, Unlock } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { renderTokenText } from "@/shared/lib/renderTokenText";
 import { cn } from "@/shared/lib/utils";
 import type { KeyValue } from "@/shared/types";
 import type { ValueAutocomplete } from "./autocomplete";
@@ -30,23 +31,10 @@ export interface KeyValueEditorProps {
   /** `{{variable}}` autocomplete for value fields, injected by the consumer
    *  (use `VarKeyValueEditor` from features/environments). Absent → no popover. */
   autocomplete?: ValueAutocomplete;
-}
-
-/** Render text with `{{tokens}}` tinted in the variable color. */
-function renderTokenText(text: string) {
-  return text.split(/(\{\{[^}]*\}\})/g).map((part, i) =>
-    /^\{\{[^}]*\}\}$/.test(part) ? (
-      // biome-ignore lint/suspicious/noArrayIndexKey: positional text fragments
-      <span key={`v-${i}`} className="text-[color:var(--var-token)]">
-        {part}
-      </span>
-    ) : (
-      // biome-ignore lint/suspicious/noArrayIndexKey: positional text fragments
-      <span key={`v-${i}`} className="text-foreground">
-        {part}
-      </span>
-    ),
-  );
+  /** Resolve env token names for hover tooltips on `{{tokens}}` in value fields. */
+  resolveToken?: (name: string) => string | undefined;
+  /** Override key column text color (default: HTTP-method green for params/headers). */
+  keyClassName?: string;
 }
 
 function Checkbox({ on, onClick }: { on: boolean; onClick: () => void }) {
@@ -102,6 +90,8 @@ export function KeyValueEditor({
   onKeyFocus,
   onSelectSuggestion,
   autocomplete: va,
+  resolveToken,
+  keyClassName = "text-method-get",
 }: KeyValueEditorProps) {
   const [reveal, setReveal] = useState<Record<number, boolean>>({});
   const [acRow, setAcRow] = useState<number | null>(null);
@@ -156,15 +146,6 @@ export function KeyValueEditor({
       }
     }
     onChange(updated);
-  };
-
-  const applyValue = (index: number) => (next: string, caret: number) => {
-    update(index, "value", next);
-    requestAnimationFrame(() => {
-      const el = valueRefs.current[index];
-      el?.focus();
-      el?.setSelectionRange(caret, caret);
-    });
   };
 
   const remove = (index: number) => {
@@ -237,8 +218,8 @@ export function KeyValueEditor({
               onKeyDown={(e) => onKeyDown?.(e, index)}
               onFocus={() => onKeyFocus?.(index)}
               className={cn(
-                "w-full min-w-0 bg-transparent font-mono text-code outline-none",
-                rowError?.(index) ? "text-destructive" : "text-method-get",
+                "w-full min-w-0 bg-transparent font-mono text-code outline-none placeholder:text-muted-foreground/60",
+                rowError?.(index) ? "text-destructive" : keyClassName,
                 !item.enabled && "opacity-50",
               )}
             />
@@ -334,13 +315,8 @@ export function KeyValueEditor({
                       }}
                       onBlur={() => va && setTimeout(va.close, 120)}
                       onKeyDown={(e) => {
-                        if (va && acRow === index) {
-                          va.onKeyDown(
-                            e,
-                            e.currentTarget.value,
-                            e.currentTarget.selectionStart ?? 0,
-                            applyValue(index),
-                          );
+                        if (va && acRow === index && va.onKeyDown(e, e.currentTarget)) {
+                          syncValueOverlayScroll(index);
                         }
                       }}
                       className={cn(
@@ -356,13 +332,13 @@ export function KeyValueEditor({
                         }}
                         aria-hidden
                         className={cn(
-                          "pointer-events-none absolute inset-0 overflow-hidden font-mono text-code",
+                          "pointer-events-none absolute inset-0 z-raised overflow-hidden font-mono text-code",
                           !item.enabled && "opacity-50",
                         )}
                       >
                         <div className="flex h-full min-w-max items-center whitespace-nowrap">
                           {item.value ? (
-                            renderTokenText(item.value)
+                            renderTokenText(item.value, resolveToken)
                           ) : (
                             <span className="text-[color:var(--text-placeholder)]">
                               {valuePlaceholder}
@@ -382,12 +358,10 @@ export function KeyValueEditor({
                 onHover={va.setIndex}
                 onPick={(name) => {
                   const el = valueRefs.current[index];
-                  va.commit(
-                    name,
-                    el?.value ?? item.value,
-                    el?.selectionStart ?? el?.value.length ?? 0,
-                    applyValue(index),
-                  );
+                  if (el) {
+                    va.commit(name, el);
+                    syncValueOverlayScroll(index);
+                  }
                 }}
                 style={(() => {
                   // `position: fixed` so the popover escapes the editor's

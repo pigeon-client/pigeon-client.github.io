@@ -266,7 +266,7 @@ export function SettingsDrawer({
                     key={t.id}
                     active={theme === t.id}
                     label={t.label}
-                    swatchClass={t.id === "dark" ? "bg-zinc-900" : "bg-zinc-100"}
+                    swatchClass={t.id === "dark" ? "bg-theme-swatch-dark" : "bg-theme-swatch-light"}
                     onClick={() => handleTheme(t.id)}
                   />
                 ))}

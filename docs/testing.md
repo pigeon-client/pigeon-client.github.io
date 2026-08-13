@@ -1,7 +1,7 @@
 # Testing
 
-Three layers: unit/integration (Vitest), browser E2E (Playwright), and manual feature QA against
-the checklists in `docs/features/*.md`.
+Three automated layers plus manual QA: unit/integration (Vitest), browser E2E (Playwright),
+and manual feature QA against the checklists in `docs/features/*.md`.
 
 ## Unit / integration — Vitest
 
@@ -49,6 +49,18 @@ Mandatory edge cases (always on full / request-builder passes):
 
 Canonical chords: [`docs/features/keyboard-shortcuts.md`](./features/keyboard-shortcuts.md)
 (source of truth: `AppContent.tsx`).
+
+## Test catalog
+
+Structured test cases (`TC-*`) and element IDs (`EL-*`) live in
+[`@pigeon/test-catalog`](../packages/test-catalog/) — see
+[docs/test-catalog/README.md](./test-catalog/README.md) for the full feature index,
+manual QA workflow, and coverage summary.
+
+**REST-only QA:** use `getRestTestCases()`. MCP and GraphQL workbenches are coming-soon
+placeholders — keep those cases in the catalog but skip them for the current product pass.
+Drag-and-drop (tabs, collection requests, layout split) and shortcut↔button pairs are first-class
+REST cases (`dnd` and `button-pair` tags).
 
 ## Test ids
 

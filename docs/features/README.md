@@ -6,6 +6,9 @@ and does**, acceptance criteria, edge cases, manual QA checklists, and `data-tes
 Code architecture notes also live under `apps/desktop/src/features/<name>/` (and `app/`, `core/`).
 Update these docs when behavior changes.
 
+**Test catalog:** Structured `TC-*` / `EL-*` cases for every feature live in
+[docs/test-catalog/](../test-catalog/README.md) (`@pigeon/test-catalog` package).
+
 ## Feature list
 
 ### Application shell

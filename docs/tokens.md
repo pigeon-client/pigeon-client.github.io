@@ -21,7 +21,8 @@ Semantic shadcn palette (per theme): `background foreground card popover primary
 secondary muted accent destructive border input ring` + foregrounds.
 
 Pigeon domain colors (per theme): `--color-method-{get,post,put,patch,delete,head,options,query}`,
-`--color-status-{2xx,3xx,4xx,5xx}`, `--hljs-*`, `--var-token` (inline `{{variable}}` tint).
+`--color-status-{2xx,3xx,4xx,5xx}`, `--hljs-*`, `--var-token` (light primary tint for inline
+`{{variable}}`, distinct from full `--primary` on URL paths).
 
 Semantic surface/text aliases (consumed by inline styles as `var(--…)`):
 
