@@ -21,8 +21,8 @@ export interface VarTextFieldAutocomplete {
   setIndex: (i: number) => void;
   detect: (value: string, caret: number) => void;
   close: () => void;
-  onKeyDown: (e: React.KeyboardEvent, field: TextField) => boolean;
-  commit: (name: string, field: TextField) => void;
+  onKeyDownField: (e: React.KeyboardEvent, field: TextField) => boolean;
+  commitField: (name: string, field: TextField) => void;
   Suggestions: VarSuggestionsComponent;
 }
 
@@ -117,7 +117,7 @@ export function VarTextField({
         onBlur={() => va && setTimeout(va.close, 120)}
         onKeyDown={(e) => {
           const el = e.currentTarget;
-          if (va?.onKeyDown(e, el)) {
+          if (va?.onKeyDownField(e, el)) {
             syncFromField(el);
           }
         }}
@@ -150,7 +150,7 @@ export function VarTextField({
           onPick={(name) => {
             const el = inputRef.current;
             if (!el) return;
-            va.commit(name, el);
+            va.commitField(name, el);
             syncFromField(el);
           }}
           style={(() => {

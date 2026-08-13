@@ -2,6 +2,7 @@ import type React from "react";
 import { useMemo, useRef, useState } from "react";
 import { insertText, type TextField } from "@/shared/lib/inputEdit";
 import { formatVarToken, shouldWrapJsonString } from "@/shared/lib/jsonEditContext";
+import type { ApplyValueFn } from "@/shared/ui/KeyValueEditor/autocomplete";
 import { selectActiveEnv, useEnvStore } from "../store";
 import { RANDOM_TOKENS } from "../types";
 
@@ -95,14 +96,33 @@ export function useVarAutocomplete() {
     return match.value;
   };
 
-  const commit = (name: string, field: TextField, options?: VarCommitOptions) => {
+  const commitAt = (
+    name: string,
+    value: string,
+    caret: number,
+    apply: ApplyValueFn,
+    options?: VarCommitOptions,
+  ) => {
+    if (!ac) return;
+    const wrap =
+      !!options?.wrapJsonString &&
+      shouldWrapJsonString(value, ac.start, caret, resolvedValueFor(name));
+    const token = formatVarToken(name, wrap);
+    const after = value.slice(caret);
+    const swallow = after.startsWith("}}") ? 2 : 0;
+    const next = value.slice(0, ac.start) + token + value.slice(caret + swallow);
+    apply(next, ac.start + token.length);
+    lastQuery.current = null;
+    setAc(null);
+  };
+
+  const commitField = (name: string, field: TextField, options?: VarCommitOptions) => {
     if (!ac) return;
     const caret = field.selectionStart ?? field.value.length;
     const wrap =
       !!options?.wrapJsonString &&
       shouldWrapJsonString(field.value, ac.start, caret, resolvedValueFor(name));
     const token = formatVarToken(name, wrap);
-    // Swallow an auto-closed `}}` right after the caret (BodyEditor auto-pairs `{`).
     const after = field.value.slice(caret);
     const swallow = after.startsWith("}}") ? 2 : 0;
 
@@ -118,6 +138,37 @@ export function useVarAutocomplete() {
 
   /** Handle nav/insert keys. Returns true if the key was consumed. */
   const onKeyDown = (
+    e: React.KeyboardEvent,
+    value: string,
+    caret: number,
+    apply: ApplyValueFn,
+    options?: VarCommitOptions,
+  ): boolean => {
+    if (!ac || items.length === 0) return false;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setIndex((i) => (i + 1) % items.length);
+      return true;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setIndex((i) => (i - 1 + items.length) % items.length);
+      return true;
+    }
+    if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      commitAt(items[index].name, value, caret, apply, options);
+      return true;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      close();
+      return true;
+    }
+    return false;
+  };
+
+  const onKeyDownField = (
     e: React.KeyboardEvent,
     field: TextField,
     options?: VarCommitOptions,
@@ -135,7 +186,7 @@ export function useVarAutocomplete() {
     }
     if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
-      commit(items[index].name, field, options);
+      commitField(items[index].name, field, options);
       return true;
     }
     if (e.key === "Escape") {
@@ -144,6 +195,10 @@ export function useVarAutocomplete() {
       return true;
     }
     return false;
+  };
+
+  const commit = (name: string, value: string, caret: number, apply: ApplyValueFn) => {
+    commitAt(name, value, caret, apply);
   };
 
   return {
@@ -155,6 +210,8 @@ export function useVarAutocomplete() {
     detect,
     close,
     onKeyDown,
+    onKeyDownField,
     commit,
+    commitField,
   };
 }

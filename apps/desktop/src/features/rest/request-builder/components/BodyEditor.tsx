@@ -279,7 +279,7 @@ export function BodyEditor({
                 onHover={va.setIndex}
                 onPick={(name) => {
                   const ta = textareaRef.current;
-                  if (ta) va.commit(name, ta, jsonVarCommit);
+                  if (ta) va.commitField(name, ta, jsonVarCommit);
                 }}
                 className="left-[46px] top-2"
               />
@@ -337,7 +337,7 @@ export function BodyEditor({
                 }}
                 onScroll={handleScroll}
                 onKeyDown={(e) => {
-                  if (va.onKeyDown(e, e.currentTarget, jsonVarCommit)) return;
+                  if (va.onKeyDownField(e, e.currentTarget, jsonVarCommit)) return;
                   if (handleKeyDown(e.nativeEvent)) {
                     e.preventDefault();
                     return;

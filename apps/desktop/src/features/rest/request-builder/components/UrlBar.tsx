@@ -337,7 +337,7 @@ export function UrlBar() {
               }}
               onBlur={() => setTimeout(va.close, 120)}
               onKeyDown={(e) => {
-                if (va.onKeyDown(e, e.currentTarget)) {
+                if (va.onKeyDownField(e, e.currentTarget)) {
                   syncUrlOverlayScroll();
                   return;
                 }
@@ -369,7 +369,7 @@ export function UrlBar() {
               onPick={(name) => {
                 const el = urlInputRef.current;
                 if (el) {
-                  va.commit(name, el);
+                  va.commitField(name, el);
                   syncUrlOverlayScroll();
                 }
               }}

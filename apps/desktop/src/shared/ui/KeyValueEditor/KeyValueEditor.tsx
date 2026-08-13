@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { renderTokenText } from "@/shared/lib/renderTokenText";
 import { cn } from "@/shared/lib/utils";
 import type { KeyValue } from "@/shared/types";
-import type { ValueAutocomplete } from "./autocomplete";
+import type { ApplyValueFn, ValueAutocomplete } from "./autocomplete";
 
 export interface KeyValueEditorProps {
   items: KeyValue[];
@@ -315,8 +315,20 @@ export function KeyValueEditor({
                       }}
                       onBlur={() => va && setTimeout(va.close, 120)}
                       onKeyDown={(e) => {
-                        if (va && acRow === index && va.onKeyDown(e, e.currentTarget)) {
-                          syncValueOverlayScroll(index);
+                        if (va && acRow === index) {
+                          const el = e.currentTarget;
+                          const caret = el.selectionStart ?? el.value.length;
+                          const apply: ApplyValueFn = (next, newCaret) => {
+                            update(index, "value", next);
+                            requestAnimationFrame(() => {
+                              el.focus();
+                              el.setSelectionRange(newCaret, newCaret);
+                              syncValueOverlayScroll(index);
+                            });
+                          };
+                          if (va.onKeyDown(e, el.value, caret, apply)) {
+                            syncValueOverlayScroll(index);
+                          }
                         }
                       }}
                       className={cn(
@@ -359,7 +371,16 @@ export function KeyValueEditor({
                 onPick={(name) => {
                   const el = valueRefs.current[index];
                   if (el) {
-                    va.commit(name, el);
+                    const caret = el.selectionStart ?? el.value.length;
+                    const apply: ApplyValueFn = (next, newCaret) => {
+                      update(index, "value", next);
+                      requestAnimationFrame(() => {
+                        el.focus();
+                        el.setSelectionRange(newCaret, newCaret);
+                        syncValueOverlayScroll(index);
+                      });
+                    };
+                    va.commit(name, el.value, caret, apply);
                     syncValueOverlayScroll(index);
                   }
                 }}
