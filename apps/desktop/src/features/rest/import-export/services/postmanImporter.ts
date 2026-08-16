@@ -1,5 +1,5 @@
-import type { CollectionNode } from "@/features/rest/collections";
 import type { RequestConfig } from "@/shared/types";
+import type { CollectionNode } from "../../collections/types";
 import type { RequestModel } from "../model/RequestModel";
 import { requestModelToRequestConfig } from "./requestModelAdapter";
 

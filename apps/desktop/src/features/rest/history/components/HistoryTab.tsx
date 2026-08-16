@@ -1,5 +1,7 @@
 import { EmptyState, MethodBadge } from "@pigeon/ui";
-import { useMemo, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { type ReactNode, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { SidebarLoadingState } from "@/shared/ui/SidebarLoadingState";
 import { useHistoryStore } from "../store";
 import type { HistoryItem } from "../types";
 
@@ -22,6 +24,62 @@ function getDateBucket(timestamp: number): string {
 function formatTime(timestamp: number): string {
   const d = new Date(timestamp);
   return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+}
+
+const BUCKET_ORDER = ["Today", "Yesterday", "This Week", "Last Week", "Older"];
+const HISTORY_ROW_HEIGHT = 30;
+const SECTION_HEADER_HEIGHT = 33;
+
+type FlatRow =
+  | { type: "header"; bucket: string }
+  | { type: "row"; item: HistoryItem; index: number };
+
+function findHistoryDeleteIndex(
+  history: HistoryItem[],
+  item: HistoryItem,
+  fallbackIndex: number,
+): number {
+  if (item.id !== undefined) {
+    const byId = history.findIndex((h) => h.id === item.id);
+    if (byId !== -1) return byId;
+  }
+  return fallbackIndex;
+}
+
+function rowKey(item: HistoryItem): number {
+  return item.id ?? item.timestamp;
+}
+
+function scrollMarginOf(el: HTMLElement, scrollParent: HTMLElement): number {
+  return (
+    el.getBoundingClientRect().top -
+    scrollParent.getBoundingClientRect().top +
+    scrollParent.scrollTop
+  );
+}
+
+function flattenHistory(history: HistoryItem[], search: string): FlatRow[] {
+  const buckets: Record<string, { item: HistoryItem; index: number }[]> = {};
+  for (let i = 0; i < history.length; i++) {
+    const item = history[i];
+    if (!matchesSearch(item.name || item.url, search)) continue;
+    const b = getDateBucket(item.timestamp);
+    if (!buckets[b]) buckets[b] = [];
+    buckets[b].push({ item, index: i });
+  }
+  for (const k of Object.keys(buckets)) {
+    buckets[k].sort((a, b) => b.item.timestamp - a.item.timestamp);
+  }
+  const rows: FlatRow[] = [];
+  for (const bucket of BUCKET_ORDER) {
+    const entries = buckets[bucket];
+    if (!entries?.length) continue;
+    rows.push({ type: "header", bucket });
+    for (const entry of entries) {
+      rows.push({ type: "row", item: entry.item, index: entry.index });
+    }
+  }
+  return rows;
 }
 
 /* ── Section header in file tree ── */
@@ -74,7 +132,7 @@ function HistoryRow({
       style={{
         display: "flex",
         alignItems: "center",
-        height: 30,
+        height: HISTORY_ROW_HEIGHT,
         borderRadius: "var(--radius)",
         cursor: "pointer",
         paddingLeft: 8,
@@ -173,6 +231,35 @@ function HistoryRow({
   );
 }
 
+function HistoryRowList({
+  rows,
+  history,
+  onLoad,
+  onDelete,
+}: {
+  rows: FlatRow[];
+  history: HistoryItem[];
+  onLoad: (item: HistoryItem) => void;
+  onDelete: (localIndex: number) => void;
+}) {
+  return (
+    <>
+      {rows.map((row) =>
+        row.type === "header" ? (
+          <SectionHeader key={`header:${row.bucket}`} label={row.bucket} />
+        ) : (
+          <HistoryRow
+            key={rowKey(row.item)}
+            item={row.item}
+            onLoad={() => onLoad(row.item)}
+            onDelete={() => onDelete(findHistoryDeleteIndex(history, row.item, row.index))}
+          />
+        ),
+      )}
+    </>
+  );
+}
+
 /* ── History tab content ── */
 export function HistoryTab({
   search,
@@ -182,46 +269,103 @@ export function HistoryTab({
   onLoad: (item: HistoryItem) => void;
 }) {
   const history = useHistoryStore((s) => s.history);
+  const loaded = useHistoryStore((s) => s.loaded);
   const removeHistory = useHistoryStore((s) => s.removeHistory);
 
-  const groupedHistory = useMemo(() => {
-    const buckets: Record<string, HistoryItem[]> = {};
-    const order = ["Today", "Yesterday", "This Week", "Last Week", "Older"];
-    for (const item of history) {
-      if (!matchesSearch(item.name || item.url, search)) continue;
-      const b = getDateBucket(item.timestamp);
-      if (!buckets[b]) buckets[b] = [];
-      buckets[b].push(item);
-    }
-    for (const k of Object.keys(buckets)) buckets[k].sort((a, b) => b.timestamp - a.timestamp);
-    return { buckets, order: order.filter((b) => buckets[b]?.length) };
-  }, [history, search]);
+  const virtualRows = useMemo(() => flattenHistory(history, search), [history, search]);
 
-  if (groupedHistory.order.length === 0) {
-    return (
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
+  const [didLookUp, setDidLookUp] = useState(false);
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const parent = list?.parentElement ?? null;
+    setScrollEl(parent);
+    setDidLookUp(true);
+    if (list && parent) setScrollMargin(scrollMarginOf(list, parent));
+  }, [search, loaded, virtualRows.length]);
+
+  const virtualizer = useVirtualizer({
+    count: virtualRows.length,
+    getScrollElement: () => scrollEl,
+    estimateSize: (index) =>
+      virtualRows[index]?.type === "header" ? SECTION_HEADER_HEIGHT : HISTORY_ROW_HEIGHT,
+    overscan: 8,
+    scrollMargin,
+    enabled: loaded && virtualRows.length > 0 && scrollEl != null,
+    getItemKey: (index) => {
+      const row = virtualRows[index];
+      if (!row) return index;
+      return row.type === "header" ? `header:${row.bucket}` : rowKey(row.item);
+    },
+  });
+
+  let body: ReactNode;
+  if (!loaded) {
+    body = <SidebarLoadingState label="Loading history…" />;
+  } else if (virtualRows.length === 0) {
+    body = (
       <EmptyState
         icon="📭"
         label={search ? "No matching history" : "No history yet"}
         sub="Send a request to see it here"
       />
     );
+  } else if (scrollEl) {
+    body = (
+      <div
+        style={{
+          height: virtualizer.getTotalSize(),
+          width: "100%",
+          position: "relative",
+        }}
+      >
+        {virtualizer.getVirtualItems().map((vItem) => {
+          const row = virtualRows[vItem.index];
+          if (!row) return null;
+          return (
+            <div
+              key={vItem.key}
+              data-index={vItem.index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${vItem.start - scrollMargin}px)`,
+              }}
+            >
+              {row.type === "header" ? (
+                <SectionHeader label={row.bucket} />
+              ) : (
+                <HistoryRow
+                  item={row.item}
+                  onLoad={() => onLoad(row.item)}
+                  onDelete={() =>
+                    removeHistory(findHistoryDeleteIndex(history, row.item, row.index))
+                  }
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  } else if (didLookUp) {
+    body = (
+      <HistoryRowList
+        rows={virtualRows}
+        history={history}
+        onLoad={onLoad}
+        onDelete={removeHistory}
+      />
+    );
+  } else {
+    body = null;
   }
 
-  return (
-    <>
-      {groupedHistory.order.map((bucket) => (
-        <div key={bucket}>
-          <SectionHeader label={bucket} />
-          {groupedHistory.buckets[bucket].map((item) => (
-            <HistoryRow
-              key={item.timestamp}
-              item={item}
-              onLoad={() => onLoad(item)}
-              onDelete={() => removeHistory(history.indexOf(item))}
-            />
-          ))}
-        </div>
-      ))}
-    </>
-  );
+  return <div ref={listRef}>{body}</div>;
 }

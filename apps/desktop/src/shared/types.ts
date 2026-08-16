@@ -90,6 +90,9 @@ export interface AuthConfig {
   apiKey: string;
   apiValue: string;
   apiAddTo: "header" | "query";
+  /** Set when this auth came from a collection/draft folder's inherited
+   *  config, not typed directly on the request — see `collections/lib/inheritance.ts`. */
+  inherited?: boolean;
 }
 
 export interface RequestConfig {

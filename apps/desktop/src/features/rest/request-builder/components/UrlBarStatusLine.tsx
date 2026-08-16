@@ -1,43 +1,14 @@
-/* ── Below the URL row: cURL-import toast, unresolved-var error, and the
- *  resolved-URL preview when the URL contains {{tokens}}. ── */
+/* ── Below the URL row: unresolved-var error and the resolved-URL preview
+ *  when the URL contains {{tokens}}. ── */
 export function UrlBarStatusLine({
-  curlToast,
   sendError,
   url,
   previewUrl,
 }: {
-  curlToast: boolean;
   sendError: string | null;
   url: string;
   previewUrl: string;
 }) {
-  if (curlToast) {
-    return (
-      <div
-        style={{ animation: "pgToast 150ms ease-out" }}
-        className="mt-1.5 flex items-center gap-2 rounded border border-status-2xx/30 bg-status-2xx/10 px-3 py-1"
-      >
-        <svg
-          width="13"
-          height="13"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-          className="text-status-2xx"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-        <span className="text-xs font-medium text-status-2xx">
-          cURL imported — method, headers and body applied
-        </span>
-      </div>
-    );
-  }
-
   if (sendError) {
     return (
       <div

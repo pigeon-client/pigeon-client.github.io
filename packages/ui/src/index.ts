@@ -9,6 +9,15 @@ export {
   CardTitle,
 } from "./components/card";
 export { ConfirmModal, type ConfirmModalState } from "./components/confirm-modal";
+export {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from "./components/context-menu";
 export { EmptyState } from "./components/empty-state";
 export { Input, type InputProps } from "./components/input";
 export { Kbd, type KbdProps } from "./components/kbd";
@@ -20,7 +29,7 @@ export { Select, type SelectProps } from "./components/select";
 export { Separator } from "./components/separator";
 export { Switch } from "./components/switch";
 export { Tooltip } from "./components/Tooltip";
-export { Tab, TabButton } from "./components/tab-button";
+export { TabButton } from "./components/tab-button";
 export {
   Tabs,
   TabsContent,

@@ -359,7 +359,11 @@ export const collectionTestCases: TestCase[] = [
     ],
     expectedResult: "Folder-level headers merge at open time",
     elementIds: ["EL-COL-004", "EL-COL-006", "EL-RB-016"],
-    automation: { status: "partial", spec: "e2e/folder-config-layout.spec.ts" },
+    automation: {
+      status: "covered",
+      spec: "e2e/folder-config-layout.spec.ts",
+      testName: "folder config headers appear in nested request editor",
+    },
     tags: ["collections", "inheritance"],
   },
   {

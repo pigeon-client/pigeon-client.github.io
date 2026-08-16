@@ -109,12 +109,19 @@ can't do either, so `oauthHttp.ts`/`OauthFlow.ts` throw `OauthUnsupportedError` 
    Client ID / Secret / Scope fields → PKCE (S256) + a one-shot loopback listener
    (`oauth_loopback_open`/`oauth_loopback_wait`, `127.0.0.1:<random port>/callback`) → opens the
    system browser (`open_external_url`) → validates `state` on the redirect → exchanges the code
-   for a token (always includes the RFC 8707 `resource` parameter).
+   for a token (always includes the RFC 8707 `resource` parameter). Discovery and token URLs must
+   be `http`/`https` (Rust plus metadata parsing). The native opener refuses other schemes. The
+   authorization-server `issuer` must match the discovered AS identifier (RFC 8414, trailing-slash
+   normalized). Token/DCR POSTs do not follow redirects. Truncated (>50 MiB) OAuth responses are
+   rejected rather than parsed. The loopback waiter ignores non-`GET /callback` probes (e.g.
+   favicon) until timeout.
 3. Tokens persist to SQLite (`mcp_oauth` table, keyed by the canonical MCP server URI —
    `oauth/canonicalUri.ts`), via `oauthDb.ts` / `save_mcp_oauth`/`get_mcp_oauth`/`delete_mcp_oauth`
-   in `src-tauri`. Reconnecting to a known server attaches the cached token automatically before
-   the first request, so a valid session never re-prompts. `refreshAccessToken` in `OauthFlow.ts`
-   handles the `refresh_token` grant (not yet auto-invoked on token expiry — only on a fresh 401).
+   in `src-tauri`. Desktop builds never fall back to webview localStorage for these records;
+   leftover `pg_browser_mcp_oauth` rows are migrated into SQLite once IPC is ready. Reconnecting
+   to a known server attaches the cached token automatically before the first request, so a valid
+   session never re-prompts. `refreshAccessToken` in `OauthFlow.ts` handles the `refresh_token`
+   grant (not yet auto-invoked on token expiry — only on a fresh 401).
 4. "Forget authorization" (shown next to Disconnect once connected with a cached token) deletes
    the stored record for that server.
 

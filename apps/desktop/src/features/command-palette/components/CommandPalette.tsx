@@ -1,10 +1,10 @@
+import { cn, Input, Menu, Modal } from "@pigeon/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ApiResponse } from "@/core/http";
-import { useCollectionStore } from "@/features/rest/collections";
-import { useHistoryStore } from "@/features/rest/history";
-import { useTabStore } from "@/features/rest/request-builder";
 import { methodTextClass } from "@/shared/lib/httpMethod";
-import { cn } from "@/shared/lib/utils";
+import { useCollectionStore } from "../../rest/collections/store";
+import { useHistoryStore } from "../../rest/history/store";
+import { useTabStore } from "../../rest/request-builder/store";
 import {
   collectPaletteItems,
   hostOf,
@@ -89,39 +89,9 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: backdrop div must remain a div so click events propagate to onClick for click-outside-to-close
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label="Close command palette"
-      onClick={onClose}
-      onKeyDown={(e) => {
-        if (
-          e.target === e.currentTarget &&
-          (e.key === "Escape" || e.key === "Enter" || e.key === " ")
-        ) {
-          e.preventDefault();
-          onClose();
-        }
-      }}
-      style={{ animation: "pgFade 120ms ease-out" }}
-      className="fixed inset-0 z-modal flex items-start justify-center bg-black/60 pt-[12vh] backdrop-blur-[8px]"
-    >
-      <div
-        data-testid="command-palette"
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            e.stopPropagation();
-            onClose();
-          }
-        }}
-        style={{ width: 640, maxWidth: "calc(100vw - 48px)", animation: "pgPop 150ms ease-out" }}
-        className="flex max-h-[70vh] flex-col overflow-hidden rounded border border-border bg-card shadow-modal"
-      >
-        <input
+    <Modal onClose={onClose} width={640} className="max-h-[70vh]">
+      <div data-testid="command-palette" className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <Input
           ref={inputRef}
           data-testid="command-palette-input"
           value={query}
@@ -147,10 +117,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           autoCorrect="off"
           autoCapitalize="off"
           autoComplete="off"
-          className="h-12 shrink-0 border-b border-border bg-transparent px-4 font-mono text-code text-foreground outline-none placeholder:text-muted-foreground"
+          size="lg"
+          className="h-12 shrink-0 rounded-none border-0 border-b border-border bg-transparent px-4 text-code shadow-none focus-visible:ring-0"
         />
 
-        <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-1.5">
+        <Menu
+          ref={listRef}
+          className="relative z-auto min-h-0 flex-1 rounded-none border-0 p-1.5 shadow-none"
+        >
           {query.trim() === "" ? (
             <div className="px-3 py-6 text-center text-xs text-muted-foreground">
               Type to search every request — history, drafts, and collections.
@@ -204,8 +178,8 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
               </div>
             ))
           )}
-        </div>
+        </Menu>
       </div>
-    </div>
+    </Modal>
   );
 }

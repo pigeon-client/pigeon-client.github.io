@@ -1,5 +1,5 @@
+import { cn } from "@pigeon/ui";
 import { useMemo } from "react";
-import { cn } from "@/shared/lib/utils";
 import { maskVarTokensForHighlight } from "@/shared/lib/varTokenSegments";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { hljsHighlight, LINE_HEIGHT } from "../lib/bodyEditorHelpers";

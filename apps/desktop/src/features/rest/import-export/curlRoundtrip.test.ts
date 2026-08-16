@@ -251,6 +251,18 @@ describe("parseCurl", () => {
   it("returns null for non-curl input", () => {
     expect(parseCurl("not a curl command")).toBeNull();
   });
+
+  it("keeps query params visible in the URL bar", () => {
+    const parsed = parseCurl(
+      `curl -X GET "https://api.example.com/users?page=1&limit=10" -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json"`,
+    );
+    expect(parsed).not.toBeNull();
+    expect(parsed?.url).toBe("https://api.example.com/users?page=1&limit=10");
+    expect(parsed?.params).toEqual([
+      { key: "page", value: "1", enabled: true },
+      { key: "limit", value: "10", enabled: true },
+    ]);
+  });
 });
 
 describe("cURL round-trip", () => {

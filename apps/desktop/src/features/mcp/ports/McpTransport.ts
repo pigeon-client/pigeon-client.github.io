@@ -3,6 +3,8 @@ export interface McpHttpResponse {
   /** Lower-cased header names (matches `fetch`'s `Headers` iteration). */
   headers: Record<string, string>;
   bodyText: string;
+  /** True when the native client cut the body at the 50 MiB cap. */
+  truncated?: boolean;
 }
 
 /**

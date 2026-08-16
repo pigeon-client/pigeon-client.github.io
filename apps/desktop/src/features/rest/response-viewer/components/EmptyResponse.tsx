@@ -1,6 +1,6 @@
 import { Send } from "lucide-react";
-import { useTabStore } from "@/features/rest/request-builder";
 import { clickVisibleSendButton } from "@/shared/lib/sendButton";
+import { useTabStore } from "../../request-builder/store";
 
 /* ── Empty state ── */
 export function EmptyResponse() {

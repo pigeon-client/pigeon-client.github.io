@@ -37,6 +37,9 @@ jobs:
       - name: Biome check
         run: pnpm ci:check
 
+      - name: Unit tests (Vitest)
+        run: pnpm test
+
       - name: Import cycle check
         run: pnpm check:cycles
 

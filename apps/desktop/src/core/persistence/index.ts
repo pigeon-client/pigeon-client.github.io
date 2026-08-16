@@ -1,2 +1,8 @@
 export { numTable, strTable } from "./browserTable";
-export { createKeyValueStore, createNumTableStore, createStrTableStore } from "./tableStore";
+export type { KeyValueBackend } from "./tableStore";
+export {
+  createKeyValueStore,
+  createNumTableStore,
+  createStrTableStore,
+  resolveKeyValueBackend,
+} from "./tableStore";

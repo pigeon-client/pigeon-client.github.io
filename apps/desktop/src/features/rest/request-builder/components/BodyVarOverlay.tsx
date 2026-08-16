@@ -1,5 +1,5 @@
+import { cn } from "@pigeon/ui";
 import { formatTokenTooltip, getTokenPreview } from "@/shared/lib/tokenPreview";
-import { cn } from "@/shared/lib/utils";
 import { parseVarToken, splitVarTokens } from "@/shared/lib/varTokenSegments";
 import { TokenChip } from "@/shared/ui/TokenChip";
 import { LINE_HEIGHT } from "../lib/bodyEditorHelpers";

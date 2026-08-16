@@ -1,8 +1,7 @@
-import { Menu } from "@pigeon/ui";
+import { cn, Menu } from "@pigeon/ui";
 import { ChevronDown } from "lucide-react";
 import type { RefObject } from "react";
 import { HTTP_METHODS, methodTextClass } from "@/shared/lib/httpMethod";
-import { cn } from "@/shared/lib/utils";
 import type { HttpMethod } from "@/shared/types";
 import { MethodOption } from "./MethodOption";
 

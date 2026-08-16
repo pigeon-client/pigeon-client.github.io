@@ -2,7 +2,7 @@
 
 Feature code: **RB** · Source: `packages/test-catalog/src/test-cases/tabs-request-builder.ts`
 
-Components covered: `TabStrip`, `UrlBar`, `MethodSelector`, `RequestEditor`, `HeadersEditor`, `BodyEditor`, `AuthEditor`, `EmptyRequestState`, `KeyValueEditor`
+Components covered: `TabStrip`, `UrlBar`, `MethodSelector`, `RequestEditor`, `HeadersEditor`, `BodyEditor`, `VarAuthEditor`, `EmptyRequestState`, `KeyValueEditor`
 
 ---
 
@@ -36,7 +36,7 @@ Components covered: `TabStrip`, `UrlBar`, `MethodSelector`, `RequestEditor`, `He
 | EL-RB-024 | Body word wrap toggle | `[data-testid="body-wrap-toggle"]` | BodyEditor.tsx |
 | EL-RB-025 | Body find bar | `[data-testid="body-find"]` | FindBar.tsx |
 | EL-RB-026 | Try an example CTA | `button:has-text("Try an example")` | EmptyRequestState.tsx |
-| EL-RB-027 | Auth type selector | `[data-testid="auth-type-select"]` | AuthEditor.tsx *(planned)* |
+| EL-RB-027 | Auth type selector | `[data-testid="auth-type-select"]` | VarAuthEditor.tsx *(planned)* |
 | EL-RB-028 | Body type JSON | `[data-testid="body-type-json"]` | BodyTypeSelector.tsx *(planned)* |
 | EL-RB-029 | Body type Form Data | `[data-testid="body-type-form-data"]` | BodyTypeSelector.tsx *(planned)* |
 | EL-RB-030 | Body type URL Encoded | `[data-testid="body-type-urlencoded"]` | BodyTypeSelector.tsx *(planned)* |

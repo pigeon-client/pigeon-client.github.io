@@ -1,7 +1,6 @@
-import { Button, Input, Modal, ModalHeader, Switch } from "@pigeon/ui";
+import { Button, cn, Input, Modal, ModalHeader, Switch } from "@pigeon/ui";
 import { Check, Copy, Globe, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/shared/lib/utils";
 import type { KeyValue } from "@/shared/types";
 import { selectActiveEnv, useEnvStore } from "../store";
 import type { EnvVariable } from "../types";

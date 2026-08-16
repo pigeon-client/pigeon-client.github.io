@@ -14,6 +14,7 @@ export interface OauthHttpResponse {
   status: number;
   headers: Record<string, string>;
   bodyText: string;
+  truncated?: boolean;
 }
 
 /** Generic HTTP call for OAuth discovery / dynamic client registration / token exchange. */

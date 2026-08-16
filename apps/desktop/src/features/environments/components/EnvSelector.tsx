@@ -1,7 +1,6 @@
-import { Menu } from "@pigeon/ui";
+import { cn, Menu } from "@pigeon/ui";
 import { AlertTriangle, Check, ChevronDown, Globe, Settings2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/shared/lib/utils";
 import { selectActiveEnv, useEnvStore } from "../store";
 
 /** Header dropdown to see + switch the active environment (R2). Turns red when a

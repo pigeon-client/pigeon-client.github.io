@@ -221,16 +221,21 @@ pub(crate) async fn stream_sse_response(
         }
         match item {
             Ok(bytes) => {
-                // Cap the raw-transcript accumulator; events keep streaming to the
-                // UI regardless — only the final buffered body stops growing.
                 let remaining = MAX_RESPONSE_BYTES.saturating_sub(body_acc.len());
-                if remaining > 0 {
-                    body_acc.extend_from_slice(&bytes[..bytes.len().min(remaining)]);
+                if remaining == 0 {
+                    break;
                 }
-                let chunk = String::from_utf8_lossy(&bytes);
+                let take = bytes.len().min(remaining);
+                body_acc.extend_from_slice(&bytes[..take]);
+                let chunk = String::from_utf8_lossy(&bytes[..take]);
                 for mut ev in parser.push(&chunk) {
                     ev.stream_id = stream_id.clone();
                     let _ = app.emit("sse-event", ev);
+                }
+                // Stop reading once the body cap is hit so a hostile stream cannot
+                // grow the frontend event list unbounded.
+                if take < bytes.len() {
+                    break;
                 }
             }
             Err(e) => {

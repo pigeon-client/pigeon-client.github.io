@@ -1,6 +1,6 @@
 import { createNumTableStore, numTable } from "@/core/persistence";
-import type { FolderConfig } from "@/features/rest/collections";
 import type { RequestConfig } from "@/shared/types";
+import type { FolderConfig } from "../../collections/types";
 import type { HistoryItem } from "../types";
 
 const DRAFTS = "pg_browser_drafts";

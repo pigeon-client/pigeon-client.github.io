@@ -1,10 +1,15 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  echo "This installer only supports macOS." >&2
+  exit 1
+fi
 
 SITE="${PIGEON_SITE:-https://trypigeon.dev}"
 
 # Version: explicit arg, else latest from trypigeon.dev/release.json.
-VERSION="$1"
+VERSION="${1-}"
 if [ -z "$VERSION" ]; then
   echo "Resolving latest release from ${SITE}..."
   VERSION="$(curl -fsSL "${SITE}/release.json" \
@@ -26,20 +31,19 @@ case "$(uname -m)" in
   *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
 esac
 
-FILENAME="Pigeon_${VERSION}_${ARCH}.dmg"
 TMP_DMG="$(mktemp -t pigeon-install).dmg"
 VOLUME="/Volumes/Pigeon"
 
 cleanup() {
   hdiutil detach "$VOLUME" -force >/dev/null 2>&1 || true
-  rm -f "$TMP_DMG"
+  command rm -f "$TMP_DMG"
 }
 trap cleanup EXIT
 
 # Download and mount FIRST — the existing install is only replaced once the
 # new app has actually been fetched and verified to exist in the DMG.
 echo "Downloading Pigeon v${VERSION} (${ARCH})..."
-curl -fL "${SITE}/download/latest/${ARCH}" -o "$TMP_DMG"
+curl -fSL --progress-bar "${SITE}/download/latest/${ARCH}" -o "$TMP_DMG"
 
 echo "Mounting DMG..."
 hdiutil attach "$TMP_DMG" -mountpoint "$VOLUME" -nobrowse
@@ -51,17 +55,18 @@ fi
 
 if [ -d "/Applications/Pigeon.app" ]; then
   echo "Removing existing Pigeon installation..."
-  rm -rf /Applications/Pigeon.app
+  command rm -rf /Applications/Pigeon.app
 fi
 
 echo "Copying to Applications..."
 cp -r "$VOLUME/Pigeon.app" /Applications/
 sync
 
-# TODO(signing): remove once releases are Developer-ID signed + notarized —
-# stripping quarantine bypasses Gatekeeper and should not be part of the flow.
-echo "Removing quarantine attribute..."
-xattr -cr /Applications/Pigeon.app
+# Releases are ad-hoc signed (no Developer ID / notarization). Strip only the
+# Gatekeeper quarantine xattr so the first launch is not blocked. This stays
+# until an Apple signing certificate is available.
+echo "Clearing Gatekeeper quarantine..."
+xattr -dr com.apple.quarantine /Applications/Pigeon.app 2>/dev/null || true
 
 echo "Unmounting DMG..."
 sleep 1

@@ -148,10 +148,10 @@ Workspace tabs: `role="tab"`. Scope `url-input` / `method-trigger` to `:visible`
 ## Key files
 
 `components/TabStrip.tsx`, `components/UrlBar.tsx` (+ `MethodSelector.tsx`, `MethodOption.tsx`,
-`TokenChip.tsx`, `UrlBarStatusLine.tsx`), `components/RequestEditor.tsx`,
+`UrlBarStatusLine.tsx`), `components/RequestEditor.tsx`,
 `components/BodyEditor.tsx` (+ `BodyTypeSelector.tsx`, `BinaryFilePane.tsx`, `HighlightLayer.tsx`,
 `LineNumbers.tsx`, `lib/bodyEditorHelpers.ts`), `components/HeadersEditor.tsx`,
-`components/AuthEditor.tsx`, `components/EmptyRequestState.tsx`, `store.ts`,
+`components/HeadersEditor.tsx`, `components/EmptyRequestState.tsx`, `store.ts`,
 `hooks/useAutoClose.ts`, `hooks/useSendRequest.ts` (send + history/draft orchestration — see
 [execution.md](./execution.md)). `KeyValueEditor` itself now lives in `shared/ui/KeyValueEditor/`
 (shared with MCP's headers editor), not in this feature.

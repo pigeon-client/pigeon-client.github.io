@@ -1,4 +1,4 @@
-import { Modal, ModalHeader } from "@pigeon/ui";
+import { Kbd, Modal, ModalHeader } from "@pigeon/ui";
 
 interface KeyboardShortcutsModalProps {
   onClose: () => void;
@@ -45,14 +45,6 @@ const SECTIONS: { label: string; shortcuts: { keys: string[]; action: string }[]
   },
 ];
 
-function Key({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="inline-flex h-6 min-w-[26px] select-none items-center justify-center rounded border border-border bg-muted px-1.5 font-mono text-2xs font-semibold text-foreground">
-      {children}
-    </kbd>
-  );
-}
-
 export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps) {
   return (
     <Modal onClose={onClose} width={480}>
@@ -78,7 +70,7 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
                         {i > 0 && (
                           <span className="text-2xs font-semibold text-muted-foreground">+</span>
                         )}
-                        <Key>{key}</Key>
+                        <Kbd className="h-6 min-w-[26px] select-none">{key}</Kbd>
                       </span>
                     ))}
                   </div>

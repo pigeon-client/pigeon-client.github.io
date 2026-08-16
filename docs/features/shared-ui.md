@@ -7,7 +7,8 @@ Reusable UI used by two or more features:
 - **Package primitives** — `@pigeon/ui` (`packages/ui`): design tokens + interactive
   primitives (Button, Input, Select, Textarea, Label, Modal, Tabs, Switch, Menu, …).
 - **Desktop composites** — `apps/desktop/src/shared/ui`: domain-aware editors that
-  compose package primitives (KeyValueEditor, AuthEditor, FindBar, highlight layers).
+  compose package primitives (KeyValueEditor, FindBar, highlight layers). Auth lives in
+  `VarAuthEditor` (`@/features/environments`).
 
 ## Problem / job to be done
 
@@ -35,6 +36,7 @@ key/value editor, modal focus rules, find bar, and highlighted body — without 
 | `Modal` / `ModalHeader` / `ModalFooter` / `ConfirmModal` | Centered dialog + right drawer |
 | `Tabs` / `TabButton` | Radix tabs + standalone tab buttons (sidebar / underline) |
 | `Menu` / `MenuItem` | Dropdown / suggestion panel surface |
+| `ContextMenu` | Right-click menu (Base UI, no enter/exit motion) |
 | `EmptyState` | Empty pane illustration + copy |
 | `Alert` / `Card` / `Separator` / `Kbd` | Feedback, surfaces, dividers, shortcuts |
 | `Switch` / `Tooltip` / badges / `Resizable*` | Existing chrome primitives |
@@ -45,13 +47,12 @@ key/value editor, modal focus rules, find bar, and highlighted body — without 
 | Component | Role |
 |-----------|------|
 | `KeyValueEditor` | Enable + key + value + delete rows; auto-append empty row; optional env autocomplete |
-| `AuthEditor` | Auth modes: `none` / `bearer` / `basic` / `api-key` (header or query) — uses `Input`/`Select` |
+| `VarAuthEditor` | Auth modes: `none` / `bearer` / `basic` / `api-key` (header or query) — uses `Select`/`VarTextField` |
 | `FindBar` | In-panel find (body editor, response) — uses `Button` |
 | `HighlightedBody` / `HighlightedHtml` | hljs-themed code / HTML highlight |
 | `TreeRow` | Shared tree row spacing/depth for drafts & collections |
 
-Thin re-exports (`Modal.tsx`, `EmptyState.tsx`, `ConfirmModal.tsx`, `tabs-shim.tsx`) remain for
-back-compat — prefer importing from `@pigeon/ui` directly.
+Thin re-exports are gone — always import primitives from `@pigeon/ui`.
 
 ### Rules
 
@@ -60,7 +61,8 @@ back-compat — prefer importing from `@pigeon/ui` directly.
    package.
 3. Colors via tokens — no hardcoded hex in feature CSS.
 4. New form chrome must use `@pigeon/ui` primitives (`Input`, `Select`, `Textarea`, `Button`,
-   `Modal`, `Menu`) rather than duplicating border/bg/focus class strings.
+   `Modal`, `Menu`, `cn`) rather than duplicating border/bg/focus class strings or importing
+   `@radix-ui` / `@/components/ui`.
 
 ## Non-functional requirements
 

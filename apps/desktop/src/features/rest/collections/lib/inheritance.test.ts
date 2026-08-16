@@ -92,12 +92,62 @@ describe("resolveInheritedRequest", () => {
       folder("root", { auth: bearer("outer-token") }),
       folder("inner", { auth: bearer("inner-token") }),
     ];
-    expect(resolveInheritedRequest(ancestors, req).auth).toEqual(bearer("inner-token"));
+    expect(resolveInheritedRequest(ancestors, req).auth).toEqual({
+      ...bearer("inner-token"),
+      inherited: true,
+    });
   });
 
   it("falls through to a farther ancestor's auth when the nearer one is unset", () => {
     const req = makeRequest();
     const ancestors = [folder("root", { auth: bearer("outer-token") }), folder("inner", {})];
-    expect(resolveInheritedRequest(ancestors, req).auth).toEqual(bearer("outer-token"));
+    expect(resolveInheritedRequest(ancestors, req).auth).toEqual({
+      ...bearer("outer-token"),
+      inherited: true,
+    });
+  });
+
+  it("inherits collection-level headers when no folder overrides exist", () => {
+    const req = makeRequest();
+    const collectionConfig = {
+      headers: [{ key: "X-Collection", value: "all", enabled: true }],
+    };
+    const resolved = resolveInheritedRequest([], req, collectionConfig);
+    expect(resolved.headers).toEqual([
+      { key: "X-Collection", value: "all", enabled: true, inherited: true },
+    ]);
+  });
+
+  it("folder header wins over collection header with the same key", () => {
+    const req = makeRequest();
+    const ancestors = [
+      folder("root", { headers: [{ key: "X-Env", value: "folder", enabled: true }] }),
+    ];
+    const collectionConfig = {
+      headers: [{ key: "X-Env", value: "collection", enabled: true }],
+    };
+    const resolved = resolveInheritedRequest(ancestors, req, collectionConfig);
+    expect(resolved.headers).toEqual([
+      { key: "X-Env", value: "folder", enabled: true, inherited: true },
+    ]);
+  });
+
+  it("inherits collection auth when request and folders have none", () => {
+    const req = makeRequest();
+    const collectionConfig = { auth: bearer("collection-token") };
+    expect(resolveInheritedRequest([], req, collectionConfig).auth).toEqual({
+      ...bearer("collection-token"),
+      inherited: true,
+    });
+  });
+
+  it("nearest folder auth wins over collection auth", () => {
+    const req = makeRequest();
+    const ancestors = [folder("root", { auth: bearer("folder-token") })];
+    const collectionConfig = { auth: bearer("collection-token") };
+    expect(resolveInheritedRequest(ancestors, req, collectionConfig).auth).toEqual({
+      ...bearer("folder-token"),
+      inherited: true,
+    });
   });
 });

@@ -105,6 +105,15 @@ export const appShellElements: TestElement[] = [
     component: "app/layout/UpdateToast.tsx",
     planned: true,
   },
+  {
+    id: "EL-APP-013",
+    feature: "APP",
+    name: "App fallback context menu",
+    selector: '[data-testid="app-context-menu"]',
+    testId: "app-context-menu",
+    component: "app/layout/AppContextMenu.tsx",
+    notes: "Right-click chrome without a nested ContextMenu; not the WKWebView native menu",
+  },
 ];
 
 export const workspaceElements: TestElement[] = [

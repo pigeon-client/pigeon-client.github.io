@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "../lib/cn";
 
 const selectVariants = cva(
-  "flex w-full cursor-pointer appearance-none rounded border border-border bg-card bg-[length:14px] bg-[right_0.75rem_center] bg-no-repeat font-[inherit] text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+  "flex w-full cursor-pointer appearance-none rounded bg-card bg-[length:14px] bg-[right_0.75rem_center] bg-no-repeat font-[inherit] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       size: {
@@ -20,7 +20,7 @@ const selectVariants = cva(
   },
 );
 
-/** Inline SVG chevron so native <select> matches AuthEditor / settings chrome. */
+/** Inline SVG chevron so native <select> matches VarAuthEditor / settings chrome. */
 const CHEVRON =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238b909c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")";
 

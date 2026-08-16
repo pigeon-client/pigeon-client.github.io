@@ -6,11 +6,13 @@ import {
   sendRequest,
   UnresolvedVariablesError,
 } from "@/core/http";
-import { makeResolver, selectActiveEnv, useEnvStore } from "@/features/environments";
-import type { HistoryItem } from "@/features/rest/history";
-import { buildSnapshot, useHistoryStore } from "@/features/rest/history";
 import { extractEndpoint } from "@/shared/lib/url";
 import type { RequestConfig } from "@/shared/types";
+import { makeResolver } from "../../../environments/lib/resolve";
+import { selectActiveEnv, useEnvStore } from "../../../environments/store";
+import { buildSnapshot } from "../../history/lib/snapshot";
+import { useHistoryStore } from "../../history/store";
+import type { HistoryItem } from "../../history/types";
 
 export function useSendRequest() {
   const activeEnv = useEnvStore(selectActiveEnv);

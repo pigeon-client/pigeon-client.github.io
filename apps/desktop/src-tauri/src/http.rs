@@ -15,6 +15,31 @@ pub(crate) const MAX_RESPONSE_BYTES: usize = 50 * 1024 * 1024;
 /// this exact text to show a neutral "Cancelled" state instead of a real failure.
 pub(crate) const CANCELLED_ERR: &str = "Request cancelled";
 
+/// Buffer a response body up to `MAX_RESPONSE_BYTES`. Returns `(bytes, truncated)`.
+/// When `cancel` is set, polls the flag between chunks so REST cancel stays live.
+pub(crate) async fn read_body_capped(
+    response: reqwest::Response,
+    cancel: Option<&CancelHandle>,
+) -> Result<(Vec<u8>, bool), String> {
+    let mut body_acc = Vec::<u8>::new();
+    let mut truncated = false;
+    let mut stream = response.bytes_stream();
+    while let Some(item) = stream.next().await {
+        if cancel.is_some_and(|h| h.flag.load(Ordering::SeqCst)) {
+            return Err(CANCELLED_ERR.to_string());
+        }
+        let bytes = item.map_err(|e| format!("Failed to read response body: {}", e))?;
+        let remaining = MAX_RESPONSE_BYTES.saturating_sub(body_acc.len());
+        if bytes.len() > remaining {
+            body_acc.extend_from_slice(&bytes[..remaining]);
+            truncated = true;
+            break;
+        }
+        body_acc.extend_from_slice(&bytes);
+    }
+    Ok((body_acc, truncated))
+}
+
 /// Race a request-sending future against cancellation. `handle` is `None` when the
 /// caller supplied no stream id (nothing to cancel by), in which case this is just
 /// a passthrough — every real send from the UI always supplies one.
@@ -428,26 +453,7 @@ pub(crate) async fn finalize_response(
         }
     }
 
-    // Stream the body with a hard size cap instead of buffering unbounded.
-    let mut body_acc = Vec::<u8>::new();
-    let mut truncated = false;
-    let mut stream = response.bytes_stream();
-    while let Some(item) = stream.next().await {
-        if cancel_handle
-            .as_ref()
-            .is_some_and(|h| h.flag.load(Ordering::SeqCst))
-        {
-            return Err(CANCELLED_ERR.to_string());
-        }
-        let bytes = item.map_err(|e| format!("Failed to read response body: {}", e))?;
-        let remaining = MAX_RESPONSE_BYTES.saturating_sub(body_acc.len());
-        if bytes.len() > remaining {
-            body_acc.extend_from_slice(&bytes[..remaining]);
-            truncated = true;
-            break;
-        }
-        body_acc.extend_from_slice(&bytes);
-    }
+    let (body_acc, truncated) = read_body_capped(response, cancel_handle.as_deref()).await?;
 
     let elapsed = start.elapsed().as_millis() as u64;
     let size = body_acc.len();

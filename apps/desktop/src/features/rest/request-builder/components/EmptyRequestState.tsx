@@ -1,5 +1,6 @@
 import pigeonLogo from "@pigeon/brand/pigeon-mark.svg";
-import { parseCurl } from "@/features/rest/import-export";
+import { Button, Kbd } from "@pigeon/ui";
+import { parseCurl } from "../../import-export/services/curlService";
 import { useTabStore } from "../store";
 
 /* A ready-to-run sample so the app is never a blank slate. */
@@ -26,85 +27,20 @@ export function EmptyRequestState() {
   ];
 
   return (
-    <div
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--bg-base)",
-        gap: 0,
-        userSelect: "none",
-      }}
-    >
-      {/* Icon */}
+    <div className="flex flex-1 select-none flex-col items-center justify-center bg-background">
       <img
         src={pigeonLogo}
         alt="Pigeon"
-        className="pg-logo"
-        style={{
-          width: 72,
-          height: 72,
-          objectFit: "contain",
-          marginBottom: 20,
-        }}
+        className="pg-logo mb-5 h-[72px] w-[72px] object-contain"
       />
 
-      <div
-        style={{
-          fontSize: "var(--text-lg)",
-          fontWeight: 700,
-          color: "var(--text-primary)",
-          marginBottom: 8,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        No request open
-      </div>
-      <div
-        style={{
-          fontSize: "var(--text-code)",
-          color: "var(--text-secondary)",
-          marginBottom: 32,
-          textAlign: "center",
-          maxWidth: 280,
-          lineHeight: 1.6,
-        }}
-      >
+      <div className="mb-2 text-lg font-bold tracking-tight text-foreground">No request open</div>
+      <div className="mb-8 max-w-[280px] text-center text-code leading-relaxed text-muted-foreground">
         Start from scratch, or try a ready-made sample request to see how it works.
       </div>
 
-      {/* CTAs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 40 }}>
-        <button
-          type="button"
-          onClick={loadExample}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            height: 38,
-            padding: "0 18px",
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            color: "var(--text-primary)",
-            fontFamily: "inherit",
-            fontSize: "var(--text-code)",
-            fontWeight: 600,
-            cursor: "pointer",
-            transition: "border-color 0.1s, color 0.1s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--primary)";
-            e.currentTarget.style.color = "var(--primary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--border)";
-            e.currentTarget.style.color = "var(--text-primary)";
-          }}
-        >
+      <div className="mb-10">
+        <Button type="button" variant="outline" size="lg" onClick={loadExample} className="gap-2">
           <svg
             width="14"
             height="14"
@@ -120,56 +56,16 @@ export function EmptyRequestState() {
             <line x1="12" y1="19" x2="20" y2="19" />
           </svg>
           Try an example
-        </button>
+        </Button>
       </div>
 
-      {/* Keyboard hints */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          padding: "16px 24px",
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-        }}
-      >
+      <div className="flex flex-col gap-1.5 rounded border border-border bg-card px-6 py-4">
         {hints.map(({ keys, label }) => (
-          <div
-            key={label}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 24,
-            }}
-          >
-            <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
-              {label}
-            </span>
-            <div style={{ display: "flex", gap: 4 }}>
+          <div key={label} className="flex items-center justify-between gap-6">
+            <span className="text-xs text-muted-foreground">{label}</span>
+            <div className="flex gap-1">
               {keys.map((k) => (
-                <span
-                  key={k}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minWidth: 22,
-                    height: 20,
-                    padding: "0 5px",
-                    background: "var(--bg-input)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--radius)",
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--text-2xs)",
-                    fontWeight: 600,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {k}
-                </span>
+                <Kbd key={k}>{k}</Kbd>
               ))}
             </div>
           </div>

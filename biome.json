@@ -111,6 +111,10 @@
                   "@/core/*/types"
                 ],
                 "message": "Import from the module's barrel (index.ts) instead of reaching into its internals."
+              },
+              {
+                "group": ["@radix-ui/*", "@base-ui/*", "@base-ui/react/*", "@/components/ui/*"],
+                "message": "Import UI primitives from @pigeon/ui. Radix/shadcn/Base UI live only in packages/ui."
               }
             ]
           }
@@ -160,6 +164,16 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["packages/ui/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
     {
       "includes": ["apps/site/src/styles/**"],
       "linter": {

@@ -102,7 +102,7 @@ Shared sidebar elements: `EL-SID-005` (Collections tab), `EL-SID-010` (tree row)
 |-------|-------|
 | **Priority** | P1 |
 | **Type** | functional |
-| **Automation** | partial — layout only in `e2e/folder-config-layout.spec.ts` |
+| **Automation** | covered — `e2e/folder-config-layout.spec.ts` (`folder config headers appear in nested request editor`) |
 
 | Step | Action | Element | Expected |
 |------|--------|---------|----------|

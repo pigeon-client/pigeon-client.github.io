@@ -71,7 +71,7 @@ save destination picking.
 
 Each folder (not the top-level collection itself) can carry its own headers + auth, set via the
 gear icon on a folder's hover actions (`FolderConfigModal` — Headers/Auth tabs, same
-`VarKeyValueEditor`/`AuthEditor` as the request editor). Clicking a saved request merges every
+`VarKeyValueEditor`/`VarAuthEditor` as the request editor). Clicking a saved request merges every
 ancestor folder's config into the request *at that moment* (`lib/inheritance.ts`'s
 `resolveInheritedRequest`, ancestors from `lib/tree.ts`'s `findAncestors`) before it opens in a
 tab — it is a one-time merge, not a live link, matching how history snapshots work.

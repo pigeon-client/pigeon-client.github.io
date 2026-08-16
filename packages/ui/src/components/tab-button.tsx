@@ -67,6 +67,3 @@ export function TabButton({
     </button>
   );
 }
-
-/** @deprecated Use TabButton — kept as alias for migration. */
-export const Tab = TabButton;

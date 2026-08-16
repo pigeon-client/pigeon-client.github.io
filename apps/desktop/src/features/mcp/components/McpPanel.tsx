@@ -1,15 +1,12 @@
 import { Input, Select, Textarea } from "@pigeon/ui";
 import { useEffect, useState } from "react";
 import { interpolateStrict, UnresolvedVariablesError } from "@/core/interpolation";
-import {
-  makeResolver,
-  selectActiveEnv,
-  useEnvStore,
-  VarKeyValueEditor,
-} from "@/features/environments";
 import { isTauri } from "@/shared/lib/platform";
 import type { Header } from "@/shared/types";
 import { HighlightedBody } from "@/shared/ui/result-viewer";
+import { VarKeyValueEditor } from "../../environments/components/VarKeyValueEditor";
+import { makeResolver } from "../../environments/lib/resolve";
+import { selectActiveEnv, useEnvStore } from "../../environments/store";
 import { buildToolArgs, isSimpleSchema } from "../lib/toolSchema";
 import { canonicalizeServerUrl } from "../oauth/canonicalUri";
 import {

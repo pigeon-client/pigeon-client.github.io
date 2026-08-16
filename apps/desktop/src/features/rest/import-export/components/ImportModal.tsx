@@ -1,9 +1,8 @@
-import { Alert, Button, Modal, ModalFooter, ModalHeader, Textarea } from "@pigeon/ui";
+import { Alert, Button, cn, Modal, ModalFooter, ModalHeader, Textarea } from "@pigeon/ui";
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
-import { useCollectionStore } from "@/features/rest/collections";
-import { cn } from "@/shared/lib/utils";
 import type { RequestConfig } from "@/shared/types";
+import { useCollectionStore } from "../../collections/store";
 import { parseCurl } from "../services/curlService";
 import { type ParsedPostmanCollection, parsePostmanCollection } from "../services/postmanImporter";
 

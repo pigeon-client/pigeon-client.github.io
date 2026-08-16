@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::http::{build_custom_client, get_http_client, RequestHeader};
+use crate::http::{build_custom_client, get_http_client, read_body_capped, RequestHeader};
 
 /// Raw HTTP response for the MCP transport — the frontend owns all JSON-RPC
 /// framing (mirrors the `HttpClient` port pattern in `features/execution`).
@@ -10,6 +10,8 @@ pub struct McpHttpResponse {
     pub status: u16,
     pub headers: HashMap<String, String>,
     pub body_text: String,
+    #[serde(default)]
+    pub truncated: bool,
 }
 
 // --- MCP transport ---
@@ -56,14 +58,13 @@ pub async fn send_mcp_request(
             resp_headers.insert(name.as_str().to_string(), v.to_string());
         }
     }
-    let body_text = response
-        .text()
-        .await
-        .map_err(|e| format!("Failed to read MCP response body: {}", e))?;
+    let (bytes, truncated) = read_body_capped(response, None).await?;
+    let body_text = String::from_utf8_lossy(&bytes).into_owned();
 
     Ok(McpHttpResponse {
         status,
         headers: resp_headers,
         body_text,
+        truncated,
     })
 }

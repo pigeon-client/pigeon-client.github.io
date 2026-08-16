@@ -1,20 +1,17 @@
+import { cn } from "@pigeon/ui";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import {
-  makeResolver,
-  selectActiveEnv,
-  useEnvStore,
-  useVarAutocomplete,
-  VarKeyValueEditor,
-  VarSuggestions,
-} from "@/features/environments";
-import { useWordWrap } from "@/features/settings";
 import { bodyUiGroup, highlightLanguageFor } from "@/shared/lib/contentType";
 import { insertText, replaceRange } from "@/shared/lib/inputEdit";
 import { formatJsonPreservingVars } from "@/shared/lib/jsonEditContext";
 import { findMatches } from "@/shared/lib/textFind";
-import { cn } from "@/shared/lib/utils";
 import type { BodyType, KeyValue } from "@/shared/types";
 import { FindBar } from "@/shared/ui/FindBar";
+import { VarKeyValueEditor } from "../../../environments/components/VarKeyValueEditor";
+import { VarSuggestions } from "../../../environments/components/VarSuggestions";
+import { useVarAutocomplete } from "../../../environments/hooks/useVarAutocomplete";
+import { makeResolver } from "../../../environments/lib/resolve";
+import { selectActiveEnv, useEnvStore } from "../../../environments/store";
+import { useWordWrap } from "../../../settings/hooks/useWordWrap";
 import { useAutoClose } from "../hooks/useAutoClose";
 import {
   defaultBinaryFormat,

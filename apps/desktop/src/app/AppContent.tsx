@@ -29,9 +29,11 @@ import {
   type SettingsTab,
 } from "@/features/settings";
 import { ComingSoonWorkspace } from "@/features/workspaces";
-import { isTauri } from "@/shared/lib/platform";
+import { startMacosCompositorKeepAlive } from "@/shared/lib/macosCompositorKeepAlive";
+import { isTauri, waitForTauriIpc } from "@/shared/lib/platform";
 import { clickVisibleSendButton } from "@/shared/lib/sendButton";
-import { getWindowKind, type WindowKind } from "@/shared/lib/windowKind";
+import { getWindowKind, refreshWindowKind, type WindowKind } from "@/shared/lib/windowKind";
+import { AppContextMenu } from "./layout/AppContextMenu";
 import { Header } from "./layout/Header";
 import { MigrationToast } from "./layout/MigrationToast";
 import { Sidebar } from "./layout/Sidebar";
@@ -52,12 +54,59 @@ export function AppContent() {
   useEffect(() => {
     applyTheme(getStoredTheme());
     useEnvStore.getState().load();
-    // Coming-soon OS windows (legacy) still skip REST-only boot work.
-    if (windowKind === "rest") {
-      useHistoryStore.getState().load();
-      useCollectionStore.getState().load();
-      checkForUpdates(true);
+    void (async () => {
+      await waitForTauriIpc();
+      if (isTauri() && navigator.platform.toLowerCase().includes("mac")) {
+        startMacosCompositorKeepAlive();
+      }
+      refreshWindowKind();
+      // Coming-soon OS windows (legacy) still skip REST-only boot work.
+      if (getWindowKind() === "rest") {
+        void useHistoryStore.getState().load();
+        void useCollectionStore.getState().load();
+        checkForUpdates(true);
+      }
+    })();
+  }, [windowKind]);
+
+  // Retry DB load when the tab regains focus after a failed or skipped initial load,
+  // or when sidebar data was previously present but the in-memory store went empty.
+  useEffect(() => {
+    if (windowKind !== "rest") return;
+    const compositorKeepAlive = () => window.__pigeonMacCompositorKeepAlive === true;
+    const retryLoad = () => {
+      if (compositorKeepAlive()) {
+        if (!document.hasFocus()) return;
+      } else if (document.visibilityState !== "visible") {
+        return;
+      }
+      const coll = useCollectionStore.getState();
+      const hist = useHistoryStore.getState();
+      if (!coll.loaded) {
+        void coll.load();
+      } else if (coll.hadData && coll.collections.length === 0) {
+        void coll.reload();
+      }
+      if (!hist.loaded) {
+        void hist.load();
+      } else if (hist.hadData && hist.drafts.length === 0 && hist.history.length === 0) {
+        void hist.reload();
+      }
+    };
+    // Visibility is spoofed while the macOS compositor keepalive is on, so hide/show
+    // must not drive retries. Focus still covers a real return to the window.
+    const onVisibilityChange = () => {
+      if (compositorKeepAlive()) return;
+      retryLoad();
+    };
+    if (!compositorKeepAlive()) {
+      document.addEventListener("visibilitychange", onVisibilityChange);
     }
+    window.addEventListener("focus", retryLoad);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", retryLoad);
+    };
   }, [windowKind]);
 
   const [workbench, setWorkbench] = useState<WindowKind>(
@@ -345,7 +394,7 @@ export function AppContent() {
   ]);
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground">
+    <AppContextMenu>
       {/* Topbar */}
       <Header
         onOpenSettings={openSettings}
@@ -446,7 +495,7 @@ export function AppContent() {
                       className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
                       style={{ display: isActive ? "flex" : "none" }}
                     >
-                      <UrlBar />
+                      <UrlBar tabId={tab.id} />
                       {hasUrl ? (
                         <ResizablePanelGroup
                           id={`response-split-${tab.id}`}
@@ -533,6 +582,6 @@ export function AppContent() {
           Saved to collection
         </div>
       )}
-    </div>
+    </AppContextMenu>
   );
 }

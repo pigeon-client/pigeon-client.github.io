@@ -1,5 +1,5 @@
+import { cn } from "@pigeon/ui";
 import { methodTextClass } from "@/shared/lib/httpMethod";
-import { cn } from "@/shared/lib/utils";
 import type { HttpMethod } from "@/shared/types";
 
 export function MethodOption({

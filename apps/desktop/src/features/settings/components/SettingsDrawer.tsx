@@ -1,17 +1,16 @@
 import pigeonLogo from "@pigeon/brand/pigeon-mark.svg";
-import { Button, Input, Modal, ModalHeader, Select, Switch } from "@pigeon/ui";
+import { Button, cn, Input, Modal, ModalHeader, Select, Switch } from "@pigeon/ui";
 import { AlertCircle, CheckCircle2, Download, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useEnvStore } from "@/features/environments";
-import { useCollectionStore } from "@/features/rest/collections";
+import { useEnvStore } from "../../environments/store";
+import { useCollectionStore } from "../../rest/collections/store";
 import {
   getRetentionDays,
   RETENTION_OPTIONS,
   type RetentionDays,
   setRetentionDays,
-  useHistoryStore,
-} from "@/features/rest/history";
-import { cn } from "@/shared/lib/utils";
+} from "../../rest/history/lib/retention";
+import { useHistoryStore } from "../../rest/history/store";
 import { useWordWrap } from "../hooks/useWordWrap";
 import { type AppTheme, applyTheme } from "../lib/theme";
 import {

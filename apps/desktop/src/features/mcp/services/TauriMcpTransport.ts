@@ -5,6 +5,7 @@ interface RustMcpResponse {
   status: number;
   headers: Record<string, string>;
   bodyText: string;
+  truncated?: boolean;
 }
 
 /** Tauri transport — Rust `reqwest`, no CORS. See `send_mcp_request` in `src-tauri/src/lib.rs`. */
@@ -20,6 +21,11 @@ export const tauriMcpTransport: McpTransport = {
     });
     const lowered: Record<string, string> = {};
     for (const [k, v] of Object.entries(res.headers)) lowered[k.toLowerCase()] = v;
-    return { status: res.status, headers: lowered, bodyText: res.bodyText };
+    return {
+      status: res.status,
+      headers: lowered,
+      bodyText: res.bodyText,
+      truncated: res.truncated,
+    };
   },
 };

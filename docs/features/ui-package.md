@@ -12,6 +12,10 @@ import {
   Button,
   Card,
   ConfirmModal,
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
   EmptyState,
   Input,
   Kbd,
@@ -33,6 +37,11 @@ import {
   cn,
 } from "@pigeon/ui";
 ```
+
+Apps and desktop `shared/` import **only** this barrel. Do not import `@radix-ui/*`,
+`@base-ui/*`, `@/components/ui/*`, or `packages/ui/src/**`. New shadcn/Radix/Base UI
+primitives are added inside `packages/ui` (`packages/ui/components.json`), then
+re-exported from `index.ts`.
 
 Tokens CSS (once per app):
 
@@ -57,6 +66,10 @@ Tokens CSS (once per app):
   inputs does not dismiss (backdrop only reacts when it is the event target).
 - `ConfirmModal` — destructive/confirm pattern used instead of `window.confirm`.
 - `Menu` — shared dropdown / suggestion surface (`z-dropdown`).
+- `ContextMenu` — right-click / long-press menu (Base UI). Opens instantly with no
+  slide or fade (`side="bottom"` — not the shadcn default `side="right"` slide-in).
+  Nested menus win (tab strip); other chrome uses the app fallback in
+  `AppContextMenu`.
 - `Tooltip` — ~350ms delay; `z-popover`.
 
 ## Accessibility

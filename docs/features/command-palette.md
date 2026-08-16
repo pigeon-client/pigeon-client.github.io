@@ -63,8 +63,8 @@ that requirement: one query, every source, ranked.
 
 ## UI
 
-- Centered overlay, ~12vh from the top, backdrop blur — same visual language as `Modal`
-  (`src/shared/ui/Modal.tsx`) but custom-built (search input replaces a header, no footer).
+- Centered overlay (same `Modal` from `@pigeon/ui` as other dialogs). Search `Input`
+  replaces a header; no footer. List surface is `Menu`.
 - Input at the top (`command-palette-input`), scrollable result list below
   (`command-palette-result-<i>`), empty/no-match hint text when the query is blank or unmatched.
 

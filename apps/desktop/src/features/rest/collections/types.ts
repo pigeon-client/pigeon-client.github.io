@@ -4,9 +4,8 @@ import type { AuthConfig, Header, HttpMethod, RequestConfig } from "@/shared/typ
 export const MAX_NESTING_DEPTH = 10;
 
 /**
- * Headers/auth set on a folder, inherited by every request nested under it
- * (see `lib/inheritance.ts`). Both fields are optional independently — a
- * folder can set headers without auth, or vice versa.
+ * Headers/auth scoped to a folder or collection, inherited by nested requests
+ * (see `lib/inheritance.ts`). Both fields are optional independently.
  */
 export interface FolderConfig {
   headers?: Header[];
@@ -28,5 +27,7 @@ export interface Collection {
   id?: string;
   name: string;
   root: CollectionNode[]; // tree of folders & requests
+  /** Collection-wide headers/auth — lowest inheritance precedence. */
+  config?: FolderConfig;
   createdAt: number;
 }

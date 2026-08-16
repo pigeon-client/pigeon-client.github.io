@@ -9,6 +9,8 @@
 - Run `pnpm test` and `pnpm build` after code changes.
 - Run `pnpm ci:check` before merging; fix reported formatting or lint errors.
 - Use design tokens instead of hardcoded color values (spec: `docs/tokens.md`).
+- Import UI primitives only from `@pigeon/ui`. Do not import `@radix-ui/*`, `@base-ui/*`,
+  or shadcn internals outside `packages/ui`.
 - Keep project documentation under `docs/` only — do not add `.md` files beside source in
   `apps/*/src` or `packages/*/`.
 - Biome is strict (`preset: recommended` + React/security/performance domains; `console.log` banned).

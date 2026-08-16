@@ -41,8 +41,7 @@ Code used by 2+ features. Single-feature code belongs in that feature.
 
 | Path | Contents |
 |------|----------|
-| `ui/` | Desktop composites: `Modal`, `FindBar`, `KeyValueEditor`, `HighlightedHtml`, `result-viewer`, … |
-| `lib/utils.ts` | `cn` |
+| `ui/` | Desktop composites: `FindBar`, `KeyValueEditor`, `HighlightedHtml`, `result-viewer`, … |
 | `lib/url.ts` | URL parsing/normalization |
 | `lib/template.ts` | Pure `{{var}}` `interpolate` + `parseEnvString` (no deps) |
 | `lib/platform.ts` / `windowKind.ts` | `isTauri()`, window kind |

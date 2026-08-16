@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { strTable } from "@/core/persistence";
 import type { RequestConfig } from "@/shared/types";
 import { findUniqueSavedRequest, useCollectionStore } from "./store";
 
 // db.ts wrappers no-op off-Tauri, so these exercise the in-memory tree logic.
 beforeEach(() => {
-  useCollectionStore.setState({ collections: [] });
+  useCollectionStore.setState({ collections: [], loaded: false });
 });
 
 describe("collections store — immutable tree updates", () => {
@@ -157,6 +158,125 @@ describe("collections store — immutable tree updates", () => {
       name: "Login",
       id: requestId,
     });
+  });
+
+  it("moveNode relocates a request to another collection's root", async () => {
+    const store = useCollectionStore.getState();
+    const sourceId = (await store.addCollection("A")) as string;
+    const destId = (await store.addCollection("B")) as string;
+
+    await store.addRequest(sourceId, null, "Login", {
+      name: "Login",
+      method: "POST",
+      url: "https://api.example.com/login",
+      headers: [],
+      params: [],
+      body: "",
+      bodyType: "none",
+      auth: { type: "none" } as RequestConfig["auth"],
+      multipart: [],
+      formData: [],
+      file: null,
+      nameLocked: false,
+    });
+    const requestId = useCollectionStore.getState().collections.find((c) => c.id === sourceId)
+      ?.root[0]?.id;
+    expect(requestId).toBeTruthy();
+
+    const ok = await store.moveNode(sourceId, requestId as string, null, destId);
+    const after = useCollectionStore.getState().collections;
+    const source = after.find((c) => c.id === sourceId);
+    const dest = after.find((c) => c.id === destId);
+
+    expect(ok).toBe(true);
+    expect(source?.root.some((n) => n.id === requestId)).toBe(false);
+    expect(dest?.root.some((n) => n.id === requestId)).toBe(true);
+  });
+
+  it("does not apply a cross-collection move if source persist fails", async () => {
+    const store = useCollectionStore.getState();
+    const sourceId = (await store.addCollection("A")) as string;
+    const destId = (await store.addCollection("B")) as string;
+    await store.addRequest(sourceId, null, "Login", {
+      name: "Login",
+      method: "POST",
+      url: "https://api.example.com/login",
+      headers: [],
+      params: [],
+      body: "",
+      bodyType: "none",
+      auth: { type: "none" } as RequestConfig["auth"],
+      multipart: [],
+      formData: [],
+      file: null,
+      nameLocked: false,
+    });
+    const requestId = useCollectionStore.getState().collections.find((c) => c.id === sourceId)
+      ?.root[0]?.id;
+    expect(requestId).toBeTruthy();
+
+    const before = useCollectionStore.getState().collections.map((c) => ({
+      id: c.id,
+      root: structuredClone(c.root),
+    }));
+    const originalUpsert = strTable.upsert.bind(strTable);
+    let writes = 0;
+    const spy = vi.spyOn(strTable, "upsert").mockImplementation((key, id, data) => {
+      if (key === "pg_browser_collections") {
+        writes += 1;
+        if (writes === 2) throw new Error("source persist failed");
+      }
+      return originalUpsert(key, id, data);
+    });
+
+    try {
+      const ok = await store.moveNode(sourceId, requestId as string, null, destId);
+      expect(ok).toBe(false);
+      const after = useCollectionStore.getState().collections;
+      for (const snapshot of before) {
+        expect(after.find((c) => c.id === snapshot.id)?.root).toEqual(snapshot.root);
+      }
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("does not persist inherited auth or headers on addRequest", async () => {
+    const store = useCollectionStore.getState();
+    const id = (await store.addCollection("C")) as string;
+    const nodeId = await store.addRequest(id, null, "Req", {
+      name: "Req",
+      method: "GET",
+      url: "https://api.example.com/req",
+      headers: [
+        { key: "X-Folder", value: "from-folder", enabled: true, inherited: true },
+        { key: "X-Own", value: "1", enabled: true },
+      ],
+      params: [],
+      body: "",
+      bodyType: "none",
+      auth: {
+        type: "bearer",
+        username: "",
+        password: "",
+        token: "folder-token",
+        apiKey: "",
+        apiValue: "",
+        apiAddTo: "header",
+        inherited: true,
+      },
+      multipart: [],
+      formData: [],
+      file: null,
+      nameLocked: false,
+    });
+    expect(nodeId).toBeTruthy();
+
+    const node = useCollectionStore.getState().collections[0].root[0];
+    expect(node.request?.auth.type).toBe("none");
+    expect(node.request?.auth.token).toBe("");
+    expect(node.request?.auth.inherited).toBeUndefined();
+    expect(node.request?.headers).toEqual([{ key: "X-Own", value: "1", enabled: true }]);
   });
 
   it("updateRequest overwrites an existing request node in place", async () => {

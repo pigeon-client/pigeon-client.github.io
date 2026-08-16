@@ -1,6 +1,6 @@
 import { bodyTypeFromContentType, isBinaryBodyType } from "@/shared/lib/contentType";
 import { HTTP_METHODS, isHttpMethod } from "@/shared/lib/httpMethod";
-import { parseUrl } from "@/shared/lib/url";
+import { applyParamsToUrl, parseUrl } from "@/shared/lib/url";
 import type { AuthConfig, BodyType, HttpMethod, KeyValue, RequestConfig } from "@/shared/types";
 import type { Auth, Body, FormField, RequestModel } from "../model/RequestModel";
 
@@ -163,16 +163,18 @@ function shouldKeepHeader(key: string, auth: Auth | undefined): boolean {
 export function requestModelToRequestConfig(model: RequestModel): Partial<RequestConfig> {
   const auth = toAuth(model.auth);
   const body = bodyToRequestConfig(model.body, model.headers);
+  const params = model.url.query.map((param) => ({
+    key: param.key,
+    value: param.value,
+    enabled: param.enabled,
+  }));
+  const baseUrl = toBaseUrl(model);
 
   return {
     name: model.name,
     method: toMethod(model.method),
-    url: toBaseUrl(model),
-    params: model.url.query.map((param) => ({
-      key: param.key,
-      value: param.value,
-      enabled: param.enabled,
-    })),
+    url: applyParamsToUrl(baseUrl, params),
+    params,
     headers: model.headers
       .filter((header) => shouldKeepHeader(header.key, model.auth))
       .map((header) => ({

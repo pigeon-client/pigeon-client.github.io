@@ -1,8 +1,9 @@
 import { create } from "zustand";
-import type { FolderConfig } from "@/features/rest/collections";
+import { persistStoreOnHmr } from "@/shared/lib/persistStoreOnHmr";
 import { isTauri } from "@/shared/lib/platform";
 import { normalizeUrlForMatch, parseUrl } from "@/shared/lib/url";
 import type { RequestConfig } from "@/shared/types";
+import type { FolderConfig } from "../collections/types";
 import { getRetentionDays, partitionByRetention } from "./lib/retention";
 import {
   deleteDraft as dbDeleteDraft,
@@ -46,6 +47,14 @@ function trimForBrowser<T extends { id?: number }>(
   return rows.slice(0, cap);
 }
 
+function reindexDbIds<T extends { id?: number }>(rows: T[]): Map<number, number> {
+  const ids = new Map<number, number>();
+  rows.forEach((row, i) => {
+    if (row.id !== undefined && row.id > 0) ids.set(i, row.id);
+  });
+  return ids;
+}
+
 /** Normalize a draft URL to ensure it has a protocol for consistent matching */
 function normalizeDraftUrl(url: string): string {
   return url.startsWith("http://") || url.startsWith("https://") ? url : parseUrl(url);
@@ -60,8 +69,10 @@ interface HistoryState {
    *  deterministic host/path id. See `services/db.ts`. */
   draftFolderConfigs: Record<string, FolderConfig>;
   loaded: boolean;
+  hadData: boolean;
 
   load: () => Promise<void>;
+  reload: () => Promise<void>;
   setDraftFolderConfig: (folderId: string, config: FolderConfig) => void;
   addToHistory: (item: HistoryItem) => Promise<void>;
   saveDraft: (draft: RequestConfig) => Promise<void>;
@@ -75,6 +86,8 @@ interface HistoryState {
   removeHistory: (localIndex: number) => Promise<void>;
 }
 
+let historyLoadPromise: Promise<void> | null = null;
+
 export const useHistoryStore = create<HistoryState>((set, get) => ({
   history: [],
   drafts: [],
@@ -82,30 +95,58 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   draftDbIds: new Map(),
   draftFolderConfigs: {},
   loaded: false,
+  hadData: false,
 
   load: async () => {
     if (get().loaded) return;
-    const draftRows = await getDrafts();
-    const historyRows = await getHistory();
-    const draftFolderConfigs = getDraftFolderConfigs();
-    const drafts = draftRows.map((r) => ({ ...r.data, id: r.id }));
-    const historyAll = historyRows.map((r) => ({ ...r.data, id: r.id }));
+    if (historyLoadPromise) return historyLoadPromise;
 
-    // Time-based retention, pruned once on app start only — never mid-session.
-    const { kept: history, pruned } = partitionByRetention(historyAll, getRetentionDays());
-    await Promise.all(
-      pruned.filter((h) => h.id !== undefined).map((h) => deleteHistoryEntry(h.id as number)),
-    );
+    historyLoadPromise = (async () => {
+      try {
+        const draftRows = await getDrafts();
+        const historyRows = await getHistory();
+        const draftFolderConfigs = getDraftFolderConfigs();
+        const drafts = draftRows.map((r) => ({ ...r.data, id: r.id }));
+        const historyAll = historyRows.map((r) => ({ ...r.data, id: r.id }));
 
-    const draftDbIds = new Map<number, number>();
-    const historyDbIds = new Map<number, number>();
-    drafts.forEach((d, i) => {
-      if (d.id !== undefined) draftDbIds.set(i, d.id);
-    });
-    history.forEach((h, i) => {
-      if (h.id !== undefined) historyDbIds.set(i, h.id);
-    });
-    set({ drafts, history, draftDbIds, historyDbIds, draftFolderConfigs, loaded: true });
+        // Time-based retention, pruned once on app start only — never mid-session.
+        const { kept: history, pruned } = partitionByRetention(historyAll, getRetentionDays());
+        await Promise.all(
+          pruned.filter((h) => h.id !== undefined).map((h) => deleteHistoryEntry(h.id as number)),
+        );
+
+        const draftDbIds = reindexDbIds(drafts);
+        const historyDbIds = reindexDbIds(history);
+        set((state) => {
+          const hasRows = drafts.length > 0 || history.length > 0;
+          const inMemoryRows = state.drafts.length > 0 || state.history.length > 0;
+          if (!hasRows && inMemoryRows) {
+            return { loaded: true, hadData: true };
+          }
+          return {
+            drafts,
+            history,
+            draftDbIds,
+            historyDbIds,
+            draftFolderConfigs,
+            loaded: true,
+            hadData: hasRows || state.hadData,
+          };
+        });
+      } catch (err) {
+        console.error("[Pigeon] Failed to load history/drafts", err);
+      } finally {
+        historyLoadPromise = null;
+      }
+    })();
+
+    return historyLoadPromise;
+  },
+
+  reload: async () => {
+    historyLoadPromise = null;
+    set({ loaded: false });
+    await get().load();
   },
 
   setDraftFolderConfig: (folderId, config) => {
@@ -139,7 +180,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
         set((s) => {
           const newHistory = [...s.history];
           newHistory[i] = updated;
-          return { history: newHistory };
+          return { history: newHistory, historyDbIds: reindexDbIds(newHistory) };
         });
         return;
       }
@@ -156,9 +197,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
         "history",
         deleteHistoryEntry,
       );
-      const newIds = new Map(state.historyDbIds);
-      if (dbId > 0) newIds.set(0, dbId);
-      return { history: newHistory, historyDbIds: newIds };
+      return { history: newHistory, historyDbIds: reindexDbIds(newHistory), hadData: true };
     });
   },
 
@@ -174,13 +213,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
         "drafts",
         dbDeleteDraft,
       );
-      const newIds = new Map(state.draftDbIds);
-      // Shift existing indices by 1 since new draft is prepended
-      for (const [idx, id] of state.draftDbIds) {
-        newIds.set(idx + 1, id);
-      }
-      if (dbId > 0) newIds.set(0, dbId);
-      return { drafts: newDrafts, draftDbIds: newIds };
+      return { drafts: newDrafts, draftDbIds: reindexDbIds(newDrafts), hadData: true };
     });
   },
 
@@ -219,7 +252,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     set((s) => {
       const newDrafts = [...s.drafts];
       newDrafts[found.index] = updated;
-      return { drafts: newDrafts };
+      return { drafts: newDrafts, draftDbIds: reindexDbIds(newDrafts) };
     });
   },
 
@@ -254,7 +287,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
       set((s) => {
         const newDrafts = [...s.drafts];
         newDrafts[existingIndex] = updated;
-        return { drafts: newDrafts };
+        return { drafts: newDrafts, draftDbIds: reindexDbIds(newDrafts), hadData: true };
       });
     } else {
       // Create new draft
@@ -269,13 +302,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
           "drafts",
           dbDeleteDraft,
         );
-        const newIds = new Map(s.draftDbIds);
-        // Shift existing indices by 1
-        for (const [idx, id] of s.draftDbIds) {
-          newIds.set(idx + 1, id);
-        }
-        if (dbId > 0) newIds.set(0, dbId);
-        return { drafts: newDrafts, draftDbIds: newIds };
+        return { drafts: newDrafts, draftDbIds: reindexDbIds(newDrafts), hadData: true };
       });
     }
   },
@@ -288,9 +315,10 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     if (dbId !== undefined && dbId > 0) {
       await dbDeleteDraft(dbId);
     }
-    set((s) => ({
-      drafts: s.drafts.filter((_, i) => i !== localIndex),
-    }));
+    set((s) => {
+      const drafts = s.drafts.filter((_, i) => i !== localIndex);
+      return { drafts, draftDbIds: reindexDbIds(drafts) };
+    });
   },
 
   removeHistory: async (localIndex) => {
@@ -301,16 +329,36 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     if (dbId !== undefined && dbId > 0) {
       await deleteHistoryEntry(dbId);
     }
-    set((s) => ({
-      history: s.history.filter((_, i) => i !== localIndex),
-    }));
+    set((s) => {
+      const history = s.history.filter((_, i) => i !== localIndex);
+      return { history, historyDbIds: reindexDbIds(history) };
+    });
   },
 }));
 
 function stripFiles(draft: RequestConfig): RequestConfig {
   return {
     ...draft,
+    headers: draft.headers
+      .filter((h) => !h.inherited)
+      .map((h) => ({ key: h.key, value: h.value, enabled: h.enabled })),
+    auth: draft.auth.inherited
+      ? {
+          type: "none",
+          username: "",
+          password: "",
+          token: "",
+          apiKey: "",
+          apiValue: "",
+          apiAddTo: draft.auth.apiAddTo,
+        }
+      : draft.auth,
     file: null,
     multipart: draft.multipart.map((f) => ({ ...f, file: null })),
   };
 }
+
+persistStoreOnHmr("history-store", useHistoryStore, {
+  reload: () => void useHistoryStore.getState().load(),
+  isLoaded: (s) => s.loaded,
+});

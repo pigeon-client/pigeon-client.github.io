@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persistStoreOnHmr } from "@/shared/lib/persistStoreOnHmr";
 import type { RequestConfig } from "@/shared/types";
 import {
   deleteCollection as dbDeleteCollection,
@@ -16,8 +17,11 @@ import {
 interface CollectionState {
   collections: Collection[];
   loaded: boolean;
+  /** Set once we have successfully loaded or saved at least one collection. */
+  hadData: boolean;
 
   load: () => Promise<void>;
+  reload: () => Promise<void>;
   addCollection: (name: string) => Promise<string | null>;
   importCollection: (name: string, root: CollectionNode[]) => Promise<string | null>;
   renameCollection: (id: string, name: string) => Promise<void>;
@@ -34,6 +38,7 @@ interface CollectionState {
   removeNode: (collectionId: string, nodeId: string) => Promise<void>;
   renameNode: (collectionId: string, nodeId: string, name: string) => Promise<void>;
   setFolderConfig: (collectionId: string, nodeId: string, config: FolderConfig) => Promise<void>;
+  setCollectionConfig: (collectionId: string, config: FolderConfig) => Promise<void>;
   /** Overwrite an existing request node in place (no modal / no re-parent). */
   updateRequest: (
     collectionId: string,
@@ -59,6 +64,17 @@ function stripFiles(request: RequestConfig): RequestConfig {
     headers: request.headers
       .filter((h) => !h.inherited)
       .map((h) => ({ key: h.key, value: h.value, enabled: h.enabled })),
+    auth: request.auth.inherited
+      ? {
+          type: "none",
+          username: "",
+          password: "",
+          token: "",
+          apiKey: "",
+          apiValue: "",
+          apiAddTo: request.auth.apiAddTo,
+        }
+      : request.auth,
     file: null,
     multipart: request.multipart.map((f) => ({ ...f, file: null })),
   };
@@ -206,19 +222,46 @@ function genNodeId(): string {
   return `node-${Date.now()}-${++nodeCounter}`;
 }
 
+let collectionsLoadPromise: Promise<void> | null = null;
+
 export const useCollectionStore = create<CollectionState>((set, get) => ({
   collections: [],
   loaded: false,
+  hadData: false,
 
   load: async () => {
     if (get().loaded) return;
-    try {
-      const rows = await dbGetCollections();
-      const collections = rows.map((r) => JSON.parse(r.data) as Collection);
-      set({ collections, loaded: true });
-    } catch {
-      set({ loaded: true });
-    }
+    if (collectionsLoadPromise) return collectionsLoadPromise;
+
+    collectionsLoadPromise = (async () => {
+      try {
+        const rows = await dbGetCollections();
+        const fromDb = rows.map((r) => JSON.parse(r.data) as Collection);
+        set((state) => {
+          // Don't clobber in-memory data with a stale empty fetch (startup race).
+          if (fromDb.length === 0 && state.collections.length > 0) {
+            return { loaded: true, hadData: true };
+          }
+          return {
+            collections: fromDb,
+            loaded: true,
+            hadData: fromDb.length > 0 || state.hadData,
+          };
+        });
+      } catch (err) {
+        console.error("[Pigeon] Failed to load collections", err);
+      } finally {
+        collectionsLoadPromise = null;
+      }
+    })();
+
+    return collectionsLoadPromise;
+  },
+
+  reload: async () => {
+    collectionsLoadPromise = null;
+    set({ loaded: false });
+    await get().load();
   },
 
   addCollection: async (name) => {
@@ -237,6 +280,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     await dbSaveCollection(collection);
     set((state) => ({
       collections: [...state.collections, collection],
+      hadData: true,
     }));
     return id;
   },
@@ -259,6 +303,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     await dbSaveCollection(collection);
     set((state) => ({
       collections: [...state.collections, collection],
+      hadData: true,
     }));
     return id;
   },
@@ -400,6 +445,18 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     }));
   },
 
+  setCollectionConfig: async (collectionId, config) => {
+    const state = get();
+    const collection = state.collections.find((c) => c.id === collectionId);
+    if (!collection) return;
+
+    const updated = { ...collection, config };
+    await dbUpdateCollection(updated);
+    set((s) => ({
+      collections: s.collections.map((c) => (c.id === collectionId ? updated : c)),
+    }));
+  },
+
   updateRequest: async (collectionId, nodeId, request, name) => {
     const state = get();
     const collection = state.collections.find((c) => c.id === collectionId);
@@ -489,8 +546,19 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
 
     const updatedSource = { ...source, root: sourceRoot };
     const updatedDest = { ...dest, root: destRoot };
-    await dbUpdateCollection(updatedSource);
-    await dbUpdateCollection(updatedDest);
+    // Dest first: the node exists in two collections briefly — safer than existing
+    // nowhere. If source persist then fails, roll dest back to the pre-move tree.
+    try {
+      await dbUpdateCollection(updatedDest);
+    } catch {
+      return false;
+    }
+    try {
+      await dbUpdateCollection(updatedSource);
+    } catch {
+      await dbUpdateCollection(dest);
+      return false;
+    }
     set((s) => ({
       collections: s.collections.map((c) => {
         if (c.id === collectionId) return updatedSource;
@@ -557,3 +625,8 @@ export function findUniqueSavedRequest(
 
   return matches.length === 1 ? matches[0] : null;
 }
+
+persistStoreOnHmr("collection-store", useCollectionStore, {
+  reload: () => void useCollectionStore.getState().load(),
+  isLoaded: (s) => s.loaded,
+});

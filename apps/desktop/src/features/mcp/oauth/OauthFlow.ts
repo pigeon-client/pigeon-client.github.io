@@ -8,6 +8,7 @@ import {
 } from "./metadata";
 import { type McpOauthRecord, saveMcpOauth } from "./oauthDb";
 import {
+  type OauthHttpResponse,
   oauthHttpRequest,
   openExternalUrl,
   openOauthLoopback,
@@ -114,6 +115,12 @@ interface TokenResponse {
   scope?: string;
 }
 
+function assertCompleteBody(res: OauthHttpResponse, label: string): void {
+  if (res.truncated) {
+    throw new OauthFlowError(`${label} response was truncated`);
+  }
+}
+
 function parseTokenResponse(status: number, bodyText: string): TokenResponse {
   let json: unknown;
   try {
@@ -148,6 +155,7 @@ async function tokenRequest(
   };
   if (clientSecret) headers.Authorization = basicAuthHeader(clientId, clientSecret);
   const res = await oauthHttpRequest("POST", tokenEndpoint, headers, body);
+  assertCompleteBody(res, "Token endpoint");
   return parseTokenResponse(res.status, res.bodyText);
 }
 
@@ -180,6 +188,7 @@ async function discoverAuthorizationServer(serverUrl: string, wwwAuthenticate?: 
   const prmUrl =
     parseWwwAuthenticate(wwwAuthenticate) ?? buildDefaultProtectedResourceMetadataUrl(serverUrl);
   const prmRes = await oauthHttpRequest("GET", prmUrl, { Accept: "application/json" });
+  assertCompleteBody(prmRes, "Protected Resource Metadata");
   if (prmRes.status < 200 || prmRes.status >= 300) {
     throw new OauthFlowError(`Protected Resource Metadata fetch failed (HTTP ${prmRes.status})`);
   }
@@ -191,10 +200,11 @@ async function discoverAuthorizationServer(serverUrl: string, wwwAuthenticate?: 
 
   const asMetadataUrl = buildAuthorizationServerMetadataUrl(issuer);
   const asRes = await oauthHttpRequest("GET", asMetadataUrl, { Accept: "application/json" });
+  assertCompleteBody(asRes, "Authorization Server Metadata");
   if (asRes.status < 200 || asRes.status >= 300) {
     throw new OauthFlowError(`Authorization Server Metadata fetch failed (HTTP ${asRes.status})`);
   }
-  return { metadata: parseAuthorizationServerMetadata(asRes.bodyText) };
+  return { metadata: parseAuthorizationServerMetadata(asRes.bodyText, issuer) };
 }
 
 async function registerClient(registrationEndpoint: string, redirectUri: string) {
@@ -204,6 +214,7 @@ async function registerClient(registrationEndpoint: string, redirectUri: string)
     { "Content-Type": "application/json", Accept: "application/json" },
     buildRegistrationRequestBody(redirectUri),
   );
+  assertCompleteBody(res, "Dynamic client registration");
   if (res.status < 200 || res.status >= 300) {
     throw new OauthFlowError(`Dynamic client registration failed (HTTP ${res.status})`);
   }

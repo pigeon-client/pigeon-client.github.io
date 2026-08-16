@@ -1,8 +1,7 @@
-import { Tooltip } from "@pigeon/ui";
+import { cn, Tooltip } from "@pigeon/ui";
 import { Eye, EyeOff, FolderTree, Lock, Paperclip, Unlock } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderTokenText } from "@/shared/lib/renderTokenText";
-import { cn } from "@/shared/lib/utils";
 import type { KeyValue } from "@/shared/types";
 import type { ApplyValueFn, ValueAutocomplete } from "./autocomplete";
 

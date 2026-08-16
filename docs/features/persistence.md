@@ -21,7 +21,9 @@ retries, or command naming.
 1. **Factories** (`core/persistence`):
    - `createNumTableStore` — numeric ids (history, drafts)
    - `createStrTableStore` — string ids (collections; browser-only tables when no Tauri commands)
-   - `createKeyValueStore` — keyed records (mcp_oauth)
+   - `createKeyValueStore` — keyed records (mcp_oauth). On a Tauri app build this fails closed
+     (never writes tokens to `localStorage`) if IPC is not ready, and migrates any leftover
+     `pg_browser_mcp_oauth` rows into SQLite on first successful IPC use.
 2. Feature `services/db.ts` files instantiate factories with `browserKey` + Tauri command names.
 3. **Environments** persist via localStorage in **both** builds (no Rust environments table).
 4. **Open tabs** persist in localStorage: `pg_open_tabs:<windowKind>`.

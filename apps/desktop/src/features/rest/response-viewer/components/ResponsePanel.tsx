@@ -1,14 +1,11 @@
 import { CircleStop } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   cancelSseStream,
   cancelTabStream,
   getTabStreamId,
   isEventStreamContentType,
 } from "@/core/http";
-import { generateCurl } from "@/features/rest/import-export";
-import { useTabStore } from "@/features/rest/request-builder";
-import { useWordWrap } from "@/features/settings";
 import {
   classifyResponse,
   highlightLanguageFor,
@@ -16,6 +13,9 @@ import {
 } from "@/shared/lib/contentType";
 import { findMatches } from "@/shared/lib/textFind";
 import { FindBar } from "@/shared/ui/FindBar";
+import { useWordWrap } from "../../../settings/hooks/useWordWrap";
+import { generateCurl } from "../../import-export/lib/generateCurl";
+import { useTabStore } from "../../request-builder/store";
 import { BodyView, MEDIA_KINDS, TEXT_PRETTY_KINDS } from "./BodyView";
 import { EmptyResponse } from "./EmptyResponse";
 import { HeadersTable } from "./HeadersTable";
@@ -339,12 +339,10 @@ function ResponseContent({
 }
 
 /* ── Main ResponsePanel ── */
-export function ResponsePanel({ tabId }: { tabId: string }) {
-  const tabs = useTabStore((s) => s.tabs);
-  const tab = tabs.find((t) => t.id === tabId);
-  const response = tab?.response ?? null;
-  const isLoading = tab?.isLoading ?? false;
-  const request = tab?.request;
+export const ResponsePanel = memo(function ResponsePanel({ tabId }: { tabId: string }) {
+  const response = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.response ?? null);
+  const isLoading = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.isLoading ?? false);
+  const request = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.request);
 
   const [activeTab, setActiveTab] = useState<"body" | "headers">("body");
   const [bodyView, setBodyView] = useState<BodyViewMode>("pretty");
@@ -471,4 +469,4 @@ export function ResponsePanel({ tabId }: { tabId: string }) {
       )}
     </div>
   );
-}
+});

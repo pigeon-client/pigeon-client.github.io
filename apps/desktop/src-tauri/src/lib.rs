@@ -9,6 +9,9 @@ mod oauth;
 mod sse;
 mod windows;
 
+#[cfg(target_os = "macos")]
+mod macos;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let (db_conn, migration_status) = db::init_db();
@@ -21,6 +24,23 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
+        .on_window_event(|window, event| {
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::Manager;
+                if let Some(webview_window) = window.get_webview_window(window.label()) {
+                    match event {
+                        tauri::WindowEvent::Focused(true) => {
+                            macos::ensure_configured(&webview_window);
+                        }
+                        tauri::WindowEvent::Focused(false) => {
+                            macos::flush_presentation(&webview_window);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        })
         .manage(db_state)
         .manage(Arc::new(sse::SseCancelState {
             flags: Mutex::new(HashMap::new()),
@@ -52,6 +72,15 @@ pub fn run() {
             db::mcp_oauth::delete_mcp_oauth,
             windows::open_workspace_window,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Ready = event {
+                use tauri::Manager;
+                for (_, window) in app.webview_windows() {
+                    macos::ensure_configured(&window);
+                }
+            }
+        });
 }

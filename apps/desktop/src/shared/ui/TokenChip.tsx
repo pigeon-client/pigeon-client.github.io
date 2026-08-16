@@ -1,6 +1,6 @@
+import { cn } from "@pigeon/ui";
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "@/shared/lib/utils";
 
 export function TokenChip({
   token,

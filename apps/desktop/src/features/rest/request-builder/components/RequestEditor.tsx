@@ -1,8 +1,9 @@
 import { CountBadge, Tabs, TabsContent, TabsList, TabsTrigger } from "@pigeon/ui";
-import { useCallback, useState } from "react";
-import { VarAuthEditor, VarKeyValueEditor } from "@/features/environments";
+import { memo, useCallback, useState } from "react";
 import { applyParamsToUrl } from "@/shared/lib/url";
 import type { AuthConfig, BodyType, Header, KeyValue } from "@/shared/types";
+import { VarAuthEditor } from "../../../environments/components/VarAuthEditor";
+import { VarKeyValueEditor } from "../../../environments/components/VarKeyValueEditor";
 import { useTabStore } from "../store";
 import { BodyEditor } from "./BodyEditor";
 import { HeadersEditor } from "./HeadersEditor";
@@ -13,7 +14,7 @@ interface RequestEditorProps {
   tabId: string;
 }
 
-export function RequestEditor({ tabId }: RequestEditorProps) {
+export const RequestEditor = memo(function RequestEditor({ tabId }: RequestEditorProps) {
   const request = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.request);
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
   const [activeTab, setActiveTab] = useState<RequestTab>("params");
@@ -137,4 +138,4 @@ export function RequestEditor({ tabId }: RequestEditorProps) {
       </Tabs>
     </div>
   );
-}
+});

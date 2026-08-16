@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { VarKeyValueEditor } from "@/features/environments";
 import { replaceRange } from "@/shared/lib/inputEdit";
 import type { Header } from "@/shared/types";
+import { VarKeyValueEditor } from "../../../environments/components/VarKeyValueEditor";
 
 interface HeadersEditorProps {
   headers: Header[];

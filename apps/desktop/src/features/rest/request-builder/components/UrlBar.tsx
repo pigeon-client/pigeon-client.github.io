@@ -1,36 +1,33 @@
 import { Button } from "@pigeon/ui";
 import { CircleStop, Send } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import {
   beginTabStream,
   cancelTabStream,
   endTabStream,
   UnresolvedVariablesError,
 } from "@/core/http";
-import {
-  makeResolver,
-  resolveForPreview,
-  selectActiveEnv,
-  useEnvStore,
-  useVarAutocomplete,
-  VarSuggestions,
-} from "@/features/environments";
-import { parseCurl } from "@/features/rest/import-export";
 import { useInputCaretAnchor } from "@/shared/lib/inputCaretPosition";
 import { formatTokenTooltip, getTokenPreview } from "@/shared/lib/tokenPreview";
 import { extractEndpoint, splitUrlQuery } from "@/shared/lib/url";
+import { TokenChip } from "@/shared/ui/TokenChip";
+import { VarSuggestions } from "../../../environments/components/VarSuggestions";
+import { useVarAutocomplete } from "../../../environments/hooks/useVarAutocomplete";
+import { makeResolver, resolveForPreview } from "../../../environments/lib/resolve";
+import { selectActiveEnv, useEnvStore } from "../../../environments/store";
+import { parseCurl } from "../../import-export/services/curlService";
 import { useSendRequest } from "../hooks/useSendRequest";
 import { useTabStore } from "../store";
 import { MethodSelector } from "./MethodSelector";
-import { TokenChip } from "./TokenChip";
 import { UrlBarStatusLine } from "./UrlBarStatusLine";
 
 // Session-level "don't ask again" for the production send guardrail (R4b).
 let prodGuardAcknowledged = false;
 
-export function UrlBar() {
-  const tabs = useTabStore((s) => s.tabs);
-  const activeTabId = useTabStore((s) => s.activeTabId);
+export const UrlBar = memo(function UrlBar({ tabId }: { tabId: string }) {
+  const request = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.request);
+  const isLoading = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.isLoading ?? false);
+  const nameLocked = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.nameLocked ?? false);
   const updateTabRequest = useTabStore((s) => s.updateTabRequest);
   const setTabLoading = useTabStore((s) => s.setTabLoading);
   const updateTabResponse = useTabStore((s) => s.updateTabResponse);
@@ -41,7 +38,6 @@ export function UrlBar() {
   const { sendRequest } = useSendRequest();
 
   const [methodOpen, setMethodOpen] = useState(false);
-  const [curlToast, setCurlToast] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const va = useVarAutocomplete();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -71,22 +67,14 @@ export function UrlBar() {
     return () => document.removeEventListener("mousedown", handler);
   }, [methodOpen]);
 
-  const activeTab = tabs.find((t) => t.id === activeTabId);
-  const varMenuAnchor = useInputCaretAnchor(
-    urlInputRef,
-    va.caret,
-    va.open,
-    activeTab?.request.url ?? "",
-  );
+  const varMenuAnchor = useInputCaretAnchor(urlInputRef, va.caret, va.open, request?.url ?? "");
   // Re-sync after URL text changes (paste / store write) — caret scroll may
   // land before the overlay's content width updates.
   useEffect(() => {
     requestAnimationFrame(syncUrlOverlayScroll);
-  }, [activeTab?.request.url]);
+  }, [request?.url]);
 
-  if (!activeTab) return null;
-
-  const { request } = activeTab;
+  if (!request) return null;
 
   /* Apply a raw URL, keeping the Params editor in sync with its query string
      in real time — edit the query and the params update on every keystroke. */
@@ -95,7 +83,7 @@ export function UrlBar() {
     const kv = params.map((p) => ({ key: p.key, value: p.value, enabled: true }));
     // updateTabRequest derives the tab name from the path when it isn't locked;
     // don't call setTabName here (that would lock it on the first keystroke).
-    updateTabRequest(activeTab.id, { url: raw, params: kv });
+    updateTabRequest(tabId, { url: raw, params: kv });
   };
 
   const handleSend = async () => {
@@ -115,15 +103,15 @@ export function UrlBar() {
       prodGuardAcknowledged = true;
     }
     setSendError(null);
-    setTabLoading(activeTab.id, true);
-    updateTabResponse(activeTab.id, null);
-    const { streamId, signal } = beginTabStream(activeTab.id);
+    setTabLoading(tabId, true);
+    updateTabResponse(tabId, null);
+    const { streamId, signal } = beginTabStream(tabId);
     try {
       const result = await sendRequest(request, {
         streamId,
         signal,
         onSseMeta: (meta) => {
-          updateTabResponse(activeTab.id, {
+          updateTabResponse(tabId, {
             status: meta.status,
             statusText: meta.statusText,
             headers: meta.headers,
@@ -136,9 +124,9 @@ export function UrlBar() {
           });
         },
         onSseEvent: (ev) => {
-          const prev = useTabStore.getState().tabs.find((t) => t.id === activeTab.id)?.response;
+          const prev = useTabStore.getState().tabs.find((t) => t.id === tabId)?.response;
           if (!prev?.sse) return;
-          updateTabResponse(activeTab.id, {
+          updateTabResponse(tabId, {
             ...prev,
             sseEvents: [...(prev.sseEvents ?? []), ev],
           });
@@ -146,7 +134,7 @@ export function UrlBar() {
       });
       // A cancelled request just clears loading below — no response, no toast.
       if (!result.cancelled) {
-        updateTabResponse(activeTab.id, result);
+        updateTabResponse(tabId, result);
       }
     } catch (e) {
       // Unresolved {{vars}} block the send — surface the message, don't fake a response.
@@ -155,7 +143,7 @@ export function UrlBar() {
         if (toastTimer.current) clearTimeout(toastTimer.current);
         toastTimer.current = setTimeout(() => setSendError(null), 5000);
       } else {
-        updateTabResponse(activeTab.id, {
+        updateTabResponse(tabId, {
           status: 0,
           statusText: "Request Failed",
           headers: {},
@@ -168,13 +156,13 @@ export function UrlBar() {
         });
       }
     } finally {
-      endTabStream(activeTab.id);
-      setTabLoading(activeTab.id, false);
+      endTabStream(tabId);
+      setTabLoading(tabId, false);
     }
   };
 
   const handleCancel = () => {
-    cancelTabStream(activeTab.id);
+    cancelTabStream(tabId);
   };
 
   // Preview only expands {{vars}} — don't run parseUrl here or mid-typing
@@ -253,12 +241,12 @@ export function UrlBar() {
           open={methodOpen}
           setOpen={setMethodOpen}
           dropdownRef={dropdownRef}
-          onSelect={(m) => updateTabRequest(activeTab.id, { method: m })}
+          onSelect={(m) => updateTabRequest(tabId, { method: m })}
         />
 
         {/* URL input — min-w-0 so long URLs shrink inside the flex row instead of blowing the panel out */}
         <div className="relative min-w-0 flex-1">
-          <div className="relative flex h-9 w-full min-w-0 items-center overflow-hidden rounded border border-border bg-card">
+          <div className="relative flex h-9 w-full min-w-0 items-center overflow-hidden rounded bg-card">
             <input
               ref={urlInputRef}
               type="text"
@@ -274,13 +262,10 @@ export function UrlBar() {
                   const parsed = parseCurl(text);
                   if (parsed?.url) {
                     e.preventDefault();
-                    updateTabRequest(activeTab.id, parsed);
-                    if (!activeTab.nameLocked) {
-                      setTabName(activeTab.id, extractEndpoint(parsed.url));
+                    updateTabRequest(tabId, parsed);
+                    if (!nameLocked) {
+                      setTabName(tabId, extractEndpoint(parsed.url));
                     }
-                    if (toastTimer.current) clearTimeout(toastTimer.current);
-                    setCurlToast(true);
-                    toastTimer.current = setTimeout(() => setCurlToast(false), 2500);
                   }
                   return;
                 }
@@ -297,13 +282,10 @@ export function UrlBar() {
                 if (raw.trimStart().toLowerCase().startsWith("curl ")) {
                   const parsed = parseCurl(raw);
                   if (parsed?.url) {
-                    updateTabRequest(activeTab.id, parsed);
-                    if (!activeTab.nameLocked && parsed.url) {
-                      setTabName(activeTab.id, extractEndpoint(parsed.url));
+                    updateTabRequest(tabId, parsed);
+                    if (!nameLocked && parsed.url) {
+                      setTabName(tabId, extractEndpoint(parsed.url));
                     }
-                    if (toastTimer.current) clearTimeout(toastTimer.current);
-                    setCurlToast(true);
-                    toastTimer.current = setTimeout(() => setCurlToast(false), 2500);
                     return;
                   }
                 }
@@ -384,20 +366,14 @@ export function UrlBar() {
 
         {/* Send — red in production (R4b); becomes Cancel while a request is in flight */}
         <Button
-          variant={activeTab.isLoading ? "outline" : prod ? "danger-filled" : "primary"}
-          onClick={activeTab.isLoading ? handleCancel : handleSend}
-          disabled={!(activeTab.isLoading || request.url)}
+          variant={isLoading ? "outline" : prod ? "danger-filled" : "primary"}
+          onClick={isLoading ? handleCancel : handleSend}
+          disabled={!(isLoading || request.url)}
           data-send-btn
-          title={
-            activeTab.isLoading
-              ? "Cancel request"
-              : prod
-                ? `Production: ${activeEnv?.name}`
-                : undefined
-          }
+          title={isLoading ? "Cancel request" : prod ? `Production: ${activeEnv?.name}` : undefined}
           className="gap-1.5 w-[80px] shrink-0 h-9"
         >
-          {activeTab.isLoading ? (
+          {isLoading ? (
             <>
               Cancel
               <CircleStop className="h-3.5 w-3.5" />
@@ -411,12 +387,7 @@ export function UrlBar() {
         </Button>
       </div>
 
-      <UrlBarStatusLine
-        curlToast={curlToast}
-        sendError={sendError}
-        url={request.url}
-        previewUrl={previewUrl}
-      />
+      <UrlBarStatusLine sendError={sendError} url={request.url} previewUrl={previewUrl} />
     </div>
   );
-}
+});

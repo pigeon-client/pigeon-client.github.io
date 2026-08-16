@@ -1,19 +1,23 @@
 import { EmptyState } from "@pigeon/ui";
 import { useMemo, useState } from "react";
-import type { CollectionNode, FolderConfig, InternalNode } from "@/features/rest/collections";
+import type { RequestConfig } from "@/shared/types";
+import { SidebarLoadingState } from "@/shared/ui/SidebarLoadingState";
+import { TreeRow } from "@/shared/ui/TreeRow";
+import {
+  FolderConfigModal,
+  type FolderConfigModalState,
+} from "../../collections/components/FolderConfigModal";
+import { resolveInheritedRequest } from "../../collections/lib/inheritance";
 import {
   buildUrlTree,
   collapseChains,
   countNode,
-  FolderConfigModal,
-  type FolderConfigModalState,
   findAncestors,
+  type InternalNode,
   mergeCollectionRoots,
   relabelLeaves,
-  resolveInheritedRequest,
-} from "@/features/rest/collections";
-import type { RequestConfig } from "@/shared/types";
-import { TreeRow } from "@/shared/ui/TreeRow";
+} from "../../collections/lib/tree";
+import type { CollectionNode, FolderConfig } from "../../collections/types";
 import { useHistoryStore } from "../store";
 
 function hasFolderConfig(config: FolderConfig | undefined): boolean {
@@ -114,6 +118,7 @@ export function DraftTab({
   onSelect: (req: RequestConfig) => void;
 }) {
   const drafts = useHistoryStore((s) => s.drafts);
+  const loaded = useHistoryStore((s) => s.loaded);
   const removeDraft = useHistoryStore((s) => s.removeDraft);
   const draftFolderConfigs = useHistoryStore((s) => s.draftFolderConfigs);
   const setDraftFolderConfig = useHistoryStore((s) => s.setDraftFolderConfig);
@@ -144,6 +149,10 @@ export function DraftTab({
     }
     return map;
   }, [drafts]);
+
+  if (!loaded) {
+    return <SidebarLoadingState label="Loading drafts…" />;
+  }
 
   if (draft.total === 0) {
     return (

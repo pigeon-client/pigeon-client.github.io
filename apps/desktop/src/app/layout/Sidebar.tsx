@@ -107,6 +107,11 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
 
       {/* Tab content */}
       <div className="flex-1 overflow-auto px-0 py-0.5 pb-3.5">
+        {search.trim() && (
+          <div className="mx-2 mb-1 flex items-center justify-between gap-2 rounded bg-muted/40 px-2 py-1 text-2xs text-muted-foreground">
+            <span className="truncate">Filtering: “{search.trim()}”</span>
+          </div>
+        )}
         {activeTab === "history" && <HistoryTab search={search} onLoad={loadHistoryItem} />}
         {activeTab === "draft" && <DraftTab search={search} onSelect={loadRequest} />}
         {activeTab === "collections" && (

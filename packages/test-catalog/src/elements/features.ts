@@ -235,7 +235,7 @@ export const collectionElements: TestElement[] = [
     name: "Confirm modal — confirm button",
     selector: '[data-testid="confirm-modal-confirm"]',
     testId: "confirm-modal-confirm",
-    component: "packages/ui/src/components/ConfirmModal.tsx",
+    component: "packages/ui/src/components/confirm-modal.tsx",
   },
   {
     id: "EL-COL-009",

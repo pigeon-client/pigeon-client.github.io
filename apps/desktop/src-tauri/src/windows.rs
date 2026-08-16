@@ -24,5 +24,6 @@ pub fn open_workspace_window(app: AppHandle, kind: String) -> Result<(), String>
         .min_inner_size(900.0, 600.0)
         .build()
         .map_err(|e| e.to_string())?;
+
     Ok(())
 }

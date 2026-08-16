@@ -1,13 +1,10 @@
 import { Select } from "@pigeon/ui";
-import {
-  makeResolver,
-  selectActiveEnv,
-  useEnvStore,
-  useVarAutocomplete,
-  VarSuggestions,
-} from "@/features/environments";
 import type { AuthConfig } from "@/shared/types";
 import { VarTextField } from "@/shared/ui/VarTextField";
+import { useVarAutocomplete } from "../hooks/useVarAutocomplete";
+import { makeResolver } from "../lib/resolve";
+import { selectActiveEnv, useEnvStore } from "../store";
+import { VarSuggestions } from "./VarSuggestions";
 
 interface VarAuthEditorProps {
   auth: AuthConfig;

@@ -40,7 +40,7 @@ describe("parsePostmanCollection", () => {
     const node = parsed?.root[0];
     expect(node?.type).toBe("request");
     expect(node?.request?.method).toBe("GET");
-    expect(node?.request?.url).toBe("https://api.acme.dev/orders/1");
+    expect(node?.request?.url).toBe("https://api.acme.dev/orders/1?verbose=true");
     expect(node?.request?.params).toEqual([{ key: "verbose", value: "true", enabled: true }]);
     expect(node?.request?.headers).toEqual([
       { key: "Accept", value: "application/json", enabled: true },

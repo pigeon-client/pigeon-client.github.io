@@ -1,8 +1,7 @@
-import { Button, Menu } from "@pigeon/ui";
+import { Button, cn, Menu } from "@pigeon/ui";
 import { Check, ChevronDown, WrapText } from "lucide-react";
 import type { RefObject } from "react";
 import { BINARY_BODY_FORMATS, RAW_BODY_FORMATS } from "@/shared/lib/contentType";
-import { cn } from "@/shared/lib/utils";
 import type { BodyType } from "@/shared/types";
 import type { RadioId } from "../lib/bodyEditorHelpers";
 

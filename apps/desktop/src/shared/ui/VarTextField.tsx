@@ -1,8 +1,8 @@
+import { cn } from "@pigeon/ui";
 import type React from "react";
 import { useRef } from "react";
 import type { TextField } from "@/shared/lib/inputEdit";
 import { renderTokenText } from "@/shared/lib/renderTokenText";
-import { cn } from "@/shared/lib/utils";
 import type { ValueSuggestion } from "@/shared/ui/KeyValueEditor/autocomplete";
 
 export type VarSuggestionsComponent = React.ComponentType<{
@@ -122,7 +122,7 @@ export function VarTextField({
           }
         }}
         className={cn(
-          "relative z-raised flex h-8 w-full min-w-0 rounded border border-border bg-card px-3 font-mono text-xs outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "relative z-raised flex h-8 w-full min-w-0 rounded bg-card px-3 font-mono text-xs outline-none transition-colors placeholder:text-muted-foreground/60",
           overlay ? "text-transparent caret-foreground" : "text-foreground",
           inputClassName,
         )}

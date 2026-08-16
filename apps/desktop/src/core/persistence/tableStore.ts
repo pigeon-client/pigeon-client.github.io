@@ -1,6 +1,23 @@
 import { invoke } from "@tauri-apps/api/core";
-import { isTauri } from "@/shared/lib/platform";
+import { isTauriAppBuild, waitForTauriIpc } from "@/shared/lib/platform";
 import { numTable, strTable } from "./browserTable";
+
+async function useTauriBackend(commands: unknown): Promise<boolean> {
+  return commands !== undefined && (await waitForTauriIpc());
+}
+
+/** Where a keyed secret store (mcp_oauth) should persist. */
+export type KeyValueBackend = "tauri" | "browser" | "unavailable";
+
+export function resolveKeyValueBackend(
+  hasCommands: boolean,
+  ipcReady: boolean,
+  tauriAppBuild: boolean,
+): KeyValueBackend {
+  if (hasCommands && ipcReady) return "tauri";
+  if (hasCommands && tauriAppBuild) return "unavailable";
+  return "browser";
+}
 
 interface NumTableCommands {
   save: string;
@@ -24,7 +41,8 @@ export function createNumTableStore<T>(opts: NumTableStoreOptions) {
 
   return {
     async save(data: T): Promise<number> {
-      if (!isTauri()) return guard(() => numTable.insert(opts.browserKey, data));
+      if (!(await useTauriBackend(opts.commands)))
+        return guard(() => numTable.insert(opts.browserKey, data));
       return invoke<number>(opts.commands.save, {
         data: JSON.stringify(data),
         ...opts.saveArgs?.(),
@@ -32,13 +50,13 @@ export function createNumTableStore<T>(opts: NumTableStoreOptions) {
     },
 
     async getAll(): Promise<{ id: number; data: T }[]> {
-      if (!isTauri()) return numTable.all<T>(opts.browserKey);
+      if (!(await useTauriBackend(opts.commands))) return numTable.all<T>(opts.browserKey);
       const rows: [number, string][] = await invoke(opts.commands.getAll);
       return rows.map(([id, json]) => ({ id, data: JSON.parse(json) as T }));
     },
 
     async update(id: number, data: T): Promise<void> {
-      if (!isTauri()) {
+      if (!(await useTauriBackend(opts.commands))) {
         guard(() => numTable.update(opts.browserKey, id, data));
         return;
       }
@@ -46,7 +64,7 @@ export function createNumTableStore<T>(opts: NumTableStoreOptions) {
     },
 
     async remove(id: number): Promise<void> {
-      if (!isTauri()) {
+      if (!(await useTauriBackend(opts.commands))) {
         numTable.remove(opts.browserKey, id);
         return;
       }
@@ -73,12 +91,10 @@ interface StrTableStoreOptions<T> {
 /** String-id table (collections) — returns raw `{ id, data }` rows; callers own JSON parsing,
  *  matching the shape every current consumer already expects. */
 export function createStrTableStore<T>(opts: StrTableStoreOptions<T>) {
-  const tauriBacked = () => opts.commands !== undefined && isTauri();
-
   return {
     async save(data: T): Promise<void> {
       const id = opts.getId(data);
-      if (!tauriBacked()) {
+      if (!(await useTauriBackend(opts.commands))) {
         if (id) strTable.upsert(opts.browserKey, id, JSON.stringify(data));
         return;
       }
@@ -87,7 +103,7 @@ export function createStrTableStore<T>(opts: StrTableStoreOptions<T>) {
     },
 
     async getAll(): Promise<{ id: string; data: string }[]> {
-      if (!tauriBacked()) return strTable.all<string>(opts.browserKey);
+      if (!(await useTauriBackend(opts.commands))) return strTable.all<string>(opts.browserKey);
       const commands = opts.commands as StrTableCommands;
       const rows: [string, string][] = await invoke(commands.getAll);
       return rows.map(([id, data]) => ({ id, data }));
@@ -95,7 +111,7 @@ export function createStrTableStore<T>(opts: StrTableStoreOptions<T>) {
 
     async update(data: T): Promise<void> {
       const id = opts.getId(data);
-      if (!tauriBacked()) {
+      if (!(await useTauriBackend(opts.commands))) {
         if (id) strTable.upsert(opts.browserKey, id, JSON.stringify(data));
         return;
       }
@@ -104,7 +120,7 @@ export function createStrTableStore<T>(opts: StrTableStoreOptions<T>) {
     },
 
     async remove(id: string): Promise<void> {
-      if (!tauriBacked()) {
+      if (!(await useTauriBackend(opts.commands))) {
         strTable.remove(opts.browserKey, id);
         return;
       }
@@ -127,11 +143,41 @@ interface KeyValueStoreOptions {
   keyArgName: string;
 }
 
-/** Key-value table (mcp_oauth) — single record per key, point lookup instead of a full list. */
+/** Key-value table (mcp_oauth) — single record per key, point lookup instead of a full list.
+ *  Desktop builds never fall back to webview localStorage for these secrets. */
 export function createKeyValueStore<T>(opts: KeyValueStoreOptions) {
+  let migratedBrowserRows = false;
+
+  async function migrateBrowserRowsIntoSqlite(): Promise<void> {
+    if (migratedBrowserRows) return;
+    const rows = strTable.all<string>(opts.browserKey);
+    if (rows.length === 0) {
+      migratedBrowserRows = true;
+      return;
+    }
+    for (const row of rows) {
+      const payload = typeof row.data === "string" ? row.data : JSON.stringify(row.data);
+      await invoke(opts.commands.save, { [opts.keyArgName]: row.id, data: payload });
+    }
+    if (typeof localStorage !== "undefined") localStorage.removeItem(opts.browserKey);
+    migratedBrowserRows = true;
+  }
+
+  async function backend(): Promise<"tauri" | "browser"> {
+    const ipcReady = await useTauriBackend(opts.commands);
+    const resolved = resolveKeyValueBackend(true, ipcReady, isTauriAppBuild());
+    if (resolved === "unavailable") {
+      throw new Error(
+        "Desktop database is unavailable; refusing to store OAuth tokens in webview storage",
+      );
+    }
+    if (resolved === "tauri") await migrateBrowserRowsIntoSqlite();
+    return resolved;
+  }
+
   return {
     async save(key: string, data: T): Promise<void> {
-      if (!isTauri()) {
+      if ((await backend()) === "browser") {
         strTable.upsert(opts.browserKey, key, JSON.stringify(data));
         return;
       }
@@ -139,7 +185,7 @@ export function createKeyValueStore<T>(opts: KeyValueStoreOptions) {
     },
 
     async get(key: string): Promise<T | null> {
-      if (!isTauri()) {
+      if ((await backend()) === "browser") {
         const row = strTable.all<string>(opts.browserKey).find((r) => r.id === key);
         return row ? (JSON.parse(row.data) as T) : null;
       }
@@ -148,7 +194,7 @@ export function createKeyValueStore<T>(opts: KeyValueStoreOptions) {
     },
 
     async remove(key: string): Promise<void> {
-      if (!isTauri()) {
+      if ((await backend()) === "browser") {
         strTable.remove(opts.browserKey, key);
         return;
       }

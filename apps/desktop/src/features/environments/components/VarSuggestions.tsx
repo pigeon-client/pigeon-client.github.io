@@ -1,6 +1,5 @@
-import { Menu } from "@pigeon/ui";
+import { cn, Menu } from "@pigeon/ui";
 import type React from "react";
-import { cn } from "@/shared/lib/utils";
 import type { VarSuggestion } from "../hooks/useVarAutocomplete";
 
 /** The `{{variable}}` autocomplete popover. Positioned by the caller. */

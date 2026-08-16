@@ -35,7 +35,7 @@ jobs:
 
             Or skip all that with one Terminal command:
             ```
-            xattr -cr /Applications/Pigeon.app
+            xattr -dr com.apple.quarantine /Applications/Pigeon.app
             ```
 
             > Windows and Linux CI builds are paused — macOS is the only published platform for now.

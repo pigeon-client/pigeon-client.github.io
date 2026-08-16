@@ -20,9 +20,10 @@ import {
 } from "@pigeon/ui";
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTabStore } from "@/features/rest/request-builder";
 import type { RequestConfig } from "@/shared/types";
+import { SidebarLoadingState } from "@/shared/ui/SidebarLoadingState";
 import { TreeRow } from "@/shared/ui/TreeRow";
+import { useTabStore } from "../../request-builder/store";
 import { resolveInheritedRequest } from "../lib/inheritance";
 import { countRequests, findAncestors } from "../lib/tree";
 import { findNode, useCollectionStore } from "../store";
@@ -224,10 +225,12 @@ function DroppableCollectionRow({
   expanded,
   requestCount,
   dropActive,
+  hasConfig,
   onToggle,
   onExpand,
   onAddRequest,
   onAddFolder,
+  onEditConfig,
   onRename,
   onDelete,
 }: {
@@ -236,10 +239,12 @@ function DroppableCollectionRow({
   expanded: boolean;
   requestCount: number;
   dropActive: boolean;
+  hasConfig: boolean;
   onToggle: () => void;
   onExpand: () => void;
   onAddRequest?: () => void;
   onAddFolder: () => void;
+  onEditConfig: () => void;
   onRename: () => void;
   onDelete: () => void;
 }) {
@@ -260,11 +265,13 @@ function DroppableCollectionRow({
       expanded={expanded}
       showCount
       count={requestCount}
+      hasConfig={hasConfig}
       dropActive={dropActive || isOver}
       setRowRef={setNodeRef}
       onClick={onToggle}
       onAddRequest={onAddRequest}
       onAddFolder={onAddFolder}
+      onEditConfig={onEditConfig}
       onRename={onRename}
       onDelete={onDelete}
     />
@@ -375,6 +382,7 @@ export function CollectionsTab({
   onSelect: (req: RequestConfig, origin?: { collectionId: string; nodeId: string }) => void;
 }) {
   const collections = useCollectionStore((s) => s.collections);
+  const loaded = useCollectionStore((s) => s.loaded);
   const addCollection = useCollectionStore((s) => s.addCollection);
   const renameCollection = useCollectionStore((s) => s.renameCollection);
   const deleteCollection = useCollectionStore((s) => s.deleteCollection);
@@ -383,6 +391,7 @@ export function CollectionsTab({
   const addFolder = useCollectionStore((s) => s.addFolder);
   const addRequest = useCollectionStore((s) => s.addRequest);
   const setFolderConfig = useCollectionStore((s) => s.setFolderConfig);
+  const setCollectionConfig = useCollectionStore((s) => s.setCollectionConfig);
   const moveNode = useCollectionStore((s) => s.moveNode);
 
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
@@ -408,7 +417,10 @@ export function CollectionsTab({
     (collectionId: string, req: RequestConfig, nodeId: string) => {
       const collection = collections.find((c) => c.id === collectionId);
       const ancestors = collection ? findAncestors(collection.root, nodeId) : [];
-      onSelect(resolveInheritedRequest(ancestors, req), { collectionId, nodeId });
+      onSelect(resolveInheritedRequest(ancestors, req, collection?.config), {
+        collectionId,
+        nodeId,
+      });
     },
     [collections, onSelect],
   );
@@ -598,9 +610,22 @@ export function CollectionsTab({
     setFolderConfigModal({
       folderName: node.name,
       config: node.folderConfig ?? {},
+      scope: "folder",
       onSubmit: (config) => {
         setFolderConfig(collectionId, node.id, config).catch((err) =>
           alert(`Failed to save folder config: ${String(err)}`),
+        );
+      },
+    });
+  };
+  const openCollectionConfigModal = (collectionId: string, name: string, config?: FolderConfig) => {
+    setFolderConfigModal({
+      folderName: name,
+      config: config ?? {},
+      scope: "collection",
+      onSubmit: (next) => {
+        setCollectionConfig(collectionId, next).catch((err) =>
+          alert(`Failed to save collection config: ${String(err)}`),
         );
       },
     });
@@ -634,6 +659,10 @@ export function CollectionsTab({
       },
     });
   };
+
+  if (!loaded) {
+    return <SidebarLoadingState label="Loading collections…" />;
+  }
 
   if (collections.length === 0 && !search) {
     return (
@@ -689,6 +718,7 @@ export function CollectionsTab({
                 expanded={isExpanded}
                 requestCount={countRequests(collection.root)}
                 dropActive={dropTargetKey === rootDropKey}
+                hasConfig={hasFolderConfig(collection.config)}
                 onToggle={() =>
                   setExpandedCollections((prev) => {
                     const next = new Set(prev);
@@ -709,6 +739,9 @@ export function CollectionsTab({
                     : undefined
                 }
                 onAddFolder={() => openAddFolderModal(id, null)}
+                onEditConfig={() =>
+                  openCollectionConfigModal(id, collection.name, collection.config)
+                }
                 onRename={() => openRenameCollectionModal(id, collection.name)}
                 onDelete={() => openDeleteCollectionModal(id, collection.name)}
               />

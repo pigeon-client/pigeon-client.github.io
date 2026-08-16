@@ -1,7 +1,7 @@
-import type { Collection, CollectionNode } from "@/features/rest/collections";
-import type { HistoryItem, ResponseSnapshot } from "@/features/rest/history";
 import { relativeTime } from "@/shared/lib/time";
 import type { HttpMethod, RequestConfig } from "@/shared/types";
+import type { Collection, CollectionNode } from "../../rest/collections/types";
+import type { HistoryItem, ResponseSnapshot } from "../../rest/history/types";
 
 export { relativeTime };
 

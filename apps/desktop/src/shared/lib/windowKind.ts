@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { isTauri } from "./platform";
+import { isTauriIpcReady } from "./platform";
 
 /**
  * Each workspace kind is a separate OS-level Tauri window (see `open_workspace_window`),
@@ -8,14 +8,26 @@ import { isTauri } from "./platform";
  */
 export type WindowKind = "rest" | "mcp" | "graphql";
 
+let cachedKind: WindowKind | undefined;
+
 function resolveWindowKind(): WindowKind {
-  if (!isTauri()) return "rest";
-  const label = getCurrentWindow().label;
-  return label === "mcp" ? "mcp" : label === "graphql" ? "graphql" : "rest";
+  if (!isTauriIpcReady()) return "rest";
+  try {
+    const label = getCurrentWindow().label;
+    return label === "mcp" ? "mcp" : label === "graphql" ? "graphql" : "rest";
+  } catch {
+    return "rest";
+  }
 }
 
-const windowKind = resolveWindowKind();
-
 export function getWindowKind(): WindowKind {
-  return windowKind;
+  if (cachedKind) return cachedKind;
+  cachedKind = resolveWindowKind();
+  return cachedKind;
+}
+
+/** Re-resolve after Tauri IPC finishes bootstrapping (first paint may be too early). */
+export function refreshWindowKind(): WindowKind {
+  cachedKind = resolveWindowKind();
+  return cachedKind;
 }

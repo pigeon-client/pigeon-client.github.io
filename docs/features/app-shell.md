@@ -36,6 +36,9 @@ workspaces, environments, and settings without burying the URL bar.
    double-click reset on the handle where supported.
 7. **Production banner**: `env-prod-indicator` when the active environment is marked production.
 8. Inactive HTTP tabs stay mounted (`display:none`) so state survives tab switches.
+9. Right-click uses a custom menu. Surfaces with their own `ContextMenu` (workspace tabs)
+   keep it; everywhere else gets the app fallback (Cut / Copy / Paste / Select All). The
+   WKWebView native menu (Look Up, Inspect Element) is suppressed.
 
 ## Non-functional requirements
 
@@ -107,11 +110,13 @@ See [keyboard-shortcuts.md](./keyboard-shortcuts.md). Shell-specific: `⌘\` tog
 | `env-prod-indicator` | Production env banner |
 | `sidebar-*` | See [sidebar.md](./sidebar.md) |
 | `workspace-layout` | Main resizable layout (if present) |
+| `app-context-menu` | Fallback right-click menu |
 
 ## Key files
 
 - `apps/desktop/src/app/App.tsx`
 - `apps/desktop/src/app/AppContent.tsx`
+- `apps/desktop/src/app/layout/AppContextMenu.tsx`
 - `apps/desktop/src/app/layout/Header.tsx`
 - `apps/desktop/src/app/layout/Sidebar.tsx`
 - `apps/desktop/src/app/layout/UpdateToast.tsx`
