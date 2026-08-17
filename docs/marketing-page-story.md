@@ -40,7 +40,7 @@ Visitors enter mid-frustration and leave ready to install. Order matters.
 1. HOOK     — Hero demo plays before they read. “Never save a request again.”
 2. PROOF    — Stats band (optional social proof — keep tiny)
 3. MAGIC    — Organize: send → auto-name → auto-file → history (our differentiator)
-4. MOMENTS  — Small daily wins while editing (JSON format, vars, braces) — story sections
+4. MOMENTS  — Small daily wins while editing (JS object → JSON, trailing-comma fix) — story sections
 5. TOOLKIT  — Features grid: breadth, still with `.sc-story` demos + story lines
 6. PHILOSOPHY — Why Pigeon: no account, local disk, native — not “vs Postman” table
 7. TRUST    — Open source, MIT, GitHub
@@ -197,6 +197,8 @@ Write SEO once in `constants.ts` / `index.astro`. Write humans in section compon
 | `apps/site/src/components/HeroSection.tsx` | Hero story + demo shell |
 | `apps/site/src/lib/heroDemoSteps.ts` | Hero beat labels |
 | `apps/site/src/components/OrganizeSection.tsx` | Reference narrative section |
+| `apps/site/src/components/MomentsSection.tsx` | "While you edit" daily-win demos |
+| `apps/site/src/styles/moments.css` | Moments demo animations |
 | `apps/site/src/components/FeaturesSection.tsx` | Cards with `story` + demos |
 | `apps/site/src/components/WhySection.tsx` | Philosophy, not comparison |
 | `apps/site/src/styles/why-story-demos.css` | Demo animations |
@@ -208,4 +210,4 @@ Write SEO once in `constants.ts` / `index.astro`. Write humans in section compon
 - [features/marketing-site.md](./features/marketing-site.md) — routes, worker, acceptance criteria
 - [landing-page-plan.md](./landing-page-plan.md) — SEO, CTAs, platform download
 - [features/collections.md](./features/collections.md) — auto-file behavior (Organize story source)
-- [features/request-builder.md](./features/request-builder.md) — JSON editor moments (future “while you edit” section)
+- [features/request-builder.md](./features/request-builder.md) — body editor behavior (Moments story source)

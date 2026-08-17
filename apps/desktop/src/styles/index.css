@@ -67,30 +67,13 @@
   background: var(--muted-foreground);
 }
 
-/* Tab strip needs compact horizontal scrollbar; 10px default consumes too much tab height. */
+/* Tab strip: hide scrollbar; overflow is driven by the left/right buttons. */
 .pg-tab-strip {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-  scrollbar-gutter: stable;
+  scrollbar-width: none;
 }
 .pg-tab-strip::-webkit-scrollbar {
-  height: 8px;
-}
-.pg-tab-strip::-webkit-scrollbar-track {
-  background: var(--bg-surface);
-}
-.pg-tab-strip::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border: 2px solid var(--bg-surface);
-}
-.pg-tab-strip:hover {
-  scrollbar-color: var(--muted-foreground) var(--bg-surface);
-}
-.pg-tab-strip:hover::-webkit-scrollbar-track {
-  background: var(--bg-surface);
-}
-.pg-tab-strip:hover::-webkit-scrollbar-thumb {
-  background: var(--muted-foreground);
+  display: none;
+  height: 0;
 }
 .pg-tab-scroll-button {
   display: flex;

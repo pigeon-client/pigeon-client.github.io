@@ -1,0 +1,471 @@
+/* ===== Moments section ("while you edit" story demos) ===== */
+.moments {
+  padding-top: 72px;
+}
+.mom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 46px;
+}
+@media (max-width: 860px) {
+  .mom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.mom-card {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 22px;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.mom-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.4),
+    0 0 24px var(--primary-soft);
+}
+.mom-card h3 {
+  font-size: 0.98rem;
+  margin: 16px 0 7px;
+}
+.mom-card p {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.mom-card code {
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.78rem;
+}
+
+/* Demo shell — mini body editor */
+.mo-demo {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 12px 14px 30px;
+  font-size: 0.72rem;
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  overflow: hidden;
+}
+/* Editor tab row — mirrors the app's Params · Auth · Headers · Body chrome
+   (same pattern as the hero demo's .ed-tabs). */
+.mo-tabs {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.62rem;
+  color: var(--faint);
+}
+.mo-tabs .on {
+  color: var(--text);
+  box-shadow: 0 2px 0 var(--primary);
+  padding-bottom: 2px;
+}
+.mo-types {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.58rem;
+  color: var(--faint);
+}
+.mo-types .on {
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-weight: 600;
+}
+.mo-format {
+  margin-left: auto;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 8px;
+  color: var(--muted);
+  font-size: 0.58rem;
+}
+.mo-line {
+  display: flex;
+  gap: 10px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.mo-line .no {
+  color: var(--faint);
+  width: 14px;
+  text-align: right;
+  flex: none;
+  user-select: none;
+}
+.mo-line .ind {
+  padding-left: 18px;
+}
+.mo-ghost .tx {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.mo-ghost .bad {
+  color: var(--rose);
+}
+.mo-arrow {
+  color: var(--primary);
+  font-size: 0.72rem;
+  padding-left: 24px;
+  opacity: 0;
+}
+.mo-pill {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(110, 231, 183, 0.1);
+  border: 1px solid rgba(110, 231, 183, 0.25);
+  border-radius: 99px;
+  padding: 2px 8px;
+  opacity: 0;
+}
+.mo-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.mo-ok {
+  margin-left: auto;
+  color: var(--green);
+  font-weight: 700;
+  font-size: 0.66rem;
+  opacity: 0;
+}
+.mo-comma .comma {
+  color: var(--rose);
+  font-weight: 700;
+}
+
+/* Caption strip (same pattern as .org-caps) */
+.mo-caps {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 8px;
+  height: 16px;
+  display: grid;
+}
+.mo-cap {
+  grid-area: 1 / 1;
+  font-size: 0.58rem;
+  color: var(--primary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+/* ---- Static (not playing / reduced motion): readable end states ---- */
+.moments:not(.playing) .mo-a-ghost {
+  opacity: 0.45;
+}
+.moments:not(.playing) .mo-a-comma {
+  opacity: 0.3;
+  text-decoration: line-through;
+}
+.moments:not(.playing) .mo-pill,
+.moments:not(.playing) .mo-ok {
+  opacity: 1;
+}
+
+/* ---- Playing: 6s loops ---- */
+/* Card 1 — JS object → JSON */
+.moments.playing .mo-a-ghost {
+  animation: mo-ghost-vis 6s ease-in-out infinite;
+}
+.moments.playing .mo-a-ghost .tx {
+  animation: mo-ghost-type 6s steps(26, end) infinite;
+}
+.moments.playing .mo-a-arrow {
+  animation: mo-arrow 6s ease-in-out infinite;
+}
+.moments.playing .mo-a-l0,
+.moments.playing .mo-a-l1,
+.moments.playing .mo-a-l2,
+.moments.playing .mo-a-l3 {
+  opacity: 0;
+  animation: mo-line-in 6s ease-in-out infinite;
+}
+.moments.playing .mo-a-l1 {
+  animation-delay: 0.12s;
+}
+.moments.playing .mo-a-l2 {
+  animation-delay: 0.24s;
+}
+.moments.playing .mo-a-l3 {
+  animation-delay: 0.36s;
+}
+.moments.playing .mo-a-pill {
+  animation: mo-pill 6s ease-in-out infinite;
+}
+@keyframes mo-ghost-vis {
+  0% {
+    opacity: 0;
+  }
+  6%,
+  58% {
+    opacity: 1;
+  }
+  64%,
+  93% {
+    opacity: 0.45;
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mo-ghost-type {
+  0%,
+  5% {
+    max-width: 0;
+  }
+  32%,
+  100% {
+    max-width: 100%;
+  }
+}
+@keyframes mo-arrow {
+  0%,
+  32% {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  38%,
+  60% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  68%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mo-line-in {
+  0%,
+  40% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  46%,
+  93% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mo-pill {
+  0%,
+  66% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  72%,
+  93% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Card 2 — trailing comma fix */
+.moments.playing .mo-a-comma {
+  animation:
+    mo-comma-life 6s ease-in-out infinite,
+    mo-comma-pulse 1.4s ease-in-out infinite;
+}
+.moments.playing .mo-a-format {
+  animation: mo-format 6s ease-in-out infinite;
+}
+.moments.playing .mo-a-ok {
+  animation: mo-ok 6s ease-in-out infinite;
+}
+@keyframes mo-comma-life {
+  0%,
+  42% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50%,
+  94% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  98%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mo-comma-pulse {
+  0%,
+  100% {
+    text-shadow: 0 0 0 rgba(251, 113, 133, 0);
+  }
+  50% {
+    text-shadow: 0 0 8px rgba(251, 113, 133, 0.8);
+  }
+}
+@keyframes mo-format {
+  0%,
+  42% {
+    transform: scale(1);
+    border-color: var(--border);
+    color: var(--muted);
+    box-shadow: none;
+  }
+  47%,
+  54% {
+    transform: scale(0.94);
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 12px var(--primary-soft);
+  }
+  60%,
+  100% {
+    transform: scale(1);
+    border-color: var(--border);
+    color: var(--muted);
+    box-shadow: none;
+  }
+}
+@keyframes mo-ok {
+  0%,
+  70% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  76%,
+  93% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Captions */
+.moments.playing .mo-cap.c0 {
+  animation: mo-cap-0 6s ease-in-out infinite;
+}
+.moments.playing .mo-cap.c1 {
+  animation: mo-cap-1 6s ease-in-out infinite;
+}
+.moments.playing .mo-cap.c2 {
+  animation: mo-cap-2 6s ease-in-out infinite;
+}
+@keyframes mo-cap-0 {
+  0%,
+  2% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  5%,
+  30% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  34%,
+  100% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+@keyframes mo-cap-1 {
+  0%,
+  36% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  40%,
+  62% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  66%,
+  100% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+@keyframes mo-cap-2 {
+  0%,
+  66% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  70%,
+  92% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  96%,
+  100% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moments.playing .mo-a-ghost,
+  .moments.playing .mo-a-ghost .tx,
+  .moments.playing .mo-a-arrow,
+  .moments.playing .mo-a-l0,
+  .moments.playing .mo-a-l1,
+  .moments.playing .mo-a-l2,
+  .moments.playing .mo-a-l3,
+  .moments.playing .mo-a-pill,
+  .moments.playing .mo-a-comma,
+  .moments.playing .mo-a-format,
+  .moments.playing .mo-a-ok,
+  .moments.playing .mo-cap {
+    animation: none;
+  }
+  .mo-a-ghost {
+    opacity: 0.45;
+  }
+  .mo-a-ghost .tx {
+    max-width: 100%;
+  }
+  .mo-a-comma {
+    opacity: 0.3;
+    text-decoration: line-through;
+  }
+  .mo-pill,
+  .mo-ok {
+    opacity: 1;
+  }
+  .mo-caps {
+    display: none;
+  }
+}

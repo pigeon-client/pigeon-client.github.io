@@ -335,123 +335,6 @@
   }
 }
 
-/* ---- Native speed story ---- */
-.sc-speed-demo {
-  gap: 10px;
-}
-.sc-speed {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.sc-speed .bar-track {
-  flex: 1;
-  height: 6px;
-  background: var(--panel-2);
-  border-radius: 99px;
-  overflow: hidden;
-  position: relative;
-}
-.sc-speed .bar-fill {
-  height: 100%;
-  width: 0%;
-  background: var(--grad);
-  border-radius: 99px;
-}
-.sc-speed .bar-fill.slow {
-  background: var(--faint);
-}
-.card:not(.playing) .sc-a-fast {
-  width: 92%;
-}
-.card:not(.playing) .sc-a-slow {
-  width: 38%;
-}
-.card.playing .sc-a-fast {
-  animation: sc-bar-fast 4.8s ease-in-out infinite;
-}
-.card.playing .sc-a-slow {
-  animation: sc-bar-slow 4.8s ease-in-out infinite;
-}
-.card.playing .sc-a-ms-fast {
-  animation: sc-ms-in 4.8s ease-in-out infinite;
-}
-.card.playing .sc-a-ms-slow {
-  animation: sc-ms-slow 4.8s ease-in-out infinite;
-}
-.sc-speed .lbl {
-  font-size: 0.64rem;
-  color: var(--faint);
-  width: 52px;
-  flex: none;
-}
-.sc-speed .ms {
-  font-size: 0.7rem;
-  font-weight: 700;
-  opacity: 0;
-  min-width: 2.6em;
-  text-align: right;
-}
-.card:not(.playing) .sc-speed .ms {
-  opacity: 1;
-}
-.sc-speed .ms.fast {
-  color: var(--green);
-}
-.sc-speed .ms.slow {
-  color: var(--faint);
-}
-
-@keyframes sc-bar-fast {
-  0%,
-  8% {
-    width: 0%;
-  }
-  22%,
-  100% {
-    width: 100%;
-  }
-}
-@keyframes sc-bar-slow {
-  0%,
-  8% {
-    width: 0%;
-  }
-  70%,
-  100% {
-    width: 42%;
-  }
-}
-@keyframes sc-ms-in {
-  0%,
-  20% {
-    opacity: 0;
-  }
-  24%,
-  100% {
-    opacity: 1;
-  }
-}
-@keyframes sc-ms-slow {
-  0%,
-  65% {
-    opacity: 0;
-  }
-  72%,
-  100% {
-    opacity: 1;
-  }
-}
-.card.playing .sc-speed-demo .sc-cap.c0 {
-  animation: sc-cap-0 4.8s ease-in-out infinite;
-}
-.card.playing .sc-speed-demo .sc-cap.c1 {
-  animation: sc-cap-1 4.8s ease-in-out infinite;
-}
-.card.playing .sc-speed-demo .sc-cap.c2 {
-  animation: sc-cap-2 4.8s ease-in-out infinite;
-}
-
 /* ---- Environments story ---- */
 .sc-env-url {
   font-size: 0.68rem;
@@ -869,10 +752,6 @@
   .card.playing .sc-a-field,
   .card.playing .sc-a-val,
   .card.playing .sc-a-send,
-  .card.playing .sc-a-fast,
-  .card.playing .sc-a-slow,
-  .card.playing .sc-a-ms-fast,
-  .card.playing .sc-a-ms-slow,
   .card.playing .sc-a-env0,
   .card.playing .sc-a-env1,
   .card.playing .sc-a-env2,
@@ -891,14 +770,7 @@
   .card.playing .sc-cap {
     animation: none;
   }
-  .card .sc-a-fast {
-    width: 92%;
-  }
-  .card .sc-a-slow {
-    width: 38%;
-  }
   .card .sc-field,
-  .card .sc-speed .ms,
   .card .sc-key,
   .card .sc-a-root,
   .card .sc-a-folder,

@@ -56,3 +56,28 @@
   padding: 3px 10px;
   margin-bottom: 10px;
 }
+.dl-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  text-align: left;
+  color: var(--faint);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  margin-top: 18px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.dl-note svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin-top: 2px;
+  stroke: var(--amber);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

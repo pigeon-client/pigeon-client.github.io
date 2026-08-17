@@ -156,22 +156,26 @@
     font-size: 0.7rem;
   }
 
-  /* Organize / features / why cards */
-  .organize {
+  /* Organize / moments / features / why cards */
+  .organize,
+  .moments {
     padding-top: 48px;
   }
   .org-grid,
+  .mom-grid,
   .grid,
   .why-grid {
     gap: 12px;
     margin-top: 28px;
   }
   .org-card,
+  .mom-card,
   .card,
   .why-card {
     padding: 18px 16px;
   }
   .org-card:hover,
+  .mom-card:hover,
   .card:hover,
   .card.active,
   .why-card:hover {

@@ -81,10 +81,22 @@ export function HeroSection() {
           </div>
 
           <div className="app-titlebar">
-            <span />
-            <span />
-            <span />
+            <div className="tb-dots" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+            <img className="tb-mark" src="/pigeon-mark.svg" alt="" />
             <span className="tb-name">Pigeon</span>
+            <span className="tb-search">
+              Search… <kbd>⌘F</kbd>
+            </span>
+            <span className="tb-env">No environment</span>
+            <span className="tb-proto">
+              <span className="on">REST</span>
+              <span>MCP</span>
+              <span>GraphQL</span>
+            </span>
           </div>
           <div className="app-body">
             <aside className="sb" aria-hidden="true">
@@ -108,7 +120,7 @@ export function HeroSection() {
                   <span>/todos/1</span>
                 </div>
                 <div className="sb-item">
-                  <span>▸ 📁 api.z.ai</span>
+                  <span>▸ 📁 reqres.in</span>
                   <span className="cnt">1</span>
                 </div>
                 <div className="sb-item">
@@ -173,6 +185,34 @@ export function HeroSection() {
                 </span>
                 <span>Body</span>
               </div>
+              <div className="ed-pane" aria-hidden="true">
+                <div className="kv-head">
+                  <span />
+                  <span>Key</span>
+                  <span>Value</span>
+                  <span />
+                </div>
+                <div className="kv-row">
+                  <span className="kv-chk on">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                  <span className="kv-ph">Key</span>
+                  <span className="kv-ph">Value</span>
+                  <svg className="kv-del" viewBox="0 0 24 24" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </div>
+                <span className="kv-add">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add param
+                </span>
+              </div>
               <div className="resp">
                 <div className="resp-bar">
                   <span className="spinner" id="demo-spin" />
@@ -180,16 +220,14 @@ export function HeroSection() {
                     200 OK
                   </span>
                   <span id="demo-time" style={{ display: "none" }}>
-                    ⏱ 369 ms
+                    355 ms
                   </span>
                   <span id="demo-size" style={{ display: "none" }}>
-                    ◎ 83 B
+                    83 B
                   </span>
                   <span className="right">
-                    <span className="resp-extra" style={{ color: "var(--text)" }}>
-                      Body
-                    </span>
-                    <span className="resp-extra">Headers 25</span>
+                    <span className="resp-tab on">Body</span>
+                    <span className="resp-tab">Headers 25</span>
                     <span className="pill">
                       <span className="on">Pretty</span>
                       <span>Raw</span>

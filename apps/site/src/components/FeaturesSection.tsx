@@ -49,35 +49,6 @@ const FEATURES: Feature[] = [
     ),
   },
   {
-    icon: <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" />,
-    title: "Native speed",
-    body: "Native engine — no CORS pain, instant startup, lighter than typical API clients.",
-    story: "Pigeon finishes before other clients start",
-    demo: (
-      <div className="sc-story sc-speed-demo">
-        <div className="sc-speed">
-          <span className="lbl">Pigeon</span>
-          <span className="bar-track">
-            <span className="bar-fill sc-a-fast" />
-          </span>
-          <span className="ms fast sc-a-ms-fast">12ms</span>
-        </div>
-        <div className="sc-speed">
-          <span className="lbl">Others</span>
-          <span className="bar-track">
-            <span className="bar-fill slow sc-a-slow" />
-          </span>
-          <span className="ms slow sc-a-ms-slow">240ms</span>
-        </div>
-        <div className="sc-caps" aria-hidden="true">
-          <span className="sc-cap c0">Fire request</span>
-          <span className="sc-cap c1">Pigeon done</span>
-          <span className="sc-cap c2">Others still going…</span>
-        </div>
-      </div>
-    ),
-  },
-  {
     icon: (
       <path d="M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18" />
     ),

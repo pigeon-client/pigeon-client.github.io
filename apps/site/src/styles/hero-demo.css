@@ -26,30 +26,84 @@
 .app-titlebar {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 11px 14px;
+  gap: 8px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--border-soft);
   background: var(--panel-2);
   flex: none;
 }
-.app-titlebar span {
+.tb-dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+}
+.tb-dots span {
   width: 11px;
   height: 11px;
   border-radius: 50%;
 }
-.app-titlebar span:nth-child(1) {
+.tb-dots span:nth-child(1) {
   background: #ff5f57;
 }
-.app-titlebar span:nth-child(2) {
+.tb-dots span:nth-child(2) {
   background: #febc2e;
 }
-.app-titlebar span:nth-child(3) {
+.tb-dots span:nth-child(3) {
   background: #28c840;
 }
+.tb-mark {
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+  flex: none;
+}
 .app-titlebar .tb-name {
-  margin-left: 10px;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin: 0;
+}
+.tb-search {
+  flex: 1;
+  max-width: 240px;
+  margin: 0 auto;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 4px 10px;
   color: var(--faint);
-  font-size: 0.74rem;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tb-search kbd {
+  font-family: var(--font);
+  font-size: 0.62rem;
+  color: var(--faint);
+  background: var(--panel-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+.tb-env {
+  color: var(--muted);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+.tb-proto {
+  display: flex;
+  gap: 10px;
+  font-size: 0.68rem;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.tb-proto .on {
+  color: var(--text);
+  box-shadow: 0 2px 0 var(--primary);
+  padding-bottom: 2px;
 }
 .app-body {
   display: grid;
@@ -394,10 +448,95 @@
   top: -0.35em;
   margin-left: 1px;
 }
+
+/* Request params — same KEY/VALUE table as the app, so JSON is clearly the response below. */
+.ed-pane {
+  padding: 8px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  flex: none;
+}
+.kv-head,
+.kv-row {
+  display: grid;
+  grid-template-columns: 16px 1fr 1fr 16px;
+  gap: 10px;
+  align-items: center;
+}
+.kv-head {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  text-transform: uppercase;
+  padding: 0 2px 6px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 4px;
+}
+.kv-row {
+  min-height: 28px;
+  padding: 2px 0;
+}
+.kv-chk {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 2px solid var(--border);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kv-chk.on {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.kv-chk svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.kv-ph {
+  color: var(--faint);
+  font-size: 0.7rem;
+}
+.kv-del {
+  width: 13px;
+  height: 13px;
+  justify-self: end;
+  fill: none;
+  stroke: var(--faint);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.kv-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.kv-add svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .resp {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 .resp-bar {
   display: flex;
@@ -426,8 +565,26 @@
 .resp-bar .right {
   margin-left: auto;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
+}
+.resp-tab {
+  position: relative;
+  padding: 0 0 6px;
+  color: var(--faint);
+}
+.resp-tab.on {
+  color: var(--text);
+}
+.resp-tab.on::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
 }
 .pill {
   border: 1px solid var(--border);
@@ -467,19 +624,19 @@
   user-select: none;
 }
 .k {
-  color: #d8a657;
+  color: var(--hljs-attr);
 }
 .s {
-  color: var(--green);
+  color: var(--hljs-string);
 }
 .n {
-  color: #e78a4e;
+  color: var(--hljs-number);
 }
 .b {
-  color: #ea6962;
+  color: var(--hljs-literal);
 }
 .p {
-  color: var(--muted);
+  color: var(--hljs-punct);
 }
 .spinner {
   width: 13px;
@@ -511,6 +668,11 @@
 @container demo-app (max-width: 620px) {
   .app-titlebar {
     padding: 8px 10px;
+  }
+  .tb-search,
+  .tb-env,
+  .tb-proto {
+    display: none;
   }
   .mn-tabs {
     padding: 6px 8px 0;
@@ -565,7 +727,7 @@
     padding: 8px 10px;
     min-height: 0;
   }
-  .app .resp-extra {
+  .app .resp-tab:not(.on) {
     display: none;
   }
   .resp-bar .right {

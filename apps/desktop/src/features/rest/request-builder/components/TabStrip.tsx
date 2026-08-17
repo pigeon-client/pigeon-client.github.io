@@ -306,7 +306,7 @@ export function TabStrip() {
           minWidth: 0,
           display: "flex",
           alignItems: "stretch",
-          overflowX: "scroll",
+          overflowX: "auto",
           overflowY: "hidden",
         }}
         className="pg-tab-strip"

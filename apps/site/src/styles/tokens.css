@@ -14,11 +14,31 @@
   --primary-soft: rgba(201, 100, 66, 0.12);
   --primary-glow: rgba(201, 100, 66, 0.3);
   --primary-glow-strong: rgba(201, 100, 66, 0.45);
-  --green: #72b872;
+  --green: #34d399;
   --amber: #fbbf24;
   --rose: #fb7185;
   --radius: 12px;
   --grad: linear-gradient(135deg, #c96442 0%, #d97a52 50%, #e08858 100%);
   --grad-text: linear-gradient(110deg, #e8a07a 0%, #c96442 40%, #d97a52 70%, #e8a07a 100%);
   --font: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Desktop `.dark` highlight.js palette. The site is permanently dark and never
+     toggles `.dark`, so @pigeon/ui's light :root --hljs-* would otherwise leak. */
+  --hljs-base: #e8eaef;
+  --hljs-attr: #8ab4f8;
+  --hljs-string: #7ec699;
+  --hljs-number: #f2b36b;
+  --hljs-literal: #c792ea;
+  --hljs-keyword: #c792ea;
+  --hljs-builtin: #f2b36b;
+  --hljs-comment: #646b78;
+  --hljs-punct: #646b78;
+  --hljs-tag: #646b78;
+  --hljs-name: #c792ea;
+  --hljs-title: #8ab4f8;
+  --hljs-class: #f2b36b;
+  --hljs-variable: #8ab4f8;
+  --hljs-regexp: #f2b36b;
+  --hljs-section: #c792ea;
+  --hljs-meta: #646b78;
 }

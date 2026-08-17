@@ -2,6 +2,7 @@ import { useScrollReveal } from "../hooks/useScrollReveal";
 import { DownloadSection } from "./DownloadSection";
 import { FeaturesSection } from "./FeaturesSection";
 import { HeroSection } from "./HeroSection";
+import { MomentsSection } from "./MomentsSection";
 import { OpenSourceSection } from "./OpenSourceSection";
 import { OrganizeSection } from "./OrganizeSection";
 import { StatsBand } from "./StatsBand";
@@ -19,6 +20,7 @@ export default function HomePage() {
       <main>
         <StatsBand />
         <OrganizeSection />
+        <MomentsSection />
         <FeaturesSection />
         <WhySection />
         <OpenSourceSection />

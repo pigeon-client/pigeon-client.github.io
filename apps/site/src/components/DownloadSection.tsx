@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { downloadLatestUrl, getInstallCmd } from "../lib/constants";
+import { getInstallCmd } from "../lib/constants";
 import { InstallBox } from "./CopyButton";
 
 const delay = (s: number): CSSProperties => ({ "--d": `${s}s` }) as CSSProperties;
@@ -28,23 +28,19 @@ export function DownloadSection() {
           <div className="dl-card active reveal">
             <div className="os-icon">{AppleIcon}</div>
             <h3>macOS</h3>
-            <p className="meta">Apple Silicon &amp; Intel · terminal install</p>
+            <p className="meta">Apple Silicon &amp; Intel · one command</p>
             <InstallBox command={installCmd} />
-            <p className="meta" style={{ marginTop: 14 }}>
-              or download the .dmg directly
+            <p className="dl-note">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 01-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 011-1c2 0 4.5-1.2 6.24-2.72a1 1 0 011.52 0C14.51 3.81 17 5 19 5a1 1 0 011 1z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+              <span>
+                Pigeon isn&apos;t Apple-notarized yet, so the installer clears the Gatekeeper
+                quarantine flag for you — no &quot;unidentified developer&quot; dialog, no
+                right-click → Open dance.
+              </span>
             </p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-              <a className="btn btn-ghost" href={downloadLatestUrl("aarch64")}>
-                Apple Silicon
-              </a>
-              <a className="btn btn-ghost" href={downloadLatestUrl("x64")}>
-                Intel
-              </a>
-            </div>
-            <p className="meta" style={{ marginTop: 14 }}>
-              or via Homebrew
-            </p>
-            <InstallBox command="brew install --cask pigeon-client/pigeon/pigeon" />
           </div>
         </div>
       </div>
