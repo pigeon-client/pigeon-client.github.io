@@ -7,7 +7,7 @@ interface Stat {
 const STATS: Stat[] = [
   { num: "$0", lbl: "forever, no tiers" },
   { num: "0", lbl: "accounts required" },
-  { num: "12ms", lbl: "request engine" },
+  { num: "fast", lbl: "request engine" },
   { num: "100%", lbl: "local, no cloud" },
   { num: "MIT", lbl: "open source" },
   { num: "∞", lbl: "requests stored" },

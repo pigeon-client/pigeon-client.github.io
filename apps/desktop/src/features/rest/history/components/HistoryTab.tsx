@@ -5,13 +5,12 @@ import { SidebarLoadingState } from "@/shared/ui/SidebarLoadingState";
 import { useHistoryStore } from "../store";
 import type { HistoryItem } from "../types";
 
-function matchesSearch(text: string, search: string): boolean {
-  return !search || text.toLowerCase().includes(search.toLowerCase());
+function matchesSearch(text: string, searchLower: string): boolean {
+  return !searchLower || text.toLowerCase().includes(searchLower);
 }
 
 /* ── Date grouping ── */
-function getDateBucket(timestamp: number): string {
-  const now = Date.now();
+function getDateBucket(timestamp: number, now: number): string {
   const diff = now - timestamp;
   const dayMs = 86400000;
   if (diff < dayMs) return "Today";
@@ -59,11 +58,13 @@ function scrollMarginOf(el: HTMLElement, scrollParent: HTMLElement): number {
 }
 
 function flattenHistory(history: HistoryItem[], search: string): FlatRow[] {
+  const now = Date.now();
+  const searchLower = search.toLowerCase();
   const buckets: Record<string, { item: HistoryItem; index: number }[]> = {};
   for (let i = 0; i < history.length; i++) {
     const item = history[i];
-    if (!matchesSearch(item.name || item.url, search)) continue;
-    const b = getDateBucket(item.timestamp);
+    if (!matchesSearch(item.name || item.url, searchLower)) continue;
+    const b = getDateBucket(item.timestamp, now);
     if (!buckets[b]) buckets[b] = [];
     buckets[b].push({ item, index: i });
   }
@@ -329,7 +330,6 @@ export function HistoryTab({
             <div
               key={vItem.key}
               data-index={vItem.index}
-              ref={virtualizer.measureElement}
               style={{
                 position: "absolute",
                 top: 0,

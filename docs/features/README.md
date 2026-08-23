@@ -16,6 +16,7 @@ Update these docs when behavior changes.
 | Doc | Feature | Status | Code |
 |-----|---------|--------|------|
 | [app-shell.md](./app-shell.md) | Layout, header, panels, modals, toasts | Shipped | `src/app/` |
+| [onboarding.md](./onboarding.md) | First-run REST overlay (URL → Send) | Shipped | `src/features/onboarding` |
 | [workspaces.md](./workspaces.md) | REST / MCP / GraphQL workbench switching | REST shipped; MCP & GraphQL coming-soon | `src/features/workspaces`, `src/shared/lib/windowKind.ts` |
 | [tabs.md](./tabs.md) | Request tab strip (name, close, reorder) | Shipped | `src/features/rest/request-builder` (`TabStrip`, store) |
 | [sidebar.md](./sidebar.md) | Left nav: History / Drafts / Collections | Shipped (REST only) | `src/app/layout/Sidebar.tsx` |

@@ -50,6 +50,14 @@ and the **marketing site** (Astro on Cloudflare Workers / trypigeon.dev).
 - **States**: browser/E2E always starts REST; coming-soon is in-page (not kind-tabs today).
 - **Doc**: [features/workspaces.md](./features/workspaces.md).
 
+### 1.5 First-run onboarding
+- **Purpose**: teach the send loop once (URL → Send → response) without stuffing it into empty
+  state or Settings → About.
+- **Surfaces**: welcome card titled **Pigeon**; spotlight hole on the URL bar, then Send.
+- **States**: pending (`pg_onboarding_complete` unset) vs complete; REST only.
+- **Interactions**: Get started / Next / Send; Skip or Escape completes; backdrop does not dismiss.
+- **Doc**: [features/onboarding.md](./features/onboarding.md).
+
 ---
 
 ## 2. REST workspace (core product)

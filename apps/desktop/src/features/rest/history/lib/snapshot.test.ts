@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { buildSnapshot, SNAPSHOT_CAP_BYTES } from "./snapshot";
 
-function bytesOf(text: string): number[] {
-  return Array.from(new TextEncoder().encode(text));
+function bytesOf(text: string): Uint8Array {
+  return new TextEncoder().encode(text);
 }
 
 describe("buildSnapshot", () => {
@@ -26,7 +26,7 @@ describe("buildSnapshot", () => {
   });
 
   it("stores metadata only for binary/media content types", () => {
-    const body = [1, 2, 3, 4];
+    const body = Uint8Array.from([1, 2, 3, 4]);
     const snap = buildSnapshot({
       status: 200,
       statusText: "OK",

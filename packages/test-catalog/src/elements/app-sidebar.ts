@@ -114,6 +114,38 @@ export const appShellElements: TestElement[] = [
     component: "app/layout/AppContextMenu.tsx",
     notes: "Right-click chrome without a nested ContextMenu; not the WKWebView native menu",
   },
+  {
+    id: "EL-APP-014",
+    feature: "APP",
+    name: "Onboarding overlay",
+    selector: '[data-testid="onboarding"]',
+    testId: "onboarding",
+    component: "features/onboarding/components/Onboarding.tsx",
+  },
+  {
+    id: "EL-APP-015",
+    feature: "APP",
+    name: "Onboarding Get started",
+    selector: '[data-testid="onboarding-start"]',
+    testId: "onboarding-start",
+    component: "features/onboarding/components/Onboarding.tsx",
+  },
+  {
+    id: "EL-APP-016",
+    feature: "APP",
+    name: "Onboarding Skip",
+    selector: '[data-testid="onboarding-skip"]',
+    testId: "onboarding-skip",
+    component: "features/onboarding/components/Onboarding.tsx",
+  },
+  {
+    id: "EL-APP-017",
+    feature: "APP",
+    name: "Onboarding Next",
+    selector: '[data-testid="onboarding-next"]',
+    testId: "onboarding-next",
+    component: "features/onboarding/components/Onboarding.tsx",
+  },
 ];
 
 export const workspaceElements: TestElement[] = [

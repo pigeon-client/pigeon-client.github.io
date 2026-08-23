@@ -3,7 +3,8 @@
 ## Overview
 
 Top-level desktop layout: header, optional sidebar, request tab strip, request/response split,
-and global overlays (settings, environments, import, save, shortcuts, command palette, toasts).
+and global overlays (settings, environments, import, save, shortcuts, command palette, first-run
+onboarding, toasts).
 Orchestrated by `AppContent.tsx` — no business logic beyond wiring feature barrels and keyboard
 chords.
 
@@ -31,7 +32,8 @@ workspaces, environments, and settings without burying the URL bar.
 4. **Coming-soon workbenches** (MCP / GraphQL): header only + `ComingSoonWorkspace` — no sidebar,
    no tabs, no editor.
 5. **Overlays**: Env modal, Import modal, Save-to-collection modal, Settings, Shortcuts modal,
-   Command palette, Update toast, Migration toast.
+   Command palette, first-run onboarding (REST only — [onboarding.md](./onboarding.md)), Update
+   toast, Migration toast.
 6. **Sidebar width** via `ResizablePanel`: ~180–400px; request/response vertical split with
    double-click reset on the handle where supported.
 7. **Production banner**: `env-prod-indicator` when the active environment is marked production.
@@ -53,6 +55,7 @@ workspaces, environments, and settings without burying the URL bar.
 - [ ] Resize sidebar within min/max; no horizontal page overflow.
 - [ ] Switch to MCP/GraphQL → coming-soon pane; sidebar and tabs hidden.
 - [ ] Escape closes palette / shortcuts / env / import / save / settings in priority order.
+  First-run onboarding captures Escape and completes the tour instead.
 - [ ] Production env active → red indicator visible.
 
 ## UI
@@ -84,6 +87,7 @@ See [keyboard-shortcuts.md](./keyboard-shortcuts.md). Shell-specific: `⌘\` tog
 ## States & edge cases
 
 - Empty URL → `EmptyRequestState` instead of editor/response split.
+- First REST launch (no `pg_onboarding_complete`) → [onboarding](./onboarding.md) overlay.
 - Browser / E2E build: `windowKind` is always `rest`; MCP/GQL are in-page coming-soon only.
 - Legacy Tauri multi-window labels still exist; UI primarily uses in-app `workbench` state.
 
@@ -92,13 +96,15 @@ See [keyboard-shortcuts.md](./keyboard-shortcuts.md). Shell-specific: `⌘\` tog
 - [ ] Launch → REST layout complete.
 - [ ] Collapse / expand sidebar; resize to extremes.
 - [ ] Resize request/response split; long URL still scrolls in URL bar.
-- [ ] Open each overlay; Escape dismisses correctly.
+- [ ] Open each overlay; Escape dismisses correctly (onboarding completes rather than closing
+      another modal).
 - [ ] Activate production env → indicator; deactivate → gone.
 - [ ] MCP / GraphQL header buttons → coming-soon; REST restores full layout.
 
 ## Automation coverage
 
-- Playwright: `e2e/smoke.spec.ts`, layout-related specs in `apps/desktop/e2e/`.
+- Playwright: `e2e/smoke.spec.ts`, `e2e/onboarding.spec.ts`, layout-related specs in
+  `apps/desktop/e2e/`.
 - Keyboard / Escape covered across feature specs.
 
 ## Test ids
@@ -111,6 +117,7 @@ See [keyboard-shortcuts.md](./keyboard-shortcuts.md). Shell-specific: `⌘\` tog
 | `sidebar-*` | See [sidebar.md](./sidebar.md) |
 | `workspace-layout` | Main resizable layout (if present) |
 | `app-context-menu` | Fallback right-click menu |
+| `onboarding` / `onboarding-start` / `onboarding-skip` / `onboarding-next` | First-run tour — [onboarding.md](./onboarding.md) |
 
 ## Key files
 
@@ -121,6 +128,7 @@ See [keyboard-shortcuts.md](./keyboard-shortcuts.md). Shell-specific: `⌘\` tog
 - `apps/desktop/src/app/layout/Sidebar.tsx`
 - `apps/desktop/src/app/layout/UpdateToast.tsx`
 - `apps/desktop/src/app/layout/MigrationToast.tsx`
+- `apps/desktop/src/features/onboarding/` (first-run overlay)
 
 ## Open risks
 

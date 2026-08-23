@@ -16,6 +16,9 @@ function contentType(key: string, stored?: string): string {
   if (key.endsWith(".js")) return "text/javascript; charset=utf-8";
   if (key.endsWith(".svg")) return "image/svg+xml";
   if (key.endsWith(".png")) return "image/png";
+  if (key.endsWith(".jpg") || key.endsWith(".jpeg")) return "image/jpeg";
+  if (key.endsWith(".webp")) return "image/webp";
+  if (key.endsWith(".avif")) return "image/avif";
   if (key.endsWith(".xml")) return "application/xml";
   if (key.endsWith(".txt") || key.endsWith(".sh")) return "text/plain; charset=utf-8";
   return "application/octet-stream";
@@ -23,6 +26,9 @@ function contentType(key: string, stored?: string): string {
 
 function cacheControl(key: string): string {
   if (key.startsWith("_astro/")) return "public, max-age=31536000, immutable";
+  if (key.startsWith("blog/") || key.startsWith("og/")) {
+    return "public, max-age=31536000, immutable";
+  }
   if (key === "latest.json" || key === "release.json") return "public, max-age=300";
   if (key.endsWith(".html")) return "public, max-age=300";
   return "public, max-age=3600";
@@ -103,15 +109,26 @@ export default {
     const redirect = await handleDownloadRedirect(pathname, env);
     if (redirect) return redirect;
 
-    for (const key of keysForPath(pathname)) {
-      const object = await env.ASSETS.get(key);
-      if (!object) continue;
+    const keys = keysForPath(pathname);
+    const objects = await Promise.all(
+      keys.map(async (key) => {
+        const object = await env.ASSETS.get(key, { onlyIf: request.headers });
+        return object ? { key, object } : null;
+      }),
+    );
+
+    for (const hit of objects) {
+      if (!hit) continue;
+      const { key, object } = hit;
 
       const headers = new Headers();
       headers.set("Content-Type", contentType(key, object.httpMetadata?.contentType));
       headers.set("Cache-Control", cacheControl(key));
       if (object.httpEtag) headers.set("ETag", object.httpEtag);
 
+      if (object.body === null) {
+        return new Response(null, { status: 304, headers });
+      }
       if (request.method === "HEAD") {
         return new Response(null, { status: 200, headers });
       }

@@ -1,25 +1,44 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import { getCollection } from "astro:content";
-import { SITE_NAME } from "../../lib/constants";
+import { BLOG_OG_IMAGE, SITE_NAME, SITE_URL } from "../../lib/constants";
+import "../../styles/blog.css";
 
 const posts = (await getCollection("blog"))
   .filter((post) => !post.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const title = `Blog · ${SITE_NAME}`;
+const title = `Pigeon Blog — Tips for the Free macOS API Client | ${SITE_NAME}`;
 const description =
-  "Release notes, deep dives, and tips for Pigeon — the API client that organizes itself.";
+  "Product notes and tips for Pigeon: auto-named tabs, domain history, environments, cURL import, and more. Free open-source Postman alternative for macOS.";
+
+const blogJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  name: `${SITE_NAME} Blog`,
+  description,
+  url: `${SITE_URL}/blog`,
+  publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+};
 ---
 
-<SiteLayout title={title} description={description} canonicalPath="/blog" bodyClass="page-blog">
+<SiteLayout
+  title={title}
+  description={description}
+  canonicalPath="/blog"
+  ogImage={BLOG_OG_IMAGE}
+  bodyClass="page-blog"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(blogJsonLd)} />
+  </Fragment>
   <main class="site-main">
     <div class="blog-index wrap">
       <header class="blog-index-header">
         <p class="blog-kicker">Blog</p>
         <h1>Notes from the nest</h1>
         <p class="blog-dek">
-          Product updates, API-client tips, and how Pigeon stays out of your way.
+          What we shipped, how things work, and a few tips for getting more out of Pigeon.
         </p>
       </header>
 
@@ -31,15 +50,28 @@ const description =
             {posts.map((post) => (
               <li>
                 <a class="blog-card" href={`/blog/${post.id}`}>
-                  <time datetime={post.data.pubDate.toISOString()}>
-                    {post.data.pubDate.toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </time>
-                  <h2>{post.data.title}</h2>
-                  <p>{post.data.description}</p>
+                  {post.data.heroImage && (
+                    <img
+                      class="blog-card-image"
+                      src={post.data.heroImage}
+                      alt={post.data.heroImageAlt ?? ""}
+                      width={640}
+                      height={360}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
+                  <div class="blog-card-body">
+                    <time datetime={post.data.pubDate.toISOString()}>
+                      {post.data.pubDate.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </time>
+                    <h2>{post.data.title}</h2>
+                    <p>{post.data.description}</p>
+                  </div>
                 </a>
               </li>
             ))}

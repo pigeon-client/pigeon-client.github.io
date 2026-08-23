@@ -22,11 +22,38 @@ export interface PaletteItem {
   /** Collection only — used to link the opened tab for in-place ⌘S. */
   collectionId?: string;
   nodeId?: string;
+  /** Lowercased fields, computed once when the palette list is built. */
+  urlLower: string;
+  nameLower: string;
+  methodLower: string;
+  headersLower: string;
+  bodyLower: string;
+  snapshotLower: string;
 }
 
 export interface PaletteResult extends PaletteItem {
   /** Match tier, lower = better. Not shown in the UI, only used to sort. */
   tier: number;
+}
+
+function searchFields(
+  method: string,
+  name: string,
+  url: string,
+  request: RequestConfig,
+  snapshot?: ResponseSnapshot,
+) {
+  return {
+    urlLower: url.toLowerCase(),
+    nameLower: name.toLowerCase(),
+    methodLower: method.toLowerCase(),
+    headersLower: (request.headers ?? [])
+      .map((h) => `${h.key}\0${h.value}`)
+      .join("\n")
+      .toLowerCase(),
+    bodyLower: (request.body ?? "").toLowerCase(),
+    snapshotLower: (snapshot?.bodyText ?? "").toLowerCase(),
+  };
 }
 
 function walkCollectionRequests(
@@ -49,6 +76,7 @@ function walkCollectionRequests(
         request: n.request,
         collectionId,
         nodeId: n.id,
+        ...searchFields(n.method ?? n.request.method, n.name, n.url ?? n.request.url, n.request),
       });
     }
   }
@@ -73,6 +101,7 @@ export function collectPaletteItems(opts: {
       timestamp: h.timestamp,
       responseTime: h.responseTime,
       snapshot: h.snapshot,
+      ...searchFields(h.method, h.name, h.url, h.request, h.snapshot),
     });
   });
   opts.drafts.forEach((d, i) => {
@@ -84,6 +113,7 @@ export function collectPaletteItems(opts: {
       name: d.name,
       url: d.url,
       request: d,
+      ...searchFields(d.method, d.name, d.url, d),
     });
   });
   for (const c of opts.collections) {
@@ -100,16 +130,13 @@ export function collectPaletteItems(opts: {
  * — ranked below every request-field match, per the launch brief).
  */
 function matchTier(item: PaletteItem, q: string): number | null {
-  const url = item.url.toLowerCase();
-  if (url === q) return 0;
-  if (url.startsWith(q)) return 1;
-  if (url.includes(q)) return 2;
-  if (item.name.toLowerCase().includes(q) || item.method.toLowerCase().includes(q)) return 3;
-  for (const h of item.request.headers ?? []) {
-    if (h.key.toLowerCase().includes(q) || h.value.toLowerCase().includes(q)) return 4;
-  }
-  if (item.request.body?.toLowerCase().includes(q)) return 5;
-  if (item.snapshot?.bodyText?.toLowerCase().includes(q)) return 6;
+  if (item.urlLower === q) return 0;
+  if (item.urlLower.startsWith(q)) return 1;
+  if (item.urlLower.includes(q)) return 2;
+  if (item.nameLower.includes(q) || item.methodLower.includes(q)) return 3;
+  if (item.headersLower.includes(q)) return 4;
+  if (item.bodyLower.includes(q)) return 5;
+  if (item.snapshotLower.includes(q)) return 6;
   return null;
 }
 

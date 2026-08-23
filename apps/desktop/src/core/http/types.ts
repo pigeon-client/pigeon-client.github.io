@@ -6,7 +6,7 @@ export interface ApiResponse {
   status: number;
   statusText: string;
   headers: Record<string, string>;
-  body: number[];
+  body: Uint8Array;
   contentType: string;
   responseTime: number;
   size: number;
@@ -22,6 +22,8 @@ export interface ApiResponse {
   snapshotTimestamp?: number;
   /** True when the snapshot body was cut at the 256KB cap. */
   snapshotTruncated?: boolean;
+  /** True when this tab's body was dropped to cap in-memory response RAM. */
+  bodyEvicted?: boolean;
   /** True when the user cancelled the in-flight request (not a real failure). */
   cancelled?: boolean;
 }

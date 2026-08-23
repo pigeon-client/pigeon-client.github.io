@@ -1,33 +1,74 @@
 ---
 title: "Welcome to trypigeon.dev"
-description: "Pigeon has a real home on the web — trypigeon.dev — with a faster, SEO-friendly site and a blog for release notes and deep dives."
+description: "Pigeon’s new home at trypigeon.dev — free open-source macOS API client with auto-named tabs, domain history, environments, and cURL import."
+seoTitle: "Welcome to trypigeon.dev | Pigeon macOS API Client Blog"
 pubDate: 2026-08-09
+heroImage: /blog/welcome-to-trypigeon-dev.webp
+heroImageAlt: "Pigeon mark on a dark background."
 ---
 
-Pigeon is the API client that organizes itself: auto-named tabs, history filed by domain, no account required.
+Pigeon is a free macOS API client. You open it, type a URL, hit send. No account. Your history, collections, and keys stay on your disk.
 
-Today the marketing site moves to **[trypigeon.dev](https://trypigeon.dev)**. Same product. Cleaner home.
+We finally put a real site in front of it: **[trypigeon.dev](https://trypigeon.dev)**. Same app. Clearer story. This post is the short tour of what ships today.
 
-## Why Astro
+## The big idea
 
-The old landing page was a single-page React app. Fine for demos — weak for search and sharing.
+Most API clients got heavy — sign-in walls, cloud sync, tabs you never asked for. Pigeon went the other way:
 
-The new site is **Astro**:
+- **No account, ever** — open the app and send a request
+- **Local by default** — collections, history, and environments live on your machine
+- **Native and small** — built for API work, not as a mini browser
 
-- Static HTML for every page (landing + blog)
-- React only where demos need it
-- Built-in sitemap and proper canonical URLs
+Everything below is how that shows up day to day.
 
-## Blog
+## It organizes while you work
 
-This post is the first of many. Expect release notes, workflow tips, and the occasional deep dive into how Pigeon stays local-first.
+You shouldn't have to rename tabs and pick folders after every call.
 
-## Install
+**Tabs name themselves.** Send a request and the tab picks up the path. Rename it once and it stays put.
 
-```bash
-curl -fsSL https://trypigeon.dev/install.sh | sh
-```
+**History files by domain.** Calls land under the host — `api.stripe.com`, `localhost`, your staging box — not a flat pile of timestamps. [We wrote more about that here.](/blog/filed-by-domain)
 
-Or grab the latest `.dmg` from [trypigeon.dev/download/latest/aarch64](https://trypigeon.dev/download/latest/aarch64) (Apple Silicon) or [Intel](https://trypigeon.dev/download/latest/x64).
+**Drafts stick around.** Half-finished URLs don't vanish when you close a tab.
 
-Star the repo if Pigeon saves you a click: [github.com/pigeon-client/pigeon](https://github.com/pigeon-client/pigeon).
+**Collections when you mean it.** Want a hand-built tree? Save with `⌘S`. Folders, nesting, the usual — still local.
+
+## Build and send requests
+
+The request builder is the center of the app:
+
+- Color-coded methods and a URL bar that stays readable
+- Params, Auth, Headers, and Body in clean editors
+- JSON, form data, raw text — whatever the API wants
+- Responses with status, headers, and a body you can actually read
+
+**Environments** use `{{variables}}` for dev, staging, and prod. Secrets stay masked. Before a destructive method hits production, Pigeon asks you to confirm.
+
+**cURL in and out.** Paste a `curl` from the docs and get a ready request. Copy back out anytime. Postman collections import too.
+
+**SSE streams.** Live event streams render as they arrive — newest on top. Hit Stop when you're done.
+
+## Move fast without the mouse
+
+Pigeon is keyboard-first:
+
+| Shortcut | What it does |
+| --- | --- |
+| `⌘↵` | Send |
+| `⌘K` | Command palette / search |
+| `⌘⇧E` | Environments |
+| `⌘S` | Save to a collection |
+| `⌘/` | Shortcuts help |
+
+The palette finds requests, collections, and actions when you don't want to dig through the sidebar.
+
+## Small things that still matter
+
+These aren't the headline features, but you'll notice them:
+
+- Tabs you can reorder and close without drama
+- Themes and request defaults in Settings
+- Update checks when a new build is out
+- Your data stays exportable — you're not locked in
+- GraphQL-over-HTTP works through normal content types today; a dedicated GraphQL bench is still on the way
+- MCP is coming later — the REST workspace is what we polish first

@@ -37,7 +37,8 @@ Keywords and FAQs exist for search engines (meta, JSON-LD). **Face copy is story
 Visitors enter mid-frustration and leave ready to install. Order matters.
 
 ```
-1. HOOK     — Hero demo plays before they read. “Never save a request again.”
+1. HOOK     — Hero demo plays before they read. “Built for Real Developers, Not Showoffs.”
+   Sub: “Focus on building. Pigeon keeps your APIs organized.” (source: `HERO_HEADLINE` / `HERO_SUB` in `apps/site/src/lib/constants.ts`)
 2. PROOF    — Stats band (optional social proof — keep tiny)
 3. MAGIC    — Organize: send → auto-name → auto-file → history (our differentiator)
 4. MOMENTS  — Small daily wins while editing (JS object → JSON, trailing-comma fix) — story sections
@@ -193,7 +194,7 @@ Write SEO once in `constants.ts` / `index.astro`. Write humans in section compon
 
 | File | Purpose |
 |---|---|
-| `apps/site/src/components/HomePage.tsx` | Section order |
+| `apps/site/src/pages/index.astro` | Section order |
 | `apps/site/src/components/HeroSection.tsx` | Hero story + demo shell |
 | `apps/site/src/lib/heroDemoSteps.ts` | Hero beat labels |
 | `apps/site/src/components/OrganizeSection.tsx` | Reference narrative section |

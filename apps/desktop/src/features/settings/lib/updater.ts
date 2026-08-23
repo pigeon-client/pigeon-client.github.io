@@ -1,5 +1,4 @@
 import { getVersion } from "@tauri-apps/api/app";
-import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type DownloadEvent, type Update } from "@tauri-apps/plugin-updater";
 
 const FALLBACK_VERSION = "0.1.0";
@@ -97,6 +96,7 @@ export async function installUpdate(
   onProgress?: (event: DownloadEvent) => void,
 ): Promise<void> {
   await update.downloadAndInstall(onProgress);
+  const { relaunch } = await import("@tauri-apps/plugin-process");
   await relaunch();
 }
 

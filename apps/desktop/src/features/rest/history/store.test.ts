@@ -49,6 +49,8 @@ describe("history store", () => {
       drafts: [],
       historyDbIds: new Map(),
       draftDbIds: new Map(),
+      historyKeyIndex: new Map(),
+      draftKeyIndex: new Map(),
       loaded: false,
     });
   });
@@ -112,6 +114,8 @@ describe("history store", () => {
       drafts: [],
       historyDbIds: new Map(),
       draftDbIds: new Map(),
+      historyKeyIndex: new Map(),
+      draftKeyIndex: new Map(),
     });
     await useHistoryStore.getState().load();
     expect(useHistoryStore.getState().history).toHaveLength(1);
@@ -147,6 +151,8 @@ describe("history store", () => {
       drafts: [],
       historyDbIds: new Map(),
       draftDbIds: new Map(),
+      historyKeyIndex: new Map(),
+      draftKeyIndex: new Map(),
     });
     await useHistoryStore.getState().load();
     expect(useHistoryStore.getState().drafts).toHaveLength(1);
@@ -184,6 +190,8 @@ describe("history store", () => {
       drafts: [],
       historyDbIds: new Map(),
       draftDbIds: new Map(),
+      historyKeyIndex: new Map(),
+      draftKeyIndex: new Map(),
     });
     await useHistoryStore.getState().load();
     const draft = useHistoryStore.getState().drafts[0];

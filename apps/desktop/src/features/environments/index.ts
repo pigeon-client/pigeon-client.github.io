@@ -1,4 +1,3 @@
-export { EnvModal } from "./components/EnvModal";
 export { EnvSelector } from "./components/EnvSelector";
 export { VarAuthEditor } from "./components/VarAuthEditor";
 export { VarKeyValueEditor } from "./components/VarKeyValueEditor";

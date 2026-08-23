@@ -1,7 +1,9 @@
+import { invoke } from "@tauri-apps/api/core";
 import { createNumTableStore, numTable } from "@/core/persistence";
+import { waitForTauriIpc } from "@/shared/lib/platform";
 import type { RequestConfig } from "@/shared/types";
 import type { FolderConfig } from "../../collections/types";
-import type { HistoryItem } from "../types";
+import type { HistoryItem, ResponseSnapshot } from "../types";
 
 const DRAFTS = "pg_browser_drafts";
 const HISTORY = "pg_browser_history";
@@ -75,6 +77,26 @@ export const saveHistory = historyStore.save;
 export const getHistory = historyStore.getAll;
 export const updateHistory = historyStore.update;
 export const deleteHistoryEntry = historyStore.remove;
+
+export async function getHistorySnapshot(id: number): Promise<ResponseSnapshot | undefined> {
+  if (await waitForTauriIpc()) {
+    const json = await invoke<string | null>("get_history_snapshot", { id });
+    return json ? (JSON.parse(json) as ResponseSnapshot) : undefined;
+  }
+  return numTable.all<HistoryItem>(HISTORY).find((r) => r.id === id)?.data.snapshot;
+}
+
+export async function pruneHistoryBefore(beforeTimestamp: number): Promise<void> {
+  if (await waitForTauriIpc()) {
+    await invoke("prune_history_before", { timestamp: beforeTimestamp });
+    return;
+  }
+  const rows = numTable.all<HistoryItem>(HISTORY);
+  numTable.replaceAll(
+    HISTORY,
+    rows.filter((row) => row.data.timestamp >= beforeTimestamp),
+  );
+}
 
 /* ── Draft auto-folder headers/auth (localStorage, both builds — like environments'
    globals: a small keyed blob, not worth a Rust/SQLite table). Keyed by the

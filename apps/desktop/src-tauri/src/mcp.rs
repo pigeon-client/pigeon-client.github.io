@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::http::{build_custom_client, get_http_client, read_body_capped, RequestHeader};
+use crate::http::{read_body_capped, RequestHeader};
 
 /// Raw HTTP response for the MCP transport — the frontend owns all JSON-RPC
 /// framing (mirrors the `HttpClient` port pattern in `features/execution`).
@@ -33,9 +33,9 @@ pub async fn send_mcp_request(
     // Same client options as send_api_request, except TLS verification is
     // always on for MCP — there is no legitimate self-signed-MCP use case yet.
     let client = if follow && proxy_trim.is_none() {
-        get_http_client().clone()
+        crate::http::get_http_client().clone()
     } else {
-        build_custom_client(follow, true, proxy_trim)?
+        crate::http::get_or_build_client(follow, true, proxy_trim, false)?
     };
     let mut builder = client
         .post(&url)

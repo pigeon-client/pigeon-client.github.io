@@ -207,7 +207,7 @@ describe("generateCurl — standard form", () => {
     expect(curl).toContain("--data-binary '@file.bin'");
   });
 
-  it("never exports a body for GET (RFC 9110) so re-import stays GET", () => {
+  it("never exports a body for GET (RFC 9110) so re-import stays GET", async () => {
     const curl = generateCurl(
       baseConfig({
         method: "GET",
@@ -218,7 +218,7 @@ describe("generateCurl — standard form", () => {
     expect(curl).toBe("curl 'https://api.example.com/users'");
     expect(curl).not.toContain("--data-raw");
     expect(curl).not.toContain("-X");
-    const parsed = parseCurl(curl);
+    const parsed = await parseCurl(curl);
     expect(parsed?.method).toBe("GET");
   });
 
@@ -237,8 +237,8 @@ describe("generateCurl — standard form", () => {
 });
 
 describe("parseCurl", () => {
-  it("parses method, url, headers and body", () => {
-    const parsed = parseCurl(
+  it("parses method, url, headers and body", async () => {
+    const parsed = await parseCurl(
       `curl -X POST https://api.example.com/users -H 'Content-Type: application/json' -d '{"name":"Ada"}'`,
     );
     expect(parsed).not.toBeNull();
@@ -248,12 +248,12 @@ describe("parseCurl", () => {
     expect(parsed?.body).toContain("Ada");
   });
 
-  it("returns null for non-curl input", () => {
-    expect(parseCurl("not a curl command")).toBeNull();
+  it("returns null for non-curl input", async () => {
+    expect(await parseCurl("not a curl command")).toBeNull();
   });
 
-  it("keeps query params visible in the URL bar", () => {
-    const parsed = parseCurl(
+  it("keeps query params visible in the URL bar", async () => {
+    const parsed = await parseCurl(
       `curl -X GET "https://api.example.com/users?page=1&limit=10" -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json"`,
     );
     expect(parsed).not.toBeNull();
@@ -266,7 +266,7 @@ describe("parseCurl", () => {
 });
 
 describe("cURL round-trip", () => {
-  it("survives config → curl → config for method/url/header/body", () => {
+  it("survives config → curl → config for method/url/header/body", async () => {
     const config = baseConfig({
       method: "POST",
       url: "https://api.example.com/users",
@@ -278,7 +278,7 @@ describe("cURL round-trip", () => {
     const curl = generateCurl(config);
     expect(curl.startsWith("curl")).toBe(true);
 
-    const parsed = parseCurl(curl);
+    const parsed = await parseCurl(curl);
     expect(parsed?.method).toBe("POST");
     expect(parsed?.url).toContain("api.example.com/users");
     expect(parsed?.headers?.some((h) => h.key === "X-Token" && h.value === "abc")).toBe(true);

@@ -10,6 +10,8 @@ export interface ResponseSnapshot {
   /** Absent for binary/media responses — those store metadata (content-type + size) only. */
   bodyText?: string;
   truncated: boolean;
+  /** List queries omit `bodyText`; fetch via `getHistorySnapshot(id)`. */
+  bodyOmitted?: boolean;
 }
 
 export interface HistoryItem {

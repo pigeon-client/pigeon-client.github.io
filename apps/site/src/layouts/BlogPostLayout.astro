@@ -1,17 +1,34 @@
 ---
 import SiteLayout from "./SiteLayout.astro";
+import { BlogCodeCopy } from "../components/BlogCodeCopy";
+import { BlogGetPigeon } from "../components/BlogGetPigeon";
 import { SITE_NAME, SITE_URL } from "../lib/constants";
+import "../styles/blog.css";
 
 interface Props {
   title: string;
   description: string;
+  seoTitle?: string;
   canonicalPath: string;
   pubDate: Date;
   updatedDate?: Date;
+  heroImage?: string;
+  heroImageAlt?: string;
 }
 
-const { title, description, canonicalPath, pubDate, updatedDate } = Astro.props;
-const pageTitle = `${title} · ${SITE_NAME} Blog`;
+const {
+  title,
+  description,
+  seoTitle,
+  canonicalPath,
+  pubDate,
+  updatedDate,
+  heroImage,
+  heroImageAlt = "",
+} = Astro.props;
+const pageTitle = seoTitle ?? `${title} | ${SITE_NAME} API Client Blog`;
+const imageUrl = heroImage ? new URL(heroImage, SITE_URL).href : undefined;
+const origin = Astro.url.origin;
 
 const articleJsonLd = {
   "@context": "https://schema.org",
@@ -21,8 +38,28 @@ const articleJsonLd = {
   datePublished: pubDate.toISOString(),
   dateModified: (updatedDate ?? pubDate).toISOString(),
   author: { "@type": "Organization", name: SITE_NAME },
-  publisher: { "@type": "Organization", name: SITE_NAME },
+  publisher: {
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+  },
   mainEntityOfPage: new URL(canonicalPath, SITE_URL).href,
+  ...(imageUrl ? { image: [imageUrl] } : {}),
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_URL}/blog` },
+    {
+      "@type": "ListItem",
+      position: 3,
+      name: title,
+      item: new URL(canonicalPath, SITE_URL).href,
+    },
+  ],
 };
 ---
 
@@ -31,10 +68,12 @@ const articleJsonLd = {
   description={description}
   canonicalPath={canonicalPath}
   ogType="article"
+  ogImage={heroImage}
   bodyClass="page-blog"
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
   </Fragment>
   <main class="site-main">
     <article class="blog-post wrap">
@@ -53,10 +92,26 @@ const articleJsonLd = {
           </time>
         </p>
         <p class="blog-dek">{description}</p>
+        {
+          heroImage && (
+            <figure class="blog-hero">
+              <img
+                src={heroImage}
+                alt={heroImageAlt}
+                width={1920}
+                height={1080}
+                decoding="async"
+                fetchpriority="high"
+              />
+            </figure>
+          )
+        }
       </header>
       <div class="blog-prose">
         <slot />
       </div>
+      <BlogGetPigeon client:load origin={origin} />
+      <BlogCodeCopy client:load />
     </article>
   </main>
 </SiteLayout>

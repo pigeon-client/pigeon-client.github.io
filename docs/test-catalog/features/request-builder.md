@@ -35,7 +35,7 @@ Components covered: `TabStrip`, `UrlBar`, `MethodSelector`, `RequestEditor`, `He
 | EL-RB-023 | Add header button | `button:has-text("Add header")` | KeyValueEditor.tsx |
 | EL-RB-024 | Body word wrap toggle | `[data-testid="body-wrap-toggle"]` | BodyEditor.tsx |
 | EL-RB-025 | Body find bar | `[data-testid="body-find"]` | FindBar.tsx |
-| EL-RB-026 | Try an example CTA | `button:has-text("Try an example")` | EmptyRequestState.tsx |
+| EL-RB-026 | Load a sample CTA | `[data-testid="empty-try-example"]` | EmptyRequestState.tsx |
 | EL-RB-027 | Auth type selector | `[data-testid="auth-type-select"]` | VarAuthEditor.tsx *(planned)* |
 | EL-RB-028 | Body type JSON | `[data-testid="body-type-json"]` | BodyTypeSelector.tsx *(planned)* |
 | EL-RB-029 | Body type Form Data | `[data-testid="body-type-form-data"]` | BodyTypeSelector.tsx *(planned)* |
@@ -84,7 +84,7 @@ Components covered: `TabStrip`, `UrlBar`, `MethodSelector`, `RequestEditor`, `He
 
 ---
 
-### TC-RB-003 — Clear URL shows empty state with Try an example only
+### TC-RB-003 — Clear URL shows empty state with Load a sample
 
 | Field | Value |
 |-------|-------|
@@ -95,7 +95,7 @@ Components covered: `TabStrip`, `UrlBar`, `MethodSelector`, `RequestEditor`, `He
 | Step | Action | Element | Expected |
 |------|--------|---------|----------|
 | 1 | clear | EL-RB-001 | URL empty |
-| 2 | verify | EL-RB-026 | "Try an example" CTA visible |
+| 2 | verify | EL-RB-026 | "Load a sample" CTA visible |
 | 3 | verify | EL-RB-014 | Editor hidden or empty state covers pane |
 
 ---

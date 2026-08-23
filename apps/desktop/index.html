@@ -2,13 +2,89 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pigeon - API Tester</title>
+    <title>Pigeon</title>
+    <!-- Apply stored theme before first paint so the skeleton matches the app. Default is dark. -->
+    <script>
+      try {
+        if (localStorage.getItem("pg_theme") !== "light") {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (_) {}
+    </script>
+    <!-- Token-colored chrome (docs/tokens.md) — visible while the JS bundle parses. -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0b0c0f;
+        color: #e8eaef;
+      }
+      html:not(.dark),
+      html:not(.dark) body {
+        background: oklch(0.9818 0.0054 95.0986);
+        color: oklch(0.3438 0.0269 95.7226);
+      }
+      #root {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .pg-skel {
+        display: flex;
+        flex: 1;
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+      .pg-skel-side {
+        width: 220px;
+        flex-shrink: 0;
+        background: #0e1013;
+        border-right: 1px solid #23262e;
+      }
+      html:not(.dark) .pg-skel-side {
+        background: oklch(0.9663 0.008 98.8792);
+        border-right-color: oklch(0.8847 0.0069 97.3627);
+      }
+      .pg-skel-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        background: #0b0c0f;
+      }
+      html:not(.dark) .pg-skel-main {
+        background: oklch(0.9818 0.0054 95.0986);
+      }
+      .pg-skel-bar {
+        height: 38px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        background: #15181d;
+        border-bottom: 1px solid #23262e;
+        font: 700 1.02rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: -0.02em;
+      }
+      html:not(.dark) .pg-skel-bar {
+        background: oklch(0.9665 0.0067 97.3521);
+        border-bottom-color: oklch(0.8847 0.0069 97.3627);
+      }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="pg-skel" aria-hidden="true">
+        <div class="pg-skel-side"></div>
+        <div class="pg-skel-main">
+          <div class="pg-skel-bar">Pigeon</div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

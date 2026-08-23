@@ -1,6 +1,4 @@
-use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 mod db;
 mod http;
@@ -14,12 +12,6 @@ mod macos;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let (db_conn, migration_status) = db::init_db();
-    let db_state = db::DbState {
-        conn: std::sync::Mutex::new(db_conn),
-        migration_status,
-    };
-
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
@@ -41,10 +33,8 @@ pub fn run() {
                 }
             }
         })
-        .manage(db_state)
-        .manage(Arc::new(sse::SseCancelState {
-            flags: Mutex::new(HashMap::new()),
-        }))
+        .manage(db::DbState::default())
+        .manage(Arc::new(sse::SseCancelState::default()))
         .manage(Arc::new(oauth::OauthLoopbackState::default()))
         .invoke_handler(tauri::generate_handler![
             http::send_api_request,
@@ -57,10 +47,14 @@ pub fn run() {
             db::history::update_history,
             db::history::add_history,
             db::history::get_history,
+            db::history::get_history_snapshot,
             db::history::delete_history,
+            db::history::prune_history_before,
             db::collections::save_collection,
             db::collections::get_collections,
             db::collections::update_collection,
+            db::collections::patch_collection_name,
+            db::collections::patch_collection_config,
             db::collections::delete_collection,
             db::get_migration_status,
             oauth::oauth_http_request,

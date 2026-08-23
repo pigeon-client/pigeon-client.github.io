@@ -6,7 +6,12 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
   site: "https://trypigeon.dev",
   trailingSlash: "never",
-  integrations: [react(), sitemap()],
+  integrations: [
+    react(),
+    sitemap({
+      filter: (page) => !page.endsWith("/404"),
+    }),
+  ],
   vite: {
     plugins: [tailwindcss()],
   },

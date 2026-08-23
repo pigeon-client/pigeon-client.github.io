@@ -19,9 +19,12 @@ const { Content } = await render(post);
 <BlogPostLayout
   title={post.data.title}
   description={post.data.description}
+  seoTitle={post.data.seoTitle}
   canonicalPath={`/blog/${post.id}`}
   pubDate={post.data.pubDate}
   updatedDate={post.data.updatedDate}
+  heroImage={post.data.heroImage}
+  heroImageAlt={post.data.heroImageAlt}
 >
   <Content />
 </BlogPostLayout>

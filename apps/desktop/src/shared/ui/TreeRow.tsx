@@ -1,6 +1,6 @@
 import { METHOD_COLORS } from "@pigeon/ui";
 import { ChevronRight, FilePlus, FolderPlus, Pencil, Settings2, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 /* ── File tree row ── */
 interface TreeRowProps {
@@ -57,7 +57,6 @@ export function TreeRow({
   onAddRequest,
   onEditConfig,
 }: TreeRowProps) {
-  const [hovered, setHovered] = useState(false);
   const mc = method ? (METHOD_COLORS[method] ?? METHOD_COLORS.GET) : undefined;
 
   const depthGuides = useMemo(() => {
@@ -95,8 +94,7 @@ export function TreeRow({
           onClick?.();
         }
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className={dropActive ? "group" : "group hover:bg-[var(--bg-elevated)]"}
       style={{
         display: "flex",
         alignItems: "center",
@@ -109,9 +107,7 @@ export function TreeRow({
         opacity: isDragging ? 0.45 : 1,
         background: dropActive
           ? "color-mix(in oklch, var(--primary) 18%, transparent)"
-          : hovered
-            ? "var(--bg-elevated)"
-            : "transparent",
+          : "transparent",
         outline: dropActive ? "1px solid var(--primary)" : undefined,
         outlineOffset: dropActive ? -1 : undefined,
         transition: "background 0.1s",
@@ -186,43 +182,41 @@ export function TreeRow({
               {count}
             </span>
           )}
-          {hovered && (
-            <span style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: 4 }}>
-              {onAddRequest && (
-                <RowIconButton label="Add current request" onClick={onAddRequest}>
-                  <FilePlus size={12} />
-                </RowIconButton>
-              )}
-              {onAddFolder && (
-                <RowIconButton label="Add folder" onClick={onAddFolder}>
-                  <FolderPlus size={12} />
-                </RowIconButton>
-              )}
-              {onEditConfig && (
-                <RowIconButton
-                  label={hasConfig ? "Folder headers/auth (set)" : "Folder headers/auth"}
-                  onClick={onEditConfig}
-                >
-                  <span className="relative flex items-center justify-center">
-                    <Settings2 size={12} />
-                    {hasConfig && (
-                      <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                  </span>
-                </RowIconButton>
-              )}
-              {onRename && (
-                <RowIconButton label="Rename" onClick={onRename}>
-                  <Pencil size={11} />
-                </RowIconButton>
-              )}
-              {onDelete && (
-                <RowIconButton label="Delete" danger onClick={onDelete}>
-                  <Trash2 size={11} />
-                </RowIconButton>
-              )}
-            </span>
-          )}
+          <span className="ml-1 hidden items-center gap-[3px] group-hover:flex">
+            {onAddRequest && (
+              <RowIconButton label="Add current request" onClick={onAddRequest}>
+                <FilePlus size={12} />
+              </RowIconButton>
+            )}
+            {onAddFolder && (
+              <RowIconButton label="Add folder" onClick={onAddFolder}>
+                <FolderPlus size={12} />
+              </RowIconButton>
+            )}
+            {onEditConfig && (
+              <RowIconButton
+                label={hasConfig ? "Folder headers/auth (set)" : "Folder headers/auth"}
+                onClick={onEditConfig}
+              >
+                <span className="relative flex items-center justify-center">
+                  <Settings2 size={12} />
+                  {hasConfig && (
+                    <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
+                  )}
+                </span>
+              </RowIconButton>
+            )}
+            {onRename && (
+              <RowIconButton label="Rename" onClick={onRename}>
+                <Pencil size={11} />
+              </RowIconButton>
+            )}
+            {onDelete && (
+              <RowIconButton label="Delete" danger onClick={onDelete}>
+                <Trash2 size={11} />
+              </RowIconButton>
+            )}
+          </span>
         </>
       ) : (
         <>
@@ -284,16 +278,18 @@ export function TreeRow({
           >
             {meta}
           </span>
-          {onRename && hovered && (
-            <RowIconButton label="Rename" onClick={onRename}>
-              <Pencil size={11} />
-            </RowIconButton>
-          )}
-          {onDelete && hovered && (
-            <RowIconButton label="Delete" danger onClick={onDelete}>
-              <Trash2 size={11} />
-            </RowIconButton>
-          )}
+          <span className="ml-1 hidden items-center gap-[3px] group-hover:flex">
+            {onRename && (
+              <RowIconButton label="Rename" onClick={onRename}>
+                <Pencil size={11} />
+              </RowIconButton>
+            )}
+            {onDelete && (
+              <RowIconButton label="Delete" danger onClick={onDelete}>
+                <Trash2 size={11} />
+              </RowIconButton>
+            )}
+          </span>
         </>
       )}
     </div>

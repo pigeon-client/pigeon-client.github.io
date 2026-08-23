@@ -3,8 +3,10 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   cancelSseStream,
   cancelTabStream,
+  EMPTY_BODY,
   getTabStreamId,
   isEventStreamContentType,
+  utf8Text,
 } from "@/core/http";
 import {
   classifyResponse,
@@ -22,8 +24,8 @@ import { HeadersTable } from "./HeadersTable";
 import { StatusLine } from "./StatusLine";
 import type { BodyViewMode } from "./types";
 
-function formatBody(body: number[]): string {
-  return new TextDecoder().decode(new Uint8Array(body));
+function formatBody(body: Uint8Array): string {
+  return utf8Text(body);
 }
 
 function getStatusColor(status: number): string {
@@ -53,13 +55,13 @@ function ResponseContent({
   setToast,
   downloadBlob,
   codeLanguage,
-  request,
+  onCopyCurl,
   sseActive,
   onStopSse,
 }: {
   response: NonNullable<ReturnType<typeof useTabStore.getState>["tabs"][number]["response"]>;
   statusColor: string;
-  bodyBytes: number[];
+  bodyBytes: Uint8Array;
   bodyStr: string;
   respKind: ResponseKind;
   responseSize: number;
@@ -74,7 +76,7 @@ function ResponseContent({
   setToast: (v: boolean) => void;
   downloadBlob: (filename: string) => void;
   codeLanguage: string;
-  request?: ReturnType<typeof useTabStore.getState>["tabs"][number]["request"];
+  onCopyCurl: () => void;
   sseActive: boolean;
   onStopSse?: () => void;
 }) {
@@ -96,29 +98,30 @@ function ResponseContent({
     toastTimer.current = setTimeout(() => setToast(false), 3000);
   };
 
-  const getFormattedCode = () => {
-    if (respKind === "json" || respKind === "ndjson") {
-      if (respKind === "ndjson") {
-        // Pretty each JSON line independently when possible.
-        return bodyStr
-          .split("\n")
-          .map((line) => {
-            const t = line.trim();
-            if (!t) return line;
-            try {
-              return JSON.stringify(JSON.parse(t), null, 2);
-            } catch {
-              return line;
-            }
-          })
-          .join("\n\n");
-      }
+  const formattedCode = useMemo(() => {
+    if (respKind === "ndjson") {
+      return bodyStr
+        .split("\n")
+        .map((line) => {
+          const t = line.trim();
+          if (!t) return line;
+          try {
+            return JSON.stringify(JSON.parse(t), null, 2);
+          } catch {
+            return line;
+          }
+        })
+        .join("\n\n");
+    }
+    if (respKind === "json") {
       try {
         return JSON.stringify(JSON.parse(bodyStr), null, 2);
-      } catch {}
+      } catch {
+        return bodyStr;
+      }
     }
     return bodyStr;
-  };
+  }, [bodyStr, respKind]);
 
   const isSse =
     response.sse ||
@@ -136,7 +139,7 @@ function ResponseContent({
   const [findOpen, setFindOpen] = useState(false);
   const [findQuery, setFindQuery] = useState("");
   const [findIndex, setFindIndex] = useState(0);
-  const findSourceText = effectiveView === "raw" ? bodyStr : getFormattedCode();
+  const findSourceText = effectiveView === "raw" ? bodyStr : formattedCode;
   const responseMatches = useMemo(
     () => findMatches(findSourceText, findQuery),
     [findSourceText, findQuery],
@@ -167,7 +170,7 @@ function ResponseContent({
         wordWrap={wordWrap}
         setWordWrap={setWordWrap}
         onCopyCurl={() => {
-          navigator.clipboard.writeText(request ? generateCurl(request) : "");
+          onCopyCurl();
           showToast();
         }}
         onDownload={() => downloadBlob(`response-${Date.now()}`)}
@@ -248,7 +251,7 @@ function ResponseContent({
               effectiveView={effectiveView}
               isHtml={isHtml}
               bodyStr={bodyStr}
-              getFormattedCode={getFormattedCode}
+              formattedCode={formattedCode}
             />
           )}
         </div>
@@ -342,7 +345,6 @@ function ResponseContent({
 export const ResponsePanel = memo(function ResponsePanel({ tabId }: { tabId: string }) {
   const response = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.response ?? null);
   const isLoading = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.isLoading ?? false);
-  const request = useTabStore((s) => s.tabs.find((t) => t.id === tabId)?.request);
 
   const [activeTab, setActiveTab] = useState<"body" | "headers">("body");
   const [bodyView, setBodyView] = useState<BodyViewMode>("pretty");
@@ -350,7 +352,7 @@ export const ResponsePanel = memo(function ResponsePanel({ tabId }: { tabId: str
   const [toast, setToast] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const bodyBytes = response?.body ?? [];
+  const bodyBytes = response?.body ?? EMPTY_BODY;
   const bodyStr = useMemo(() => formatBody(bodyBytes), [bodyBytes]);
   const respKind = response ? classifyResponse(response.contentType) : "other";
   const responseSize = bodyBytes.length;
@@ -380,7 +382,7 @@ export const ResponsePanel = memo(function ResponsePanel({ tabId }: { tabId: str
   };
 
   const downloadBlob = (filename: string) => {
-    const blob = new Blob([new Uint8Array(bodyBytes)], { type: response?.contentType ?? "" });
+    const blob = new Blob([bodyBytes], { type: response?.contentType ?? "" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -462,7 +464,10 @@ export const ResponsePanel = memo(function ResponsePanel({ tabId }: { tabId: str
           setToast={setToast}
           downloadBlob={downloadBlob}
           codeLanguage={codeLanguage}
-          request={request}
+          onCopyCurl={() => {
+            const request = useTabStore.getState().tabs.find((t) => t.id === tabId)?.request;
+            navigator.clipboard.writeText(request ? generateCurl(request) : "");
+          }}
           sseActive={sseLive}
           onStopSse={cancelRequest}
         />

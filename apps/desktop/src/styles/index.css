@@ -1,5 +1,5 @@
-/* ── Fonts (must come before @import "tailwindcss" per biome rule) ── */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap");
+/* System / token fonts — do not @import remote CSS (CSP blocks it, and it
+   stalls first paint). Must stay before @import "tailwindcss" per biome. */
 @import "tailwindcss";
 @import "@pigeon/ui/tokens.css";
 

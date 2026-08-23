@@ -4,9 +4,12 @@ import { memo, useEffect, useRef, useState } from "react";
 import {
   beginTabStream,
   cancelTabStream,
+  EMPTY_BODY,
   endTabStream,
   UnresolvedVariablesError,
 } from "@/core/http";
+// biome-ignore lint/style/noRestrictedImports: onboarding barrel also exports Onboarding, which loads the sample via firstRequest
+import { notifyOnboardingSend } from "@/features/onboarding/lib/store";
 import { useInputCaretAnchor } from "@/shared/lib/inputCaretPosition";
 import { formatTokenTooltip, getTokenPreview } from "@/shared/lib/tokenPreview";
 import { extractEndpoint, splitUrlQuery } from "@/shared/lib/url";
@@ -88,6 +91,7 @@ export const UrlBar = memo(function UrlBar({ tabId }: { tabId: string }) {
 
   const handleSend = async () => {
     if (!request.url) return;
+    notifyOnboardingSend();
     // Production guardrail: confirm destructive methods against a prod env (R4b).
     if (
       prod &&
@@ -115,7 +119,7 @@ export const UrlBar = memo(function UrlBar({ tabId }: { tabId: string }) {
             status: meta.status,
             statusText: meta.statusText,
             headers: meta.headers,
-            body: [],
+            body: EMPTY_BODY,
             contentType: meta.contentType,
             responseTime: 0,
             size: 0,
@@ -147,7 +151,7 @@ export const UrlBar = memo(function UrlBar({ tabId }: { tabId: string }) {
           status: 0,
           statusText: "Request Failed",
           headers: {},
-          body: [],
+          body: EMPTY_BODY,
           contentType: "text/plain",
           responseTime: 0,
           size: 0,
@@ -234,134 +238,140 @@ export const UrlBar = memo(function UrlBar({ tabId }: { tabId: string }) {
   };
 
   return (
-    <div className="flex min-w-0 flex-col border-b border-border bg-background px-4 py-2.5">
+    <div
+      data-testid="url-bar"
+      className="flex min-w-0 flex-col border-b border-border bg-background px-4 py-2.5"
+    >
       <div className="flex min-w-0 items-center gap-2">
-        <MethodSelector
-          method={request.method}
-          open={methodOpen}
-          setOpen={setMethodOpen}
-          dropdownRef={dropdownRef}
-          onSelect={(m) => updateTabRequest(tabId, { method: m })}
-        />
+        <div data-testid="url-bar-compose" className="flex min-w-0 flex-1 items-center gap-2">
+          <MethodSelector
+            method={request.method}
+            open={methodOpen}
+            setOpen={setMethodOpen}
+            dropdownRef={dropdownRef}
+            onSelect={(m) => updateTabRequest(tabId, { method: m })}
+          />
 
-        {/* URL input — min-w-0 so long URLs shrink inside the flex row instead of blowing the panel out */}
-        <div className="relative min-w-0 flex-1">
-          <div className="relative flex h-9 w-full min-w-0 items-center overflow-hidden rounded bg-card">
-            <input
-              ref={urlInputRef}
-              type="text"
-              data-testid="url-input"
-              value={request.url}
-              onPaste={(e) => {
-                const text = e.clipboardData.getData("text");
-                if (!text) return;
-                const trimmed = text.trim();
+          {/* URL input — min-w-0 so long URLs shrink inside the flex row instead of blowing the panel out */}
+          <div className="relative min-w-0 flex-1">
+            <div className="relative flex h-9 w-full min-w-0 items-center overflow-hidden rounded bg-card">
+              <input
+                ref={urlInputRef}
+                type="text"
+                data-testid="url-input"
+                value={request.url}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData("text");
+                  if (!text) return;
+                  const trimmed = text.trim();
 
-                // cURL command → parse method/headers/body/params
-                if (trimmed.toLowerCase().startsWith("curl ")) {
-                  const parsed = parseCurl(text);
-                  if (parsed?.url) {
+                  // cURL command → parse method/headers/body/params
+                  if (trimmed.toLowerCase().startsWith("curl ")) {
+                    void parseCurl(text).then((parsed) => {
+                      if (parsed?.url) {
+                        updateTabRequest(tabId, parsed);
+                        if (!nameLocked) {
+                          setTabName(tabId, extractEndpoint(parsed.url));
+                        }
+                      }
+                    });
                     e.preventDefault();
-                    updateTabRequest(tabId, parsed);
-                    if (!nameLocked) {
-                      setTabName(tabId, extractEndpoint(parsed.url));
-                    }
-                  }
-                  return;
-                }
-
-                // Plain URL with a query string → sync into Params (default paste
-                // then flows through onChange). Guard: spaced pastes are left alone.
-                if (trimmed.includes("?") && !/\s/.test(trimmed)) {
-                  e.preventDefault();
-                  applyUrl(trimmed);
-                }
-              }}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw.trimStart().toLowerCase().startsWith("curl ")) {
-                  const parsed = parseCurl(raw);
-                  if (parsed?.url) {
-                    updateTabRequest(tabId, parsed);
-                    if (!nameLocked && parsed.url) {
-                      setTabName(tabId, extractEndpoint(parsed.url));
-                    }
                     return;
                   }
-                }
-                applyUrl(raw);
-                va.detect(raw, e.target.selectionStart ?? raw.length);
-              }}
-              onScroll={syncUrlOverlayScroll}
-              onSelect={syncUrlOverlayScroll}
-              onWheel={(e) => {
-                // Text inputs often ignore trackpad/wheel; scroll horizontally so
-                // the caret (and synced overlay) can reach the end of long URLs.
-                const el = e.currentTarget;
-                if (el.scrollWidth <= el.clientWidth) return;
-                const dx =
-                  Math.abs(e.deltaX) >= Math.abs(e.deltaY) ? e.deltaX : e.shiftKey ? e.deltaY : 0;
-                if (dx === 0) return;
-                const max = el.scrollWidth - el.clientWidth;
-                const next = Math.max(0, Math.min(max, el.scrollLeft + dx));
-                if (next === el.scrollLeft) return;
-                e.preventDefault();
-                el.scrollLeft = next;
-                syncUrlOverlayScroll();
-              }}
-              onKeyUp={(e) => {
-                syncUrlOverlayScroll();
-                va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0);
-              }}
-              onClick={(e) => {
-                syncUrlOverlayScroll();
-                va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0);
-              }}
-              onBlur={() => setTimeout(va.close, 120)}
-              onKeyDown={(e) => {
-                if (va.onKeyDownField(e, e.currentTarget)) {
+
+                  // Plain URL with a query string → sync into Params (default paste
+                  // then flows through onChange). Guard: spaced pastes are left alone.
+                  if (trimmed.includes("?") && !/\s/.test(trimmed)) {
+                    e.preventDefault();
+                    applyUrl(trimmed);
+                  }
+                }}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw.trimStart().toLowerCase().startsWith("curl ")) {
+                    void parseCurl(raw).then((parsed) => {
+                      if (parsed?.url) {
+                        updateTabRequest(tabId, parsed);
+                        if (!nameLocked && parsed.url) {
+                          setTabName(tabId, extractEndpoint(parsed.url));
+                        }
+                      }
+                    });
+                  }
+                  applyUrl(raw);
+                  va.detect(raw, e.target.selectionStart ?? raw.length);
+                }}
+                onScroll={syncUrlOverlayScroll}
+                onSelect={syncUrlOverlayScroll}
+                onWheel={(e) => {
+                  // Text inputs often ignore trackpad/wheel; scroll horizontally so
+                  // the caret (and synced overlay) can reach the end of long URLs.
+                  const el = e.currentTarget;
+                  if (el.scrollWidth <= el.clientWidth) return;
+                  const dx =
+                    Math.abs(e.deltaX) >= Math.abs(e.deltaY) ? e.deltaX : e.shiftKey ? e.deltaY : 0;
+                  if (dx === 0) return;
+                  const max = el.scrollWidth - el.clientWidth;
+                  const next = Math.max(0, Math.min(max, el.scrollLeft + dx));
+                  if (next === el.scrollLeft) return;
+                  e.preventDefault();
+                  el.scrollLeft = next;
                   syncUrlOverlayScroll();
-                  return;
-                }
-              }}
-              placeholder="https://api.example.com/endpoint"
-              spellCheck={false}
-              autoCorrect="off"
-              autoCapitalize="off"
-              autoComplete="off"
-              className="absolute inset-0 z-raised bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
-            />
-            <div
-              ref={urlOverlayRef}
-              aria-hidden
-              className="pointer-events-none absolute inset-0 z-raised overflow-hidden px-3"
-            >
-              <div className="flex h-full min-w-max items-center whitespace-nowrap font-mono text-code">
-                {renderUrlSegments(request.url)}
+                }}
+                onKeyUp={(e) => {
+                  syncUrlOverlayScroll();
+                  va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0);
+                }}
+                onClick={(e) => {
+                  syncUrlOverlayScroll();
+                  va.detect(e.currentTarget.value, e.currentTarget.selectionStart ?? 0);
+                }}
+                onBlur={() => setTimeout(va.close, 120)}
+                onKeyDown={(e) => {
+                  if (va.onKeyDownField(e, e.currentTarget)) {
+                    syncUrlOverlayScroll();
+                    return;
+                  }
+                }}
+                placeholder="https://api.example.com/endpoint"
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                autoComplete="off"
+                className="absolute inset-0 z-raised bg-transparent px-3 font-mono text-code text-transparent caret-foreground outline-none"
+              />
+              <div
+                ref={urlOverlayRef}
+                aria-hidden
+                className="pointer-events-none absolute inset-0 z-raised overflow-hidden px-3"
+              >
+                <div className="flex h-full min-w-max items-center whitespace-nowrap font-mono text-code">
+                  {renderUrlSegments(request.url)}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* {{variable}} autocomplete */}
-          {va.open && varMenuAnchor && (
-            <VarSuggestions
-              items={va.items}
-              index={va.index}
-              onHover={va.setIndex}
-              onPick={(name) => {
-                const el = urlInputRef.current;
-                if (el) {
-                  va.commitField(name, el);
-                  syncUrlOverlayScroll();
-                }
-              }}
-              style={{
-                position: "fixed",
-                top: varMenuAnchor.top,
-                left: varMenuAnchor.left,
-              }}
-            />
-          )}
+            {/* {{variable}} autocomplete */}
+            {va.open && varMenuAnchor && (
+              <VarSuggestions
+                items={va.items}
+                index={va.index}
+                onHover={va.setIndex}
+                onPick={(name) => {
+                  const el = urlInputRef.current;
+                  if (el) {
+                    va.commitField(name, el);
+                    syncUrlOverlayScroll();
+                  }
+                }}
+                style={{
+                  position: "fixed",
+                  top: varMenuAnchor.top,
+                  left: varMenuAnchor.left,
+                }}
+              />
+            )}
+          </div>
         </div>
 
         {/* Send — red in production (R4b); becomes Cancel while a request is in flight */}
@@ -371,7 +381,7 @@ export const UrlBar = memo(function UrlBar({ tabId }: { tabId: string }) {
           disabled={!(isLoading || request.url)}
           data-send-btn
           title={isLoading ? "Cancel request" : prod ? `Production: ${activeEnv?.name}` : undefined}
-          className="gap-1.5 w-[80px] shrink-0 h-9"
+          className="h-9 w-[80px] shrink-0 gap-1.5"
         >
           {isLoading ? (
             <>

@@ -20,10 +20,20 @@ export function downloadLatestUrl(arch: MacDownloadArch): string {
   return `${SITE_URL}/download/latest/${arch}`;
 }
 
-export const DEFAULT_DESCRIPTION =
-  "Pigeon auto-names your tabs, files every request by domain, and writes your history for you. A free, open-source, native API client for macOS. No account, no cloud, no busywork.";
-export const DEFAULT_TITLE =
-  "Pigeon — The API Client That Organizes Itself | Free Open-Source Postman Alternative";
+/** Hero / brand tagline — single source for UI, SEO, and JSON-LD. */
+export const HERO_HEADLINE = "Built for Real Developers, Not Showoffs.";
+/** Substring of `HERO_HEADLINE` rendered with the hero accent style. */
+export const HERO_HEADLINE_ACCENT = "Real Developers";
+export const HERO_SUB = "Focus on building. Pigeon keeps your APIs organized.";
+
+/** Browser tab / OG title — brand voice first; competitor keywords stay on /postman-alternative + FAQ. */
+export const DEFAULT_TITLE = `${HERO_HEADLINE.replace(/\.$/, "")} | ${SITE_NAME}`;
+export const DEFAULT_DESCRIPTION = `${HERO_HEADLINE} ${HERO_SUB} Free open-source macOS API client — no account, no cloud.`;
+
+/** Default Open Graph image (1200×630-ish PNG). */
+export const DEFAULT_OG_IMAGE = "/og/home.webp";
+export const BLOG_OG_IMAGE = "/og/blog.webp";
+export const POSTMAN_ALT_OG_IMAGE = "/og/postman-alternative.webp";
 
 /**
  * Install one-liner for the current host.

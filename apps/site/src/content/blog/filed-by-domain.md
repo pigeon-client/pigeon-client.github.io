@@ -1,31 +1,35 @@
 ---
 title: "How Pigeon files every request by domain"
-description: "No Save dialog. No empty Untitled tabs. Send a request and Pigeon names the tab and files history under the host — automatically."
+description: "Learn how Pigeon auto-files every API request under the host — api.stripe.com, localhost, and more. No Save dialog. A local-first Postman alternative for macOS."
+seoTitle: "How Pigeon Files API Requests by Domain | Free Postman Alternative"
 pubDate: 2026-08-09
+heroImage: /blog/filed-by-domain.webp
+heroImageAlt: "Modern History sidebar with api.stripe.com selected, plus api.github.com, localhost:3000, and staging.myapp.dev."
 ---
 
-Most API clients treat organization as homework. You send a request, then you rename the tab, then you drag it into a folder, then you remember to save.
+In most API clients, sending a request is step one. Then you rename the tab. Then you pick a folder. Then you remember to hit Save — if you remember at all.
 
-Pigeon flips that.
+Pigeon does the filing while you work.
 
-## Send first, organize for free
+## What happens when you send
 
 1. Type a URL and hit send.
-2. The tab name becomes the path (or stays locked if you renamed it).
-3. History groups under the **domain** — `api.example.com`, not a flat dump of timestamps.
+2. The tab picks up the path as its name (unless you already renamed it — then it stays put).
+3. History lands under the **domain**, not a long list of timestamps.
 
-You keep momentum. Pigeon keeps the paper trail.
+So a morning of work might look like this in the sidebar:
 
-## Why domain grouping
+- `api.stripe.com` — `/v1/charges`, `/v1/customers`
+- `api.github.com` — `/repos/.../pulls`
+- `jsonplaceholder.typicode.com` — quick test calls
+- `localhost:3000` — whatever you're building locally
 
-When you debug, you think in hosts: staging vs production, Stripe vs your own API. Filing by domain matches that mental model without another taxonomy to maintain.
+Same hosts you already think in. No extra folders to invent.
 
-Collections still exist when you want a deliberate tree. History is the automatic layer — always on, always local.
+## Why by domain?
 
-## Try it
+When something breaks, you usually hunt by host: staging vs production, Stripe vs your own API, local vs the box in the cloud. Filing history that way matches how you look for things.
 
-```bash
-curl -fsSL https://trypigeon.dev/install.sh | sh
-```
+Want a hand-built tree? Collections are still there — save with `⌘S` when you mean it. History is the automatic layer. Always on. Always local.
 
-Send three requests to different hosts. Watch the sidebar fill itself.
+Send three requests to different hosts — say Stripe, GitHub, and `localhost`. Watch the sidebar sort itself.

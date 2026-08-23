@@ -3,9 +3,20 @@ import { expect, type Page } from "@playwright/test";
 /** Open the app with a clean localStorage (fresh browser DB per test). */
 export async function openApp(page: Page) {
   await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem("pg_onboarding_complete", "true");
+  });
   await page.reload();
   await expect(page.getByTestId("url-input")).toBeVisible();
+}
+
+/** First launch with onboarding still pending (do not use for ordinary specs). */
+export async function openAppForOnboarding(page: Page) {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(page.getByTestId("onboarding")).toBeVisible();
 }
 
 // Inactive tabs stay mounted (display:none), so testids duplicate across tabs.

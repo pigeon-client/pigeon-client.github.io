@@ -13,6 +13,8 @@ export interface VarSuggestion {
   value?: string;
 }
 
+type IndexedVar = VarSuggestion & { nameLower: string };
+
 export interface VarCommitOptions {
   /** When true, wrap the token in JSON quotes if not already inside a string. */
   wrapJsonString?: boolean;
@@ -26,24 +28,35 @@ export function useVarAutocomplete() {
   const activeEnv = useEnvStore(selectActiveEnv);
   const globals = useEnvStore((s) => s.globals);
 
-  const varNames = useMemo<VarSuggestion[]>(() => {
-    const out: VarSuggestion[] = [];
+  const varNames = useMemo<IndexedVar[]>(() => {
+    const out: IndexedVar[] = [];
     const seen = new Set<string>();
     for (const v of activeEnv?.variables ?? []) {
       const k = v.key.trim();
       if (v.enabled && k && !seen.has(k)) {
         seen.add(k);
-        out.push({ name: k, kind: "env", value: v.secret ? "•••••" : v.value });
+        out.push({
+          name: k,
+          nameLower: k.toLowerCase(),
+          kind: "env",
+          value: v.secret ? "•••••" : v.value,
+        });
       }
     }
     for (const v of globals) {
       const k = v.key.trim();
       if (v.enabled && k && !seen.has(k)) {
         seen.add(k);
-        out.push({ name: k, kind: "global", value: v.secret ? "•••••" : v.value });
+        out.push({
+          name: k,
+          nameLower: k.toLowerCase(),
+          kind: "global",
+          value: v.secret ? "•••••" : v.value,
+        });
       }
     }
-    for (const t of RANDOM_TOKENS) out.push({ name: t, kind: "random" });
+    for (const t of RANDOM_TOKENS)
+      out.push({ name: t, nameLower: t.toLowerCase(), kind: "random" });
     return out;
   }, [activeEnv, globals]);
 
@@ -54,16 +67,18 @@ export function useVarAutocomplete() {
   // Proper search: substring match, but names that *start with* the query rank
   // first (stable within each group), so typing "em" surfaces "email" up top.
   const items = ac
-    ? varNames
-        .filter((v) => v.name.toLowerCase().includes(ac.query.toLowerCase()))
-        .map((v, i) => ({ v, i }))
-        .sort((a, b) => {
-          const q = ac.query.toLowerCase();
-          const ap = a.v.name.toLowerCase().startsWith(q) ? 0 : 1;
-          const bp = b.v.name.toLowerCase().startsWith(q) ? 0 : 1;
-          return ap - bp || a.i - b.i;
-        })
-        .map(({ v }) => v)
+    ? (() => {
+        const q = ac.query.toLowerCase();
+        return varNames
+          .filter((v) => v.nameLower.includes(q))
+          .map((v, i) => ({ v, i }))
+          .sort((a, b) => {
+            const ap = a.v.nameLower.startsWith(q) ? 0 : 1;
+            const bp = b.v.nameLower.startsWith(q) ? 0 : 1;
+            return ap - bp || a.i - b.i;
+          })
+          .map(({ v }) => ({ name: v.name, kind: v.kind, value: v.value }));
+      })()
     : [];
 
   /** Open the popover when the caret sits inside an unclosed `{{…`. Reset the

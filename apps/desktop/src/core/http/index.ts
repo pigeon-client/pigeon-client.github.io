@@ -1,4 +1,5 @@
 export { type Resolver, UnresolvedVariablesError } from "@/core/interpolation";
+export { EMPTY_BODY, utf8Bytes, utf8Text } from "./lib/bytes";
 export type { SseEvent, SseMeta } from "./lib/sse";
 export {
   isEventStreamContentType,

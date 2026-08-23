@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { EMPTY_BODY } from "@/core/http";
 import { useTabStore } from "./store";
 
 // The store auto-creates one tab at import. Reset to a single fresh tab per test.
@@ -76,7 +77,7 @@ describe("duplicateTab", () => {
       status: 200,
       statusText: "OK",
       headers: {},
-      body: [],
+      body: EMPTY_BODY,
       responseTime: 1,
       size: 0,
       contentType: "application/json",
@@ -135,5 +136,35 @@ describe("reorderTabs", () => {
     const state = useTabStore.getState();
     expect(state.tabs.map((tab) => tab.id)).toEqual([third, first, second]);
     expect(state.activeTabId).toBe(second);
+  });
+});
+
+describe("response body LRU", () => {
+  it("drops inactive tab bodies once more than 8 responses are retained", () => {
+    const s = useTabStore.getState();
+    const ids = [s.tabs[0].id];
+    for (let i = 0; i < 8; i++) ids.push(useTabStore.getState().addTab());
+
+    const body = new Uint8Array([1]);
+    const response = {
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      body,
+      contentType: "text/plain",
+      responseTime: 1,
+      size: 1,
+    };
+    for (const id of ids) {
+      useTabStore.getState().updateTabResponse(id, response);
+    }
+
+    const tabs = useTabStore.getState().tabs;
+    const evicted = tabs.filter((t) => t.response?.bodyEvicted);
+    expect(evicted.length).toBeGreaterThan(0);
+    const activeId = useTabStore.getState().activeTabId;
+    const active = tabs.find((t) => t.id === activeId);
+    expect(active?.response?.bodyEvicted).toBeFalsy();
+    expect(active?.response?.body.length).toBe(1);
   });
 });

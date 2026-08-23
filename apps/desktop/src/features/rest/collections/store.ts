@@ -4,6 +4,8 @@ import type { RequestConfig } from "@/shared/types";
 import {
   deleteCollection as dbDeleteCollection,
   getCollections as dbGetCollections,
+  patchCollectionConfig as dbPatchCollectionConfig,
+  patchCollectionName as dbPatchCollectionName,
   saveCollection as dbSaveCollection,
   updateCollection as dbUpdateCollection,
 } from "./services/db";
@@ -315,7 +317,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     const collection = state.collections.find((c) => c.id === id);
     if (!collection) return;
     const updated = { ...collection, name: trimmed };
-    await dbUpdateCollection(updated);
+    await dbPatchCollectionName(id, trimmed);
     set((s) => ({
       collections: s.collections.map((c) => (c.id === id ? updated : c)),
     }));
@@ -451,7 +453,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     if (!collection) return;
 
     const updated = { ...collection, config };
-    await dbUpdateCollection(updated);
+    await dbPatchCollectionConfig(collectionId, config);
     set((s) => ({
       collections: s.collections.map((c) => (c.id === collectionId ? updated : c)),
     }));

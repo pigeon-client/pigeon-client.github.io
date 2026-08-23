@@ -20,7 +20,7 @@ export const HERO_DEMO_STEPS: HeroDemoStep[] = [
     id: "launch",
     label: "Launch",
     ico: "⚡",
-    help: "Watch the dock — Pigeon opens in 0.3s",
+    help: "Watch the dock — Pigeon opens fast",
     target: "#demo-dock-icon",
     arrow: "top",
     highlight: ["#demo-dock-icon"],

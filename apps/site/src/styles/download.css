@@ -1,9 +1,26 @@
 /* ===== Download ===== */
+#download {
+  scroll-margin-top: 62px;
+}
 .dl-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-top: 46px;
+}
+#download .lead {
+  margin-bottom: 46px;
+}
+#download .dl-grid {
+  grid-template-columns: 1fr;
+  max-width: 640px;
+  margin-top: 0;
+  margin-inline: auto;
+}
+@media (max-width: 640px) {
+  #download .lead {
+    margin-bottom: 28px;
+  }
 }
 @media (max-width: 760px) {
   .dl-grid {

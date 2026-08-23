@@ -3,12 +3,11 @@
 
   <h1>Pigeon</h1>
 
-  <p><strong>Never save a request again.</strong></p>
+  <p><strong>Built for Real Developers, Not Showoffs.</strong></p>
 
   <p>
-    Pigeon names, files, and remembers every request automatically — and finds any of them in
-    3 keystrokes.<br />
-    Local, private, no account.
+    Focus on building. Pigeon keeps your APIs organized.<br />
+    Free open-source macOS API client — no account, no cloud.
   </p>
 
   <p>

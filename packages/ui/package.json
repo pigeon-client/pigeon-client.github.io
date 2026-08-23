@@ -7,8 +7,10 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./button": "./src/components/button.tsx",
     "./tokens.css": "./src/styles/tokens.css"
   },
+  "sideEffects": false,
   "peerDependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

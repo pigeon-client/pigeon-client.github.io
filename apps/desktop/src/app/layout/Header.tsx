@@ -92,8 +92,13 @@ export function Header({
     <div className="relative z-sticky grid h-11 flex-none grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-background/95 px-3.5 backdrop-blur">
       {/* Brand */}
       <div className="flex items-center gap-2.5 justify-self-start">
-        <img src={pigeonLogo} alt="Pigeon" className="h-7 w-7 rounded object-contain" />
-        <span className="text-sm font-semibold tracking-tight max-sm:hidden">Pigeon</span>
+        <img
+          src={pigeonLogo}
+          alt=""
+          aria-hidden="true"
+          className="h-7 w-7 rounded object-contain"
+        />
+        <span className="text-[1.02rem] font-bold tracking-tight">Pigeon</span>
       </div>
 
       {/* Search — truly centered between equal side columns */}

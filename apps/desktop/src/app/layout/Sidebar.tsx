@@ -1,6 +1,6 @@
 import { Button, TabButton } from "@pigeon/ui";
 import { PanelLeftClose, Plus, Upload } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { CollectionsTab } from "@/features/rest/collections";
 import type { HistoryItem } from "@/features/rest/history";
 import {
@@ -24,40 +24,41 @@ interface SidebarProps {
 export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
   const addTab = useTabStore((s) => s.addTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const loadTabRequest = useTabStore((s) => s.loadTabRequest);
   const updateTabResponse = useTabStore((s) => s.updateTabResponse);
-  const activeTabId = useTabStore((s) => s.activeTabId);
-  const tabs = useTabStore((s) => s.tabs);
 
   const historyCount = useHistoryStore((s) => s.history.length);
   const draftsCount = useHistoryStore((s) => s.drafts.length);
 
   const [activeTab, setActiveTabState] = useState<SidebarTab>("draft");
 
-  const activeRequest = useMemo(() => {
-    const tab = tabs.find((t) => t.id === activeTabId);
-    return tab?.request.url ? tab.request : null;
-  }, [activeTabId, tabs]);
-
   const loadRequest = (
     req: RequestConfig,
     origin?: { collectionId: string; nodeId: string },
   ): string => {
+    const {
+      tabs,
+      addTab: add,
+      loadTabRequest: load,
+      setActiveTab: activate,
+    } = useTabStore.getState();
     if (tabs.length === 1 && !tabs[0].request.url) {
-      loadTabRequest(tabs[0].id, req, origin ?? null);
-      setActiveTab(tabs[0].id);
+      load(tabs[0].id, req, origin ?? null);
+      activate(tabs[0].id);
       return tabs[0].id;
     }
-    const id = addTab();
-    loadTabRequest(id, req, origin ?? null);
-    setActiveTab(id);
+    const id = add();
+    load(id, req, origin ?? null);
+    activate(id);
     return id;
   };
 
   /* History rows carry a response snapshot — render it immediately, no re-send. */
   const loadHistoryItem = (item: HistoryItem) => {
-    const id = loadRequest(item.request);
-    updateTabResponse(id, snapshotToApiResponse(item));
+    void (async () => {
+      const hydrated = await useHistoryStore.getState().ensureSnapshot(item);
+      const id = loadRequest(hydrated.request);
+      updateTabResponse(id, snapshotToApiResponse(hydrated));
+    })();
   };
 
   const handleNewRequest = () => {
@@ -114,9 +115,7 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
         )}
         {activeTab === "history" && <HistoryTab search={search} onLoad={loadHistoryItem} />}
         {activeTab === "draft" && <DraftTab search={search} onSelect={loadRequest} />}
-        {activeTab === "collections" && (
-          <CollectionsTab search={search} activeRequest={activeRequest} onSelect={loadRequest} />
-        )}
+        {activeTab === "collections" && <CollectionsTab search={search} onSelect={loadRequest} />}
       </div>
 
       {/* Status bar */}

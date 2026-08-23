@@ -1,4 +1,4 @@
-import hljs from "highlight.js";
+import hljs from "./hljsSetup";
 
 /** hljs-highlight `code` as `language` (or auto-detect when omitted), HTML-escaping
  *  as a fallback if highlighting itself throws. */

@@ -1,4 +1,3 @@
-export { ImportModal } from "./components/ImportModal";
 export { generateCurl } from "./lib/generateCurl";
 export type {
   Auth,

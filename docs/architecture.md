@@ -118,6 +118,7 @@ Product specs: [features/README.md](./features/README.md).
 
 | Path | Role |
 |------|------|
+| `features/onboarding` | First-run REST overlay; `pg_onboarding_complete` |
 | `features/command-palette` | `⌘K` search; `CommandPalette`, `searchPalette` |
 | `features/environments` | Envs + `{{var}}`; `useEnvStore`, `EnvModal`, `replaceEnvVariables` |
 | `features/mcp` | Retained MCP bench + OAuth (UI coming-soon) |

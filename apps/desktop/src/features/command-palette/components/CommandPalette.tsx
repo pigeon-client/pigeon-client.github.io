@@ -1,6 +1,6 @@
 import { cn, Input, Menu, Modal } from "@pigeon/ui";
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ApiResponse } from "@/core/http";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { EMPTY_BODY, utf8Bytes } from "@/core/http";
 import { methodTextClass } from "@/shared/lib/httpMethod";
 import { useCollectionStore } from "../../rest/collections/store";
 import { useHistoryStore } from "../../rest/history/store";
@@ -24,17 +24,13 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const history = useHistoryStore((s) => s.history);
   const drafts = useHistoryStore((s) => s.drafts);
   const collections = useCollectionStore((s) => s.collections);
-  const tabs = useTabStore((s) => s.tabs);
-  const addTab = useTabStore((s) => s.addTab);
-  const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const loadTabRequest = useTabStore((s) => s.loadTabRequest);
-  const updateTabResponse = useTabStore((s) => s.updateTabResponse);
 
   const items = useMemo(
     () => collectPaletteItems({ history, drafts, collections }),
     [history, drafts, collections],
   );
-  const results = useMemo(() => searchPalette(items, query), [items, query]);
+  const deferredQuery = useDeferredValue(query);
+  const results = useMemo(() => searchPalette(items, deferredQuery), [items, deferredQuery]);
 
   useEffect(() => {
     setIndex(0);
@@ -54,38 +50,54 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   }, [index]);
 
   const openResult = (result: PaletteResult) => {
-    const req = result.request;
-    const origin =
-      result.source === "collection" && result.collectionId && result.nodeId
-        ? { collectionId: result.collectionId, nodeId: result.nodeId }
-        : null;
-    let id: string;
-    if (tabs.length === 1 && !tabs[0].request.url) {
-      id = tabs[0].id;
-      loadTabRequest(id, req, origin);
-    } else {
-      id = addTab();
-      loadTabRequest(id, req, origin);
-    }
-    setActiveTab(id);
-    if (result.source === "history" && result.snapshot) {
-      const snap = result.snapshot;
-      const response: ApiResponse = {
-        status: snap.status,
-        statusText: snap.statusText,
-        headers: {},
-        body: snap.bodyText ? Array.from(new TextEncoder().encode(snap.bodyText)) : [],
-        contentType: snap.contentType,
-        responseTime: result.responseTime ?? 0,
-        size: snap.size,
-        resolvedUrl: result.url,
-        sentHeaders: {},
-        snapshotTimestamp: result.timestamp,
-        snapshotTruncated: snap.truncated,
-      };
-      updateTabResponse(id, response);
-    }
-    onClose();
+    void (async () => {
+      const req = result.request;
+      const origin =
+        result.source === "collection" && result.collectionId && result.nodeId
+          ? { collectionId: result.collectionId, nodeId: result.nodeId }
+          : null;
+      const { tabs, addTab, loadTabRequest, setActiveTab, updateTabResponse } =
+        useTabStore.getState();
+      let id: string;
+      if (tabs.length === 1 && !tabs[0].request.url) {
+        id = tabs[0].id;
+        loadTabRequest(id, req, origin);
+      } else {
+        id = addTab();
+        loadTabRequest(id, req, origin);
+      }
+      setActiveTab(id);
+      if (result.source === "history") {
+        const parsedId = Number(result.key.slice("history:".length));
+        const historyItem = useHistoryStore
+          .getState()
+          .history.find(
+            (h) =>
+              (h.id !== undefined && h.id === parsedId) ||
+              (h.timestamp === result.timestamp && h.url === result.url),
+          );
+        const hydrated = historyItem
+          ? await useHistoryStore.getState().ensureSnapshot(historyItem)
+          : null;
+        const snap = hydrated?.snapshot ?? result.snapshot;
+        if (snap) {
+          updateTabResponse(id, {
+            status: snap.status,
+            statusText: snap.statusText,
+            headers: {},
+            body: snap.bodyText ? utf8Bytes(snap.bodyText) : EMPTY_BODY,
+            contentType: snap.contentType,
+            responseTime: result.responseTime ?? 0,
+            size: snap.size,
+            resolvedUrl: result.url,
+            sentHeaders: {},
+            snapshotTimestamp: result.timestamp,
+            snapshotTruncated: snap.truncated,
+          });
+        }
+      }
+      onClose();
+    })();
   };
 
   return (

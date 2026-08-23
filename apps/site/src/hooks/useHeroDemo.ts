@@ -82,16 +82,35 @@ export function useHeroDemo(appRef: RefObject<HTMLElement | null>, onFirstComple
     const intervals: number[] = [];
     let firstDone = false;
     const STEP_HOLD = 2200;
+    let inView = false;
+    const shouldRun = () => inView && !document.hidden;
 
     const after = (ms: number, fn: () => void) => {
-      timers.push(window.setTimeout(fn, ms));
+      timers.push(
+        window.setTimeout(() => {
+          if (!shouldRun()) {
+            after(200, fn);
+            return;
+          }
+          fn();
+        }, ms),
+      );
     };
 
     const setUrl = (preLen: number, pathLen: number, caret: boolean) => {
-      urlEl.innerHTML =
-        URL_PRE.slice(0, preLen) +
-        (pathLen > 0 ? `<span class="path">${URL_PATH.slice(0, pathLen)}</span>` : "") +
-        (caret ? '<span class="caret"></span>' : "");
+      urlEl.replaceChildren();
+      urlEl.append(URL_PRE.slice(0, preLen));
+      if (pathLen > 0) {
+        const path = document.createElement("span");
+        path.className = "path";
+        path.textContent = URL_PATH.slice(0, pathLen);
+        urlEl.append(path);
+      }
+      if (caret) {
+        const caretEl = document.createElement("span");
+        caretEl.className = "caret";
+        urlEl.append(caretEl);
+      }
     };
 
     const closeFolder = () => {
@@ -167,8 +186,8 @@ export function useHeroDemo(appRef: RefObject<HTMLElement | null>, onFirstComple
       tabEl.classList.remove("show");
       tabNameEl.textContent = "Untitled Request";
       setUrl(0, 0, true);
-      launchFast.style.width = "0%";
-      launchSlow.style.width = "0%";
+      launchFast.style.transform = "scaleX(0)";
+      launchSlow.style.transform = "scaleX(0)";
       launchEl.classList.remove("hide");
       app.classList.remove("booted");
       dockWrap.classList.remove("clicked");
@@ -186,11 +205,11 @@ export function useHeroDemo(appRef: RefObject<HTMLElement | null>, onFirstComple
       });
       after(750, () => launchCompare.classList.add("show"));
       after(950, () => {
-        launchFast.style.width = "100%";
+        launchFast.style.transform = "scaleX(1)";
       });
       after(1250, () => {
-        // ~0.3s / 3.4s when Pigeon finishes — proportional to measured median.
-        launchSlow.style.width = "9%";
+        // Bar widths stay relative (fast vs slow) — no fixed timing claims.
+        launchSlow.style.transform = "scaleX(0.09)";
       });
       after(1800, () => launchHeadline.classList.add("show"));
       after(STEP_HOLD, () => {
@@ -290,6 +309,10 @@ export function useHeroDemo(appRef: RefObject<HTMLElement | null>, onFirstComple
     };
 
     const loop = () => {
+      if (!shouldRun()) {
+        after(400, loop);
+        return;
+      }
       resetDemo();
       after(600, () => {
         boot(() => {
@@ -309,12 +332,13 @@ export function useHeroDemo(appRef: RefObject<HTMLElement | null>, onFirstComple
     };
 
     let started = false;
+
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !started) {
+        inView = entries[0]?.isIntersecting ?? false;
+        if (inView && !started) {
           started = true;
           loop();
-          io.disconnect();
         }
       },
       { threshold: 0.2 },

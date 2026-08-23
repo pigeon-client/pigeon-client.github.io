@@ -14,20 +14,8 @@
 @import "./tokens.css";
 @import "./base.css";
 @import "./header.css";
-@import "./hero-intro.css";
-@import "./hero-demo.css";
-@import "./organize.css";
-@import "./features.css";
-@import "./why.css";
-@import "./open-source.css";
-@import "./download.css";
 @import "./footer.css";
-@import "./stats-band.css";
-@import "./why-story-demos.css";
-@import "./organize-story-demos.css";
-@import "./moments.css";
 @import "./responsive.css";
-@import "./blog.css";
 
 /* Tailwind 4 doesn't auto-scan outside this app's own tree — without this,
    classes used only inside @pigeon/ui component source render unstyled. */

@@ -703,7 +703,7 @@ export const restRemainingEdgeCases: TestCase[] = [
         order: 1,
         action: "click",
         elementId: "EL-TAB-004",
-        expected: "Still one tab; empty Untitled + Try an example",
+        expected: "Still one tab; empty Untitled + Load a sample",
       },
       { order: 2, action: "verify", elementId: "EL-RB-026", expected: "Empty-request CTA visible" },
     ],

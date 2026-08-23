@@ -1,8 +1,8 @@
 import type { RequestConfig } from "@/shared/types";
-import { importCurl } from "./curlImporter";
 import { requestModelToRequestConfig } from "./requestModelAdapter";
 
-export function parseCurl(input: string): Partial<RequestConfig> | null {
-  const model = importCurl(input);
+export async function parseCurl(input: string): Promise<Partial<RequestConfig> | null> {
+  const { importCurl } = await import("./curlImporter");
+  const model = await importCurl(input);
   return model ? requestModelToRequestConfig(model) : null;
 }

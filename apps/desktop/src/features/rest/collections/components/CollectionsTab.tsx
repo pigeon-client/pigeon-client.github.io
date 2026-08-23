@@ -284,7 +284,7 @@ function CollectionTreeNode({
   depth,
   onSelect,
   collectionId,
-  activeRequest,
+  canAddRequest,
   dropTargetKey,
   onRenameNode,
   onAddFolder,
@@ -296,7 +296,7 @@ function CollectionTreeNode({
   depth: number;
   onSelect: (req: RequestConfig, nodeId: string) => void;
   collectionId?: string;
-  activeRequest?: RequestConfig | null;
+  canAddRequest: boolean;
   dropTargetKey: string | null;
   onRenameNode: (collectionId: string, node: CollectionNode) => void;
   onAddFolder: (collectionId: string, parentId: string | null) => void;
@@ -329,8 +329,9 @@ function CollectionTreeNode({
     setExpanded(true);
   };
   const handleAddRequest = () => {
-    if (!activeRequest?.url) return;
-    onAddRequest(collectionId, node.id, activeRequest);
+    const tab = getActiveHttpRequest();
+    if (!tab) return;
+    onAddRequest(collectionId, node.id, tab);
     setExpanded(true);
   };
 
@@ -344,7 +345,7 @@ function CollectionTreeNode({
         dropActive={dropTargetKey === folderDropKey}
         onToggle={() => setExpanded((e) => !e)}
         onExpand={expandFolder}
-        onAddRequest={activeRequest?.url ? handleAddRequest : undefined}
+        onAddRequest={canAddRequest ? handleAddRequest : undefined}
         onAddFolder={handleAddFolder}
         onEditConfig={() => onEditFolderConfig(collectionId, node)}
         onRename={() => onRenameNode(collectionId, node)}
@@ -358,7 +359,7 @@ function CollectionTreeNode({
             depth={depth + 1}
             onSelect={onSelect}
             collectionId={collectionId}
-            activeRequest={activeRequest}
+            canAddRequest={canAddRequest}
             dropTargetKey={dropTargetKey}
             onRenameNode={onRenameNode}
             onAddFolder={onAddFolder}
@@ -371,16 +372,24 @@ function CollectionTreeNode({
   );
 }
 
+function getActiveHttpRequest(): RequestConfig | null {
+  const { tabs, activeTabId } = useTabStore.getState();
+  const tab = tabs.find((t) => t.id === activeTabId);
+  return tab?.request.url ? tab.request : null;
+}
+
 /* ── Collections tab content ── */
 export function CollectionsTab({
   search,
-  activeRequest,
   onSelect,
 }: {
   search: string;
-  activeRequest: RequestConfig | null;
   onSelect: (req: RequestConfig, origin?: { collectionId: string; nodeId: string }) => void;
 }) {
+  const canAddActiveRequest = useTabStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return Boolean(tab?.request.url);
+  });
   const collections = useCollectionStore((s) => s.collections);
   const loaded = useCollectionStore((s) => s.loaded);
   const addCollection = useCollectionStore((s) => s.addCollection);
@@ -734,8 +743,11 @@ export function CollectionsTab({
                   })
                 }
                 onAddRequest={
-                  activeRequest?.url
-                    ? () => openAddRequestModal(id, null, activeRequest)
+                  canAddActiveRequest
+                    ? () => {
+                        const req = getActiveHttpRequest();
+                        if (req) openAddRequestModal(id, null, req);
+                      }
                     : undefined
                 }
                 onAddFolder={() => openAddFolderModal(id, null)}
@@ -754,7 +766,7 @@ export function CollectionsTab({
                     depth={1}
                     onSelect={(req, nodeId) => selectWithInheritance(id, req, nodeId)}
                     collectionId={collection.id}
-                    activeRequest={activeRequest}
+                    canAddRequest={canAddActiveRequest}
                     dropTargetKey={dropTargetKey}
                     onRenameNode={openRenameNodeModal}
                     onAddFolder={openAddFolderModal}

@@ -1,9 +1,12 @@
 use futures_util::StreamExt;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
-use tauri::{AppHandle, State};
+use tauri::{State, WebviewWindow};
+
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 use crate::sse::{self, CancelHandle, SseCancelState};
 
@@ -21,7 +24,11 @@ pub(crate) async fn read_body_capped(
     response: reqwest::Response,
     cancel: Option<&CancelHandle>,
 ) -> Result<(Vec<u8>, bool), String> {
-    let mut body_acc = Vec::<u8>::new();
+    let cap_hint = response
+        .content_length()
+        .map(|n| (n as usize).min(MAX_RESPONSE_BYTES))
+        .unwrap_or(0);
+    let mut body_acc = Vec::<u8>::with_capacity(cap_hint);
     let mut truncated = false;
     let mut stream = response.bytes_stream();
     while let Some(item) = stream.next().await {
@@ -75,19 +82,20 @@ pub(crate) fn get_http_client() -> &'static reqwest::Client {
     })
 }
 
-/// Build a one-off client that honours the user-requested overrides for
-/// redirect policy, TLS verification, and proxy. Used when the defaults
-/// need to be changed on a per-request basis (reqwest only exposes those
-/// knobs on `ClientBuilder`, not on `RequestBuilder`).
-pub(crate) fn build_custom_client(
+fn build_client(
     follow_redirects: bool,
     ssl_verify: bool,
     proxy_url: Option<&str>,
+    sse: bool,
 ) -> Result<reqwest::Client, String> {
     let mut builder = reqwest::Client::builder()
-        .timeout(Duration::from_secs(60))
+        .timeout(if sse {
+            Duration::from_secs(60 * 60 * 24)
+        } else {
+            Duration::from_secs(60)
+        })
         .connect_timeout(Duration::from_secs(10))
-        .pool_max_idle_per_host(32)
+        .pool_max_idle_per_host(if sse { 8 } else { 32 })
         .pool_idle_timeout(Duration::from_secs(90))
         .tcp_keepalive(Duration::from_secs(30))
         .danger_accept_invalid_certs(!ssl_verify);
@@ -107,12 +115,92 @@ pub(crate) fn build_custom_client(
         .map_err(|e| format!("Failed to build HTTP client: {}", e))
 }
 
+#[derive(Clone, Hash, Eq, PartialEq)]
+struct ClientKey {
+    follow: bool,
+    verify: bool,
+    proxy: String,
+    sse: bool,
+}
+
+/// Cached reqwest clients keyed by redirect / TLS / proxy / SSE timeout.
+/// The default pooled client (`get_http_client`) covers the common case.
+pub(crate) fn get_or_build_client(
+    follow_redirects: bool,
+    ssl_verify: bool,
+    proxy_url: Option<&str>,
+    sse: bool,
+) -> Result<reqwest::Client, String> {
+    if !sse && follow_redirects && ssl_verify && proxy_url.is_none() {
+        return Ok(get_http_client().clone());
+    }
+    let key = ClientKey {
+        follow: follow_redirects,
+        verify: ssl_verify,
+        proxy: proxy_url.unwrap_or("").to_string(),
+        sse,
+    };
+    static CLIENTS: OnceLock<Mutex<HashMap<ClientKey, reqwest::Client>>> = OnceLock::new();
+    let cache = CLIENTS.get_or_init(|| Mutex::new(HashMap::new()));
+    {
+        let map = cache.lock().map_err(|e| e.to_string())?;
+        if let Some(c) = map.get(&key) {
+            return Ok(c.clone());
+        }
+    }
+    let client = build_client(follow_redirects, ssl_verify, proxy_url, sse)?;
+    let mut map = cache.lock().map_err(|e| e.to_string())?;
+    Ok(map.entry(key).or_insert(client).clone())
+}
+
+fn serialize_body_b64<S: serde::Serializer>(bytes: &[u8], s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_str(&STANDARD.encode(bytes))
+}
+
+fn deserialize_body_b64<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Vec<u8>, D::Error> {
+    let s = String::deserialize(d)?;
+    STANDARD
+        .decode(s.as_bytes())
+        .map_err(serde::de::Error::custom)
+}
+
+fn looks_like_base64(s: &str) -> bool {
+    let t = s.trim();
+    t.len() >= 4
+        && t.len() % 4 == 0
+        && t.bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'+' || b == b'/' || b == b'=')
+}
+
+/// Binary uploads arrive as standard base64. Older clients sent comma-joined u8 decimals.
+fn decode_binary_body(body_content: &str) -> Vec<u8> {
+    if looks_like_base64(body_content) {
+        if let Ok(bytes) = STANDARD.decode(body_content.trim()) {
+            return bytes;
+        }
+    }
+    if body_content.contains(',') {
+        if let Ok(bytes) = body_content
+            .split(',')
+            .map(|s| s.trim().parse::<u8>())
+            .collect::<Result<Vec<u8>, _>>()
+        {
+            return bytes;
+        }
+    }
+    body_content.as_bytes().to_vec()
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ApiResponse {
     pub status: u16,
     pub status_text: String,
     pub headers: HashMap<String, String>,
+    #[serde(
+        serialize_with = "serialize_body_b64",
+        deserialize_with = "deserialize_body_b64"
+    )]
     pub body: Vec<u8>,
     pub content_type: String,
     pub response_time: u64,
@@ -136,28 +224,43 @@ struct MultipartField {
     file_name: Option<String>,
     mime: Option<String>,
     bytes: Option<Vec<u8>>,
+    #[serde(default)]
+    bytes_b64: Option<String>,
 }
 
 fn parse_http_method(method: &str) -> Result<reqwest::Method, String> {
-    match method.to_uppercase().as_str() {
-        "GET" => Ok(reqwest::Method::GET),
-        "POST" => Ok(reqwest::Method::POST),
-        "PUT" => Ok(reqwest::Method::PUT),
-        "PATCH" => Ok(reqwest::Method::PATCH),
-        "DELETE" => Ok(reqwest::Method::DELETE),
-        "HEAD" => Ok(reqwest::Method::HEAD),
-        "OPTIONS" => Ok(reqwest::Method::OPTIONS),
-        // RFC 10008 — extension method (safe + idempotent + body).
-        "QUERY" => reqwest::Method::from_bytes(b"QUERY").map_err(|e| e.to_string()),
-        other => Err(format!("Unsupported HTTP method: {}", other)),
+    if method.eq_ignore_ascii_case("GET") {
+        return Ok(reqwest::Method::GET);
     }
+    if method.eq_ignore_ascii_case("POST") {
+        return Ok(reqwest::Method::POST);
+    }
+    if method.eq_ignore_ascii_case("PUT") {
+        return Ok(reqwest::Method::PUT);
+    }
+    if method.eq_ignore_ascii_case("PATCH") {
+        return Ok(reqwest::Method::PATCH);
+    }
+    if method.eq_ignore_ascii_case("DELETE") {
+        return Ok(reqwest::Method::DELETE);
+    }
+    if method.eq_ignore_ascii_case("HEAD") {
+        return Ok(reqwest::Method::HEAD);
+    }
+    if method.eq_ignore_ascii_case("OPTIONS") {
+        return Ok(reqwest::Method::OPTIONS);
+    }
+    if method.eq_ignore_ascii_case("QUERY") {
+        return reqwest::Method::from_bytes(b"QUERY").map_err(|e| e.to_string());
+    }
+    Err(format!("Unsupported HTTP method: {}", method))
 }
 
 fn method_allows_body(method: &reqwest::Method) -> bool {
     method != reqwest::Method::GET && method != reqwest::Method::HEAD
 }
 
-/// Binary / file body types — wire format is comma-joined u8 decimals from the UI.
+/// Binary / file body types — wire format is standard base64 from the UI.
 fn is_binary_body_type(body_type: &str) -> bool {
     matches!(
         body_type,
@@ -176,19 +279,28 @@ fn is_binary_body_type(body_type: &str) -> bool {
 fn header_wants_sse(headers: &[RequestHeader]) -> bool {
     headers.iter().any(|h| {
         h.key.eq_ignore_ascii_case("accept")
-            && h.value.to_ascii_lowercase().contains("text/event-stream")
+            && contains_ignore_ascii_case(&h.value, "text/event-stream")
     })
 }
 
 fn content_type_is_sse(content_type: &str) -> bool {
-    content_type
-        .to_ascii_lowercase()
-        .contains("text/event-stream")
+    contains_ignore_ascii_case(content_type, "text/event-stream")
+}
+
+fn contains_ignore_ascii_case(haystack: &str, needle: &str) -> bool {
+    let n = needle.as_bytes();
+    if n.is_empty() || haystack.len() < n.len() {
+        return false;
+    }
+    haystack
+        .as_bytes()
+        .windows(n.len())
+        .any(|w| w.eq_ignore_ascii_case(n))
 }
 
 #[tauri::command]
 pub async fn send_api_request(
-    app: AppHandle,
+    window: WebviewWindow,
     cancel_state: State<'_, Arc<SseCancelState>>,
     method: String,
     url: String,
@@ -211,7 +323,7 @@ pub async fn send_api_request(
             cancel_state
                 .flags
                 .lock()
-                .await
+                .map_err(|e| e.to_string())?
                 .insert(sid.to_string(), handle.clone());
             Some(handle)
         }
@@ -225,31 +337,8 @@ pub async fn send_api_request(
         .map(|s| s.trim())
         .filter(|s| !s.is_empty());
 
-    // Long-lived SSE needs no overall request timeout (connect timeout still applies).
     let wants_sse = header_wants_sse(&headers);
-    let client = if wants_sse {
-        let mut builder = reqwest::Client::builder()
-            // No practical deadline for long-lived SSE (Stop cancels the stream).
-            .timeout(Duration::from_secs(60 * 60 * 24))
-            .connect_timeout(Duration::from_secs(10))
-            .pool_max_idle_per_host(8)
-            .danger_accept_invalid_certs(!verify);
-        if !follow {
-            builder = builder.redirect(reqwest::redirect::Policy::none());
-        }
-        if let Some(proxy) = proxy_trim {
-            let p = reqwest::Proxy::all(proxy)
-                .map_err(|e| format!("Invalid proxy URL '{}': {}", proxy, e))?;
-            builder = builder.proxy(p);
-        }
-        builder
-            .build()
-            .map_err(|e| format!("Failed to build SSE HTTP client: {}", e))?
-    } else if follow && verify && proxy_trim.is_none() {
-        get_http_client().clone()
-    } else {
-        build_custom_client(follow, verify, proxy_trim)?
-    };
+    let client = get_or_build_client(follow, verify, proxy_trim, wants_sse)?;
 
     let reqwest_method = parse_http_method(&method)?;
     let allow_body = method_allows_body(&reqwest_method);
@@ -291,38 +380,29 @@ pub async fn send_api_request(
         let response = match send_cancellable(client.execute(req), &cancel_handle).await {
             Ok(r) => r,
             Err(e) => {
-                cleanup_cancel_handle(&cancel_state, &stream_id).await;
+                cleanup_cancel_handle(&cancel_state, &stream_id);
                 return Err(e);
             }
         };
         let result =
-            finalize_response(response, start, app, cancel_handle, stream_id.clone()).await;
-        cleanup_cancel_handle(&cancel_state, &stream_id).await;
+            finalize_response(response, start, window, cancel_handle, stream_id.clone()).await;
+        cleanup_cancel_handle(&cancel_state, &stream_id);
         return result;
     }
 
     let mut request_builder = client.request(reqwest_method, &url);
 
-    // Collect user-supplied headers, skipping Content-Type / Content-Length
-    // since reqwest appends those; we set them explicitly below.
-    let user_overrides_ct = headers
-        .iter()
-        .any(|h| h.key.eq_ignore_ascii_case("content-type"));
+    let mut user_overrides_ct = false;
     for h in &headers {
-        if h.key.eq_ignore_ascii_case("content-type")
-            || h.key.eq_ignore_ascii_case("content-length")
-        {
+        if h.key.eq_ignore_ascii_case("content-length") {
+            continue;
+        }
+        if h.key.eq_ignore_ascii_case("content-type") {
+            user_overrides_ct = true;
+            request_builder = request_builder.header("Content-Type", &h.value);
             continue;
         }
         request_builder = request_builder.header(&h.key, &h.value);
-    }
-    if user_overrides_ct {
-        for h in &headers {
-            if h.key.eq_ignore_ascii_case("content-type") {
-                request_builder = request_builder.header("Content-Type", &h.value);
-                break;
-            }
-        }
     }
 
     // RFC 9110: never attach content on GET/HEAD.
@@ -341,7 +421,15 @@ pub async fn send_api_request(
                         .map_err(|e| format!("Invalid multipart payload: {}", e))?;
                     let mut form = reqwest::multipart::Form::new();
                     for field in fields {
-                        if let Some(bytes) = field.bytes {
+                        let file_bytes =
+                            if let Some(b64) = field.bytes_b64 {
+                                Some(STANDARD.decode(b64).map_err(|e| {
+                                    format!("Invalid multipart file encoding: {}", e)
+                                })?)
+                            } else {
+                                field.bytes
+                            };
+                        if let Some(bytes) = file_bytes {
                             let mut part = reqwest::multipart::Part::bytes(bytes);
                             if let Some(name) = field.file_name {
                                 part = part.file_name(name);
@@ -362,19 +450,7 @@ pub async fn send_api_request(
                     if !user_overrides_ct {
                         request_builder = request_builder.header("Content-Type", other);
                     }
-                    if body_content.contains(',') {
-                        let bytes: Result<Vec<u8>, _> = body_content
-                            .split(',')
-                            .map(|s| s.trim().parse::<u8>())
-                            .collect();
-                        if let Ok(byte_vec) = bytes {
-                            request_builder = request_builder.body(byte_vec);
-                        } else {
-                            request_builder = request_builder.body(body_content);
-                        }
-                    } else {
-                        request_builder = request_builder.body(body_content);
-                    }
+                    request_builder = request_builder.body(decode_binary_body(&body_content));
                 }
                 other => {
                     // Textual / structured bodies (JSON, XML, HTML, CSV, YAML, GraphQL, …).
@@ -392,26 +468,28 @@ pub async fn send_api_request(
     let response = match send_cancellable(request_builder.send(), &cancel_handle).await {
         Ok(r) => r,
         Err(e) => {
-            cleanup_cancel_handle(&cancel_state, &stream_id).await;
+            cleanup_cancel_handle(&cancel_state, &stream_id);
             return Err(e);
         }
     };
 
-    let result = finalize_response(response, start, app, cancel_handle, stream_id.clone()).await;
-    cleanup_cancel_handle(&cancel_state, &stream_id).await;
+    let result = finalize_response(response, start, window, cancel_handle, stream_id.clone()).await;
+    cleanup_cancel_handle(&cancel_state, &stream_id);
     result
 }
 
-async fn cleanup_cancel_handle(cancel_state: &Arc<SseCancelState>, stream_id: &Option<String>) {
+fn cleanup_cancel_handle(cancel_state: &Arc<SseCancelState>, stream_id: &Option<String>) {
     if let Some(sid) = stream_id.as_deref().filter(|s| !s.is_empty()) {
-        cancel_state.flags.lock().await.remove(sid);
+        if let Ok(mut flags) = cancel_state.flags.lock() {
+            flags.remove(sid);
+        }
     }
 }
 
 pub(crate) async fn finalize_response(
     response: reqwest::Response,
     start: std::time::Instant,
-    app: AppHandle,
+    window: WebviewWindow,
     cancel_handle: Option<Arc<CancelHandle>>,
     stream_id: Option<String>,
 ) -> Result<ApiResponse, String> {
@@ -422,7 +500,7 @@ pub(crate) async fn finalize_response(
         .unwrap_or("Unknown")
         .to_string();
 
-    let mut resp_headers = HashMap::new();
+    let mut resp_headers = HashMap::with_capacity(response.headers().len());
     for (key, value) in response.headers() {
         if let Ok(v) = value.to_str() {
             resp_headers.insert(key.to_string(), v.to_string());
@@ -441,7 +519,7 @@ pub(crate) async fn finalize_response(
             return sse::stream_sse_response(
                 response,
                 start,
-                app,
+                window,
                 handle,
                 sid,
                 status,

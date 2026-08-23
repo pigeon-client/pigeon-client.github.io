@@ -1,4 +1,4 @@
-import type { ApiResponse } from "@/core/http";
+import { type ApiResponse, EMPTY_BODY, utf8Bytes, utf8Text } from "@/core/http";
 import { isBinaryMime } from "@/shared/lib/contentType";
 import type { HistoryItem, ResponseSnapshot } from "../types";
 
@@ -11,7 +11,7 @@ export interface SnapshotSource {
   statusText: string;
   contentType: string;
   size: number;
-  body: number[];
+  body: Uint8Array;
 }
 
 /**
@@ -31,9 +31,9 @@ export function buildSnapshot(response: SnapshotSource): ResponseSnapshot {
     return { ...base, truncated: false };
   }
 
-  const bytes = Uint8Array.from(response.body);
+  const bytes = response.body;
   if (bytes.length <= SNAPSHOT_CAP_BYTES) {
-    return { ...base, bodyText: new TextDecoder().decode(bytes), truncated: false };
+    return { ...base, bodyText: utf8Text(bytes), truncated: false };
   }
 
   // TextDecoder handles a truncated multi-byte sequence at the cut point gracefully
@@ -41,7 +41,7 @@ export function buildSnapshot(response: SnapshotSource): ResponseSnapshot {
   const truncatedBytes = bytes.slice(0, SNAPSHOT_CAP_BYTES);
   return {
     ...base,
-    bodyText: new TextDecoder().decode(truncatedBytes),
+    bodyText: utf8Text(truncatedBytes),
     truncated: true,
   };
 }
@@ -50,7 +50,7 @@ export function buildSnapshot(response: SnapshotSource): ResponseSnapshot {
 export function snapshotToApiResponse(item: HistoryItem): ApiResponse | null {
   const snap = item.snapshot;
   if (!snap) return null;
-  const bodyBytes = snap.bodyText ? Array.from(new TextEncoder().encode(snap.bodyText)) : [];
+  const bodyBytes = snap.bodyText ? utf8Bytes(snap.bodyText) : EMPTY_BODY;
   return {
     status: snap.status,
     statusText: snap.statusText,

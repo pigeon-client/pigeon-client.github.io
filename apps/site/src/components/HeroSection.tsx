@@ -1,7 +1,29 @@
 import { useRef, useState } from "react";
 import { useHeroDemo } from "../hooks/useHeroDemo";
-import { REPO_URL } from "../lib/constants";
+import { HERO_HEADLINE, HERO_HEADLINE_ACCENT, HERO_SUB, REPO_URL } from "../lib/constants";
 import { HERO_DEMO_STEPS } from "../lib/heroDemoSteps";
+
+function HeroHeadline() {
+  const accentIdx = HERO_HEADLINE.indexOf(HERO_HEADLINE_ACCENT);
+  if (accentIdx < 0) {
+    return (
+      <>
+        {HERO_HEADLINE}
+        <span className="cursor" aria-hidden="true" />
+      </>
+    );
+  }
+  const before = HERO_HEADLINE.slice(0, accentIdx);
+  const after = HERO_HEADLINE.slice(accentIdx + HERO_HEADLINE_ACCENT.length);
+  return (
+    <>
+      {before}
+      <span className="accent">{HERO_HEADLINE_ACCENT}</span>
+      {after}
+      <span className="cursor" aria-hidden="true" />
+    </>
+  );
+}
 
 export function HeroSection() {
   const appRef = useRef<HTMLDivElement>(null);
@@ -35,7 +57,7 @@ export function HeroSection() {
                 <img className="launch-mark" src="/pigeon-mark.svg" alt="" aria-hidden="true" />
                 <p className="launch-kicker">native · local · free</p>
                 <p className="launch-title">
-                  Launch in <strong>0.3s</strong>
+                  Launch <strong>fast</strong>
                 </p>
                 <p className="launch-sub">
                   Click the dock icon — other API clients are still waking up
@@ -64,7 +86,7 @@ export function HeroSection() {
                   <span className="launch-fill fast" id="demo-launch-fast" />
                 </span>
                 <span className="launch-ms fast" id="demo-launch-ms">
-                  0.3s
+                  Fast
                 </span>
               </div>
               <div className="launch-row">
@@ -72,11 +94,11 @@ export function HeroSection() {
                 <span className="launch-bar">
                   <span className="launch-fill slow" id="demo-launch-slow" />
                 </span>
-                <span className="launch-ms slow">3.4s</span>
+                <span className="launch-ms slow">Slow</span>
               </div>
             </div>
             <p className="launch-headline" id="demo-launch-headline">
-              Opens in <strong>0.3s</strong> — ahead of other API clients
+              Opens <strong>fast</strong> — ahead of other API clients
             </p>
           </div>
 
@@ -314,13 +336,9 @@ export function HeroSection() {
           <span className="dot" aria-hidden="true" /> free &amp; open source · MIT licensed
         </span>
         <h1>
-          Never <span className="accent">save a request</span> again
-          <span className="cursor" aria-hidden="true" />
+          <HeroHeadline />
         </h1>
-        <p className="sub">
-          Pigeon names, files, and remembers every request automatically — and finds any of them in
-          3 keystrokes. Local, private, no account.
-        </p>
+        <p className="sub">{HERO_SUB}</p>
         <div className="hero-ctas">
           <a
             className="btn btn-primary"

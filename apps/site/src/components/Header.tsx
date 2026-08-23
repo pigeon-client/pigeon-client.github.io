@@ -1,18 +1,19 @@
-import { REPO_URL } from "../lib/constants";
+import { REPO_URL, SITE_NAME } from "../lib/constants";
 
 export function Header() {
   return (
     <header className="nav">
       <div className="wrap nav-inner">
-        <a className="logo" href="/" aria-label="Pigeon home">
+        <a className="logo" href="/" aria-label={`${SITE_NAME} home`}>
           <img src="/pigeon-mark.svg" alt="" aria-hidden="true" />
-          pigeon
+          {SITE_NAME}
         </a>
         <nav className="links" aria-label="Main">
           <a href="/#organize">organize</a>
           <a href="/#features">features</a>
           <a href="/#open-source">open-source</a>
           <a href="/blog">blog</a>
+          <a href="/postman-alternative">why {SITE_NAME}</a>
           <a href="/#download">download</a>
         </nav>
         <div className="nav-cta">

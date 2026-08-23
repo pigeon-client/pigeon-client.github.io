@@ -1,4 +1,4 @@
-import { Button } from "@pigeon/ui";
+import { Button } from "@pigeon/ui/button";
 import { useRef, useState } from "react";
 
 /** Copy-to-clipboard button used in the install command boxes. */

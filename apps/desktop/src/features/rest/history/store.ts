@@ -14,6 +14,8 @@ import {
   getDraftFolderConfigs,
   getDrafts,
   getHistory,
+  getHistorySnapshot,
+  pruneHistoryBefore,
   saveDraftFolderConfigs,
   saveHistory,
 } from "./services/db";
@@ -60,11 +62,31 @@ function normalizeDraftUrl(url: string): string {
   return url.startsWith("http://") || url.startsWith("https://") ? url : parseUrl(url);
 }
 
+const matchKeyCache = new WeakMap<object, string>();
+
+function matchKeyOf(item: { method: string; url: string }): string {
+  const cached = matchKeyCache.get(item);
+  if (cached !== undefined) return cached;
+  const key = normalizeUrlForMatch(item.method, normalizeDraftUrl(item.url));
+  matchKeyCache.set(item, key);
+  return key;
+}
+
+function indexByMatchKey(rows: { method: string; url: string }[]): Map<string, number> {
+  const map = new Map<string, number>();
+  rows.forEach((row, i) => {
+    map.set(matchKeyOf(row), i);
+  });
+  return map;
+}
+
 interface HistoryState {
   history: HistoryItem[];
   drafts: RequestConfig[];
   historyDbIds: Map<number, number>;
   draftDbIds: Map<number, number>;
+  historyKeyIndex: Map<string, number>;
+  draftKeyIndex: Map<string, number>;
   /** Headers/auth set on a draft auto-folder (gear icon), keyed by that folder's
    *  deterministic host/path id. See `services/db.ts`. */
   draftFolderConfigs: Record<string, FolderConfig>;
@@ -84,6 +106,8 @@ interface HistoryState {
   saveOrUpdateDraft: (draft: RequestConfig) => Promise<void>;
   removeDraft: (localIndex: number) => Promise<void>;
   removeHistory: (localIndex: number) => Promise<void>;
+  /** Fill in a list-row snapshot whose `bodyText` was omitted at load. */
+  ensureSnapshot: (item: HistoryItem) => Promise<HistoryItem>;
 }
 
 let historyLoadPromise: Promise<void> | null = null;
@@ -93,6 +117,8 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   drafts: [],
   historyDbIds: new Map(),
   draftDbIds: new Map(),
+  historyKeyIndex: new Map(),
+  draftKeyIndex: new Map(),
   draftFolderConfigs: {},
   loaded: false,
   hadData: false,
@@ -103,17 +129,15 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
     historyLoadPromise = (async () => {
       try {
-        const draftRows = await getDrafts();
-        const historyRows = await getHistory();
+        const [draftRows, historyRows] = await Promise.all([getDrafts(), getHistory()]);
         const draftFolderConfigs = getDraftFolderConfigs();
         const drafts = draftRows.map((r) => ({ ...r.data, id: r.id }));
         const historyAll = historyRows.map((r) => ({ ...r.data, id: r.id }));
 
         // Time-based retention, pruned once on app start only — never mid-session.
-        const { kept: history, pruned } = partitionByRetention(historyAll, getRetentionDays());
-        await Promise.all(
-          pruned.filter((h) => h.id !== undefined).map((h) => deleteHistoryEntry(h.id as number)),
-        );
+        const now = Date.now();
+        const retentionDays = getRetentionDays();
+        const { kept: history } = partitionByRetention(historyAll, retentionDays, now);
 
         const draftDbIds = reindexDbIds(drafts);
         const historyDbIds = reindexDbIds(history);
@@ -128,11 +152,18 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
             history,
             draftDbIds,
             historyDbIds,
+            historyKeyIndex: indexByMatchKey(history),
+            draftKeyIndex: indexByMatchKey(drafts),
             draftFolderConfigs,
             loaded: true,
             hadData: hasRows || state.hadData,
           };
         });
+
+        if (retentionDays !== null) {
+          const cutoff = now - retentionDays * 24 * 60 * 60 * 1000;
+          void pruneHistoryBefore(cutoff);
+        }
       } catch (err) {
         console.error("[Pigeon] Failed to load history/drafts", err);
       } finally {
@@ -159,31 +190,32 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
   addToHistory: async (item) => {
     const state = get();
-    const key = normalizeUrlForMatch(item.method, normalizeDraftUrl(item.url));
-    // Check for existing entry with same method+URL
-    for (let i = 0; i < state.history.length; i++) {
-      const existing = state.history[i];
-      const existingKey = normalizeUrlForMatch(existing.method, normalizeDraftUrl(existing.url));
-      if (existingKey === key) {
-        // Update existing entry (status, responseTime, timestamp, name)
-        const updated: HistoryItem = {
-          ...existing,
-          ...item,
-          id: existing.id,
-          method: existing.method,
-          url: existing.url,
-        };
-        const dbId = state.historyDbIds.get(i) ?? existing.id;
-        if (dbId !== undefined && dbId > 0) {
-          await dbUpdateHistory(dbId, updated);
-        }
-        set((s) => {
-          const newHistory = [...s.history];
-          newHistory[i] = updated;
-          return { history: newHistory, historyDbIds: reindexDbIds(newHistory) };
-        });
-        return;
+    const key = matchKeyOf(item);
+    const existingIndex = state.historyKeyIndex.get(key);
+    const existing = existingIndex !== undefined ? state.history[existingIndex] : undefined;
+    if (existing && existingIndex !== undefined) {
+      // Update existing entry (status, responseTime, timestamp, name)
+      const updated: HistoryItem = {
+        ...existing,
+        ...item,
+        id: existing.id,
+        method: existing.method,
+        url: existing.url,
+      };
+      const dbId = state.historyDbIds.get(existingIndex) ?? existing.id;
+      if (dbId !== undefined && dbId > 0) {
+        await dbUpdateHistory(dbId, updated);
       }
+      set((s) => {
+        const newHistory = [...s.history];
+        newHistory[existingIndex] = updated;
+        return {
+          history: newHistory,
+          historyDbIds: reindexDbIds(newHistory),
+          historyKeyIndex: indexByMatchKey(newHistory),
+        };
+      });
+      return;
     }
     // No duplicate found — create new entry
     const clean = { ...item, request: stripFiles(item.request) };
@@ -197,7 +229,12 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
         "history",
         deleteHistoryEntry,
       );
-      return { history: newHistory, historyDbIds: reindexDbIds(newHistory), hadData: true };
+      return {
+        history: newHistory,
+        historyDbIds: reindexDbIds(newHistory),
+        historyKeyIndex: indexByMatchKey(newHistory),
+        hadData: true,
+      };
     });
   },
 
@@ -213,21 +250,22 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
         "drafts",
         dbDeleteDraft,
       );
-      return { drafts: newDrafts, draftDbIds: reindexDbIds(newDrafts), hadData: true };
+      return {
+        drafts: newDrafts,
+        draftDbIds: reindexDbIds(newDrafts),
+        draftKeyIndex: indexByMatchKey(newDrafts),
+        hadData: true,
+      };
     });
   },
 
   findDraftByKey: (method, url) => {
     const state = get();
     const key = normalizeUrlForMatch(method, normalizeDraftUrl(url));
-    for (let i = 0; i < state.drafts.length; i++) {
-      const draft = state.drafts[i];
-      const draftKey = normalizeUrlForMatch(draft.method, normalizeDraftUrl(draft.url));
-      if (draftKey === key) {
-        return { index: i, draft };
-      }
-    }
-    return null;
+    const i = state.draftKeyIndex.get(key);
+    if (i === undefined) return null;
+    const draft = state.drafts[i];
+    return draft ? { index: i, draft } : null;
   },
 
   updateDraftByKey: async (method, url, updates) => {
@@ -252,7 +290,11 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     set((s) => {
       const newDrafts = [...s.drafts];
       newDrafts[found.index] = updated;
-      return { drafts: newDrafts, draftDbIds: reindexDbIds(newDrafts) };
+      return {
+        drafts: newDrafts,
+        draftDbIds: reindexDbIds(newDrafts),
+        draftKeyIndex: indexByMatchKey(newDrafts),
+      };
     });
   },
 
@@ -261,19 +303,13 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const normalizedUrl = normalizeDraftUrl(draft.url);
     const key = normalizeUrlForMatch(draft.method, normalizedUrl);
     // Find existing draft directly (more reliable than calling through state)
-    let existingIndex = -1;
-    let existingDbId: number | undefined;
-    for (let i = 0; i < state.drafts.length; i++) {
-      const d = state.drafts[i];
-      const dKey = normalizeUrlForMatch(d.method, normalizeDraftUrl(d.url));
-      if (dKey === key) {
-        existingIndex = i;
-        existingDbId = state.draftDbIds.get(i) ?? d.id;
-        break;
-      }
-    }
+    const existingIndex = state.draftKeyIndex.get(key);
+    const existingDbId =
+      existingIndex !== undefined
+        ? (state.draftDbIds.get(existingIndex) ?? state.drafts[existingIndex]?.id)
+        : undefined;
 
-    if (existingIndex >= 0) {
+    if (existingIndex !== undefined) {
       // Update existing draft
       const updated: RequestConfig = {
         ...state.drafts[existingIndex],
@@ -287,7 +323,12 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
       set((s) => {
         const newDrafts = [...s.drafts];
         newDrafts[existingIndex] = updated;
-        return { drafts: newDrafts, draftDbIds: reindexDbIds(newDrafts), hadData: true };
+        return {
+          drafts: newDrafts,
+          draftDbIds: reindexDbIds(newDrafts),
+          draftKeyIndex: indexByMatchKey(newDrafts),
+          hadData: true,
+        };
       });
     } else {
       // Create new draft
@@ -302,7 +343,12 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
           "drafts",
           dbDeleteDraft,
         );
-        return { drafts: newDrafts, draftDbIds: reindexDbIds(newDrafts), hadData: true };
+        return {
+          drafts: newDrafts,
+          draftDbIds: reindexDbIds(newDrafts),
+          draftKeyIndex: indexByMatchKey(newDrafts),
+          hadData: true,
+        };
       });
     }
   },
@@ -317,7 +363,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     }
     set((s) => {
       const drafts = s.drafts.filter((_, i) => i !== localIndex);
-      return { drafts, draftDbIds: reindexDbIds(drafts) };
+      return { drafts, draftDbIds: reindexDbIds(drafts), draftKeyIndex: indexByMatchKey(drafts) };
     });
   },
 
@@ -331,8 +377,25 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     }
     set((s) => {
       const history = s.history.filter((_, i) => i !== localIndex);
-      return { history, historyDbIds: reindexDbIds(history) };
+      return {
+        history,
+        historyDbIds: reindexDbIds(history),
+        historyKeyIndex: indexByMatchKey(history),
+      };
     });
+  },
+
+  ensureSnapshot: async (item) => {
+    if (!item.snapshot?.bodyOmitted) return item;
+    const id = item.id;
+    if (id === undefined || id <= 0) return item;
+    const snapshot = await getHistorySnapshot(id);
+    if (!snapshot) return item;
+    const updated: HistoryItem = { ...item, snapshot: { ...snapshot, bodyOmitted: false } };
+    set((s) => ({
+      history: s.history.map((h) => (h.id === id ? { ...h, snapshot: updated.snapshot } : h)),
+    }));
+    return updated;
   },
 }));
 

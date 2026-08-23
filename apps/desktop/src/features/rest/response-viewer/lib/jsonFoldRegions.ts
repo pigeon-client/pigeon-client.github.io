@@ -9,9 +9,14 @@ export function findJsonFoldRegions(code: string): FoldRegion[] {
   const stack: { startLine: number; open: "{" | "[" }[] = [];
   let inString = false;
   let isEscaped = false;
+  let line = 0;
 
   for (let i = 0; i < code.length; i++) {
     const ch = code[i];
+    // Count newlines before the in-string continue so strings containing `\n`
+    // don't skip the line counter (and so we never slice(0, i).split on each char).
+    if (ch === "\n") line++;
+
     if (inString) {
       if (isEscaped) isEscaped = false;
       else if (ch === "\\") isEscaped = true;
@@ -23,7 +28,6 @@ export function findJsonFoldRegions(code: string): FoldRegion[] {
       continue;
     }
 
-    const line = code.slice(0, i).split("\n").length - 1;
     if (ch === "{" || ch === "[") {
       stack.push({ startLine: line, open: ch });
       continue;
@@ -41,8 +45,14 @@ export function findJsonFoldRegions(code: string): FoldRegion[] {
   return regions;
 }
 
+export function foldRegionsByStart(regions: FoldRegion[]): Map<number, FoldRegion> {
+  const byStart = new Map<number, FoldRegion>();
+  for (const region of regions) byStart.set(region.startLine, region);
+  return byStart;
+}
+
 export function isFoldStart(line: number, regions: FoldRegion[]): FoldRegion | undefined {
-  return regions.find((r) => r.startLine === line);
+  return foldRegionsByStart(regions).get(line);
 }
 
 export function isLineHidden(
@@ -50,8 +60,9 @@ export function isLineHidden(
   collapsed: ReadonlySet<number>,
   regions: FoldRegion[],
 ): boolean {
+  const byStart = foldRegionsByStart(regions);
   for (const start of collapsed) {
-    const region = regions.find((r) => r.startLine === start);
+    const region = byStart.get(start);
     if (region && line > region.startLine && line <= region.endLine) return true;
   }
   return false;

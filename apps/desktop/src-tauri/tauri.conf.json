@@ -1,8 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Pigeon",
+  "mainBinaryName": "Pigeon",
   "version": "0.1.18",
-  "identifier": "com.k1n1.pigeon",
+  "identifier": "dev.trypigeon.app",
   "build": {
     "beforeDevCommand": "pnpm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,12 +13,13 @@
   "app": {
     "windows": [
       {
-        "title": "Pigeon - API Tester",
+        "title": "Pigeon",
         "width": 1280,
         "height": 800,
         "minWidth": 900,
         "minHeight": 600,
-        "backgroundColor": "#1C1B1A"
+        "backgroundColor": "#1C1B1A",
+        "backgroundThrottling": "disabled"
       }
     ],
     "security": {
@@ -32,6 +34,13 @@
       "appimage",
       "deb"
     ],
+    "publisher": "Pigeon",
+    "homepage": "https://trypigeon.dev",
+    "copyright": "Copyright (c) 2026 Pigeon contributors",
+    "license": "MIT",
+    "category": "DeveloperTool",
+    "shortDescription": "Native API client",
+    "longDescription": "Pigeon is a fast, native, private API client. No account, no cloud.",
     "createUpdaterArtifacts": true,
     "macOS": {
       "signingIdentity": "-"

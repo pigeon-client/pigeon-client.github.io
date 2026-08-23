@@ -1,34 +1,24 @@
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@pigeon/ui";
 import { invoke } from "@tauri-apps/api/core";
 import { PanelLeftOpen } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { CommandPalette } from "@/features/command-palette";
-import { EnvModal, selectActiveEnv, useEnvStore } from "@/features/environments";
-import {
-  findNode,
-  findUniqueSavedRequest,
-  SaveToCollectionModal,
-  useCollectionStore,
-} from "@/features/rest/collections";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { selectActiveEnv, useEnvStore } from "@/features/environments";
+import { Onboarding } from "@/features/onboarding";
+import { findNode, findUniqueSavedRequest, useCollectionStore } from "@/features/rest/collections";
 import { useHistoryStore } from "@/features/rest/history";
-import { generateCurl, ImportModal } from "@/features/rest/import-export";
+import { generateCurl } from "@/features/rest/import-export";
 import {
   EmptyRequestState,
   RequestEditor,
+  selectTabShells,
   TabStrip,
+  tabShellsEqual,
   UrlBar,
+  useEqualStore,
   useTabStore,
 } from "@/features/rest/request-builder";
 import { ResponsePanel } from "@/features/rest/response-viewer";
-import {
-  applyTheme,
-  checkForUpdates,
-  getStoredTheme,
-  KeyboardShortcutsModal,
-  SettingsDrawer,
-  type SettingsTab,
-} from "@/features/settings";
-import { ComingSoonWorkspace } from "@/features/workspaces";
+import { applyTheme, checkForUpdates, getStoredTheme, type SettingsTab } from "@/features/settings";
 import { startMacosCompositorKeepAlive } from "@/shared/lib/macosCompositorKeepAlive";
 import { isTauri, waitForTauriIpc } from "@/shared/lib/platform";
 import { clickVisibleSendButton } from "@/shared/lib/sendButton";
@@ -39,12 +29,68 @@ import { MigrationToast } from "./layout/MigrationToast";
 import { Sidebar } from "./layout/Sidebar";
 import { UpdateToast } from "./layout/UpdateToast";
 
+const CommandPalette = lazy(() =>
+  // biome-ignore lint/style/noRestrictedImports: lazy() must target the component module, not the feature barrel
+  import("@/features/command-palette/components/CommandPalette").then((m) => ({
+    default: m.CommandPalette,
+  })),
+);
+const EnvModal = lazy(() =>
+  // biome-ignore lint/style/noRestrictedImports: lazy() must target the component module, not the feature barrel
+  import("@/features/environments/components/EnvModal").then((m) => ({ default: m.EnvModal })),
+);
+const SaveToCollectionModal = lazy(() =>
+  // biome-ignore lint/style/noRestrictedImports: lazy() must target the component module, not the feature barrel
+  import("@/features/rest/collections/components/SaveToCollectionModal").then((m) => ({
+    default: m.SaveToCollectionModal,
+  })),
+);
+const ImportModal = lazy(() =>
+  // biome-ignore lint/style/noRestrictedImports: lazy() must target the component module, not the feature barrel
+  import("@/features/rest/import-export/components/ImportModal").then((m) => ({
+    default: m.ImportModal,
+  })),
+);
+const KeyboardShortcutsModal = lazy(() =>
+  // biome-ignore lint/style/noRestrictedImports: lazy() must target the component module, not the feature barrel
+  import("@/features/settings/components/KeyboardShortcutsModal").then((m) => ({
+    default: m.KeyboardShortcutsModal,
+  })),
+);
+const SettingsDrawer = lazy(() =>
+  // biome-ignore lint/style/noRestrictedImports: lazy() must target the component module, not the feature barrel
+  import("@/features/settings/components/SettingsDrawer").then((m) => ({
+    default: m.SettingsDrawer,
+  })),
+);
+const ComingSoonWorkspace = lazy(() =>
+  // biome-ignore lint/style/noRestrictedImports: lazy() must target the component module, not the feature barrel
+  import("@/features/workspaces/components/ComingSoonWorkspace").then((m) => ({
+    default: m.ComingSoonWorkspace,
+  })),
+);
+
+function scheduleIdle(fn: () => void): void {
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(fn, { timeout: 4000 });
+    return;
+  }
+  setTimeout(fn, 3000);
+}
+
 /** Focus the REST OS window when leaving a coming-soon view (desktop only). */
 function focusRestWindow() {
   if (!isTauri()) return;
   invoke("open_workspace_window", { kind: "rest" }).catch((e) =>
     console.error(`[Pigeon] Failed to focus REST workspace: ${e}`),
   );
+}
+
+function getActiveHttpTab() {
+  const { tabs, activeTabId } = useTabStore.getState();
+  const tab = tabs.find((t) => t.id === activeTabId);
+  if (tab?.kind !== "http") return null;
+  return tab;
 }
 
 /* ── Empty state when no URL has been typed yet ── */
@@ -64,7 +110,7 @@ export function AppContent() {
       if (getWindowKind() === "rest") {
         void useHistoryStore.getState().load();
         void useCollectionStore.getState().load();
-        checkForUpdates(true);
+        scheduleIdle(() => checkForUpdates(true));
       }
     })();
   }, [windowKind]);
@@ -127,15 +173,16 @@ export function AppContent() {
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("General");
   const [showPalette, setShowPalette] = useState(false);
 
-  const tabs = useTabStore((s) => s.tabs);
+  const tabShells = useEqualStore(useTabStore, (s) => selectTabShells(s.tabs), tabShellsEqual);
   const activeTabId = useTabStore((s) => s.activeTabId);
   const addTab = useTabStore((s) => s.addTab);
   const closeTab = useTabStore((s) => s.closeTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const setTabCollectionRef = useTabStore((s) => s.setTabCollectionRef);
-  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
-  // Only http tabs have an exportable/saveable request.
-  const activeRequest = activeTab && activeTab.kind === "http" ? activeTab.request : null;
+  const activeHasHttpUrl = useTabStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return Boolean(tab && tab.kind === "http" && tab.request.url.trim());
+  });
   const prodActive = useEnvStore((s) => selectActiveEnv(s)?.isProduction ?? false);
   const showComingSoon = workbench === "mcp" || workbench === "graphql";
 
@@ -150,8 +197,9 @@ export function AppContent() {
   };
 
   const handleExportCurl = async () => {
-    if (!activeRequest) return;
-    await navigator.clipboard.writeText(generateCurl(activeRequest));
+    const tab = getActiveHttpTab();
+    if (!tab?.request.url.trim()) return;
+    await navigator.clipboard.writeText(generateCurl(tab.request));
     setCurlCopied(true);
     setTimeout(() => setCurlCopied(false), 2000);
   };
@@ -164,6 +212,8 @@ export function AppContent() {
 
   /** ⌘S: update existing collection node when linked; otherwise open save modal. */
   const handleSaveRequest = useCallback(() => {
+    const activeTab = getActiveHttpTab();
+    const activeRequest = activeTab?.request;
     if (!(activeRequest?.url.trim() && activeTab)) return;
 
     const collections = useCollectionStore.getState().collections;
@@ -195,7 +245,7 @@ export function AppContent() {
     }
 
     setShowSaveModal(true);
-  }, [activeRequest, activeTab, flashSaveToast, setTabCollectionRef]);
+  }, [flashSaveToast, setTabCollectionRef]);
 
   // ⌘Enter must win over focused inputs (URL bar, editors) and autocomplete Enter.
   useEffect(() => {
@@ -313,14 +363,14 @@ export function AppContent() {
       if (metaShift && e.code === "KeyS") {
         e.preventDefault();
         // Save As — always pick collection/folder.
-        if (activeRequest?.url.trim()) {
+        if (getActiveHttpTab()?.request.url.trim()) {
           setShowSaveModal(true);
         }
         return;
       }
       if (meta && !e.altKey && /^Digit[1-9]$/.test(e.code)) {
         e.preventDefault();
-        const tab = tabs[parseInt(e.code.slice(5), 10) - 1];
+        const tab = tabShells[parseInt(e.code.slice(5), 10) - 1];
         if (tab) setActiveTab(tab.id);
         return;
       }
@@ -376,8 +426,7 @@ export function AppContent() {
     return () => window.removeEventListener("keydown", handler);
   }, [
     activeTabId,
-    activeTab,
-    tabs,
+    tabShells,
     addTab,
     closeTab,
     setActiveTab,
@@ -388,10 +437,11 @@ export function AppContent() {
     showSaveModal,
     showSettings,
     showPalette,
-    activeRequest,
     openSettings,
     handleSaveRequest,
   ]);
+
+  const saveModalRequest = showSaveModal ? getActiveHttpTab()?.request : null;
 
   return (
     <AppContextMenu>
@@ -405,7 +455,7 @@ export function AppContent() {
         onOpenGraphql={() => openWorkbench("graphql")}
         activeWorkspace={workbench}
         curlCopied={curlCopied}
-        exportDisabled={!activeRequest || showComingSoon}
+        exportDisabled={!activeHasHttpUrl || showComingSoon}
         search={search}
         onSearchChange={setSearch}
         searchInputRef={searchInputRef}
@@ -417,19 +467,21 @@ export function AppContent() {
       {/* Body — MCP/GraphQL: coming-soon page only (no sidebar, no tab strip). */}
       {showComingSoon ? (
         <div className="relative flex min-h-0 min-w-0 flex-1">
-          {workbench === "mcp" ? (
-            <ComingSoonWorkspace
-              kind="mcp"
-              title="MCP — coming soon"
-              description="A dedicated MCP bench — connect to servers, list tools, call them, and inspect results — is on the roadmap. Until then, stick with REST."
-            />
-          ) : (
-            <ComingSoonWorkspace
-              kind="graphql"
-              title="GraphQL — coming soon"
-              description="A dedicated GraphQL workspace — query editor with schema introspection, variables, and response inspection — is on the roadmap. Until then, send GraphQL as HTTP with an application/graphql body."
-            />
-          )}
+          <Suspense fallback={null}>
+            {workbench === "mcp" ? (
+              <ComingSoonWorkspace
+                kind="mcp"
+                title="MCP — coming soon"
+                description="A dedicated MCP bench — connect to servers, list tools, call them, and inspect results — is on the roadmap. Until then, stick with REST."
+              />
+            ) : (
+              <ComingSoonWorkspace
+                kind="graphql"
+                title="GraphQL — coming soon"
+                description="A dedicated GraphQL workspace — query editor with schema introspection, variables, and response inspection — is on the roadmap. Until then, send GraphQL as HTTP with an application/graphql body."
+              />
+            )}
+          </Suspense>
         </div>
       ) : (
         <div className="relative flex min-h-0 min-w-0 flex-1">
@@ -485,10 +537,9 @@ export function AppContent() {
               >
                 <TabStrip />
 
-                {tabs.map((tab) => {
+                {tabShells.map((tab) => {
                   if (tab.kind !== "http") return null;
                   const isActive = tab.id === activeTabId;
-                  const hasUrl = tab.request.url.trim().length > 0;
                   return (
                     <div
                       key={tab.id}
@@ -496,7 +547,7 @@ export function AppContent() {
                       style={{ display: isActive ? "flex" : "none" }}
                     >
                       <UrlBar tabId={tab.id} />
-                      {hasUrl ? (
+                      {tab.hasUrl ? (
                         <ResizablePanelGroup
                           id={`response-split-${tab.id}`}
                           orientation="vertical"
@@ -546,37 +597,40 @@ export function AppContent() {
       )}
 
       {/* Modals */}
-      {showEnvModal && <EnvModal onClose={() => setShowEnvModal(false)} />}
-      {showImportModal && (
-        <ImportModal
-          onClose={() => setShowImportModal(false)}
-          onImportRequest={(parsed) => {
-            const id = addTab();
-            useTabStore.getState().updateTabRequest(id, parsed);
-            setActiveTab(id);
-          }}
-        />
-      )}
-      {showSaveModal && activeRequest && (
-        <SaveToCollectionModal
-          request={activeRequest}
-          onClose={() => setShowSaveModal(false)}
-          onSaved={(origin) => {
-            if (activeTabId) setTabCollectionRef(activeTabId, origin);
-            flashSaveToast();
-          }}
-        />
-      )}
-      {showShortcutsModal && (
-        <KeyboardShortcutsModal onClose={() => setShowShortcutsModal(false)} />
-      )}
-      {showSettings && (
-        <SettingsDrawer initialTab={settingsTab} onClose={() => setShowSettings(false)} />
-      )}
-      {showPalette && <CommandPalette onClose={() => setShowPalette(false)} />}
+      <Suspense fallback={null}>
+        {showEnvModal && <EnvModal onClose={() => setShowEnvModal(false)} />}
+        {showImportModal && (
+          <ImportModal
+            onClose={() => setShowImportModal(false)}
+            onImportRequest={(parsed) => {
+              const id = addTab();
+              useTabStore.getState().updateTabRequest(id, parsed);
+              setActiveTab(id);
+            }}
+          />
+        )}
+        {showSaveModal && saveModalRequest?.url.trim() && (
+          <SaveToCollectionModal
+            request={saveModalRequest}
+            onClose={() => setShowSaveModal(false)}
+            onSaved={(origin) => {
+              if (activeTabId) setTabCollectionRef(activeTabId, origin);
+              flashSaveToast();
+            }}
+          />
+        )}
+        {showShortcutsModal && (
+          <KeyboardShortcutsModal onClose={() => setShowShortcutsModal(false)} />
+        )}
+        {showSettings && (
+          <SettingsDrawer initialTab={settingsTab} onClose={() => setShowSettings(false)} />
+        )}
+        {showPalette && <CommandPalette onClose={() => setShowPalette(false)} />}
+      </Suspense>
 
       <MigrationToast />
       <UpdateToast onOpenSettings={openSettings} />
+      <Onboarding />
       {saveToast && (
         <div className="fixed bottom-4 right-4 z-toast rounded-lg border border-primary/40 bg-card px-4 py-3 text-xs font-medium text-foreground shadow-toast">
           Saved to collection

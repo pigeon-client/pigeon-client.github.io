@@ -23,7 +23,7 @@ import {
 import { Copy, CopyX, Plus, Trash2, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { useTabStore } from "../store";
+import { selectTabChrome, tabChromeEqual, useEqualStore, useTabStore } from "../store";
 
 function TabContextActions({ tabId }: { tabId: string }) {
   const addTab = useTabStore((s) => s.addTab);
@@ -149,7 +149,7 @@ const SortableTab = ({
 };
 
 export function TabStrip() {
-  const tabs = useTabStore((s) => s.tabs);
+  const tabs = useEqualStore(useTabStore, (s) => selectTabChrome(s.tabs), tabChromeEqual);
   const activeTabId = useTabStore((s) => s.activeTabId);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const closeTab = useTabStore((s) => s.closeTab);
@@ -187,7 +187,7 @@ export function TabStrip() {
       setTabName(id, v);
     } else {
       // Cleared → back to auto; name follows the URL path again.
-      const tab = tabs.find((t) => t.id === id);
+      const tab = useTabStore.getState().tabs.find((t) => t.id === id);
       updateTabRequest(id, { url: tab?.request.url ?? "", nameLocked: false });
     }
     setEditingId(null);
@@ -328,10 +328,10 @@ export function TabStrip() {
               const isEditing = editingId === tab.id;
               // Non-http tabs show a kind badge where the method usually sits.
               const badge =
-                tab.kind === "mcp" ? "MCP" : tab.kind === "graphql" ? "GQL" : tab.request.method;
+                tab.kind === "mcp" ? "MCP" : tab.kind === "graphql" ? "GQL" : tab.method;
               const mc =
                 tab.kind === "http"
-                  ? (METHOD_COLORS[tab.request.method] ?? METHOD_COLORS.GET)
+                  ? (METHOD_COLORS[tab.method] ?? METHOD_COLORS.GET)
                   : "var(--primary)";
               return (
                 <ContextMenu key={tab.id}>

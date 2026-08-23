@@ -1,6 +1,6 @@
 import { Alert, Button, cn, Modal, ModalFooter, ModalHeader, Textarea } from "@pigeon/ui";
 import { Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RequestConfig } from "@/shared/types";
 import { useCollectionStore } from "../../collections/store";
 import { parseCurl } from "../services/curlService";
@@ -14,16 +14,6 @@ interface ImportModalProps {
 }
 
 type ImportMode = "curl" | "postman";
-
-function parsedPreview(raw: string): { method: string; url: string } | null {
-  try {
-    const p = parseCurl(raw);
-    if (!p) return null;
-    return { method: p.method ?? "GET", url: p.url ?? "" };
-  } catch {
-    return null;
-  }
-}
 
 const METHOD_TEXT: Record<string, string> = {
   GET: "text-method-get",
@@ -41,10 +31,30 @@ export function ImportModal({ onClose, onImportRequest }: ImportModalProps) {
   const [raw, setRaw] = useState("");
   const [postmanRaw, setPostmanRaw] = useState("");
   const [error, setError] = useState("");
+  const [preview, setPreview] = useState<{ method: string; url: string } | null>(null);
   const importCollection = useCollectionStore((s) => s.importCollection);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const preview = raw.trim() ? parsedPreview(raw) : null;
+  useEffect(() => {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      setPreview(null);
+      return;
+    }
+    let cancelled = false;
+    void parseCurl(raw)
+      .then((parsed) => {
+        if (cancelled) return;
+        setPreview(parsed ? { method: parsed.method ?? "GET", url: parsed.url ?? "" } : null);
+      })
+      .catch(() => {
+        if (!cancelled) setPreview(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [raw]);
+
   const methodClass = preview ? (METHOD_TEXT[preview.method] ?? "text-method-options") : "";
 
   let postmanPreview: ParsedPostmanCollection | null = null;
@@ -74,13 +84,14 @@ export function ImportModal({ onClose, onImportRequest }: ImportModalProps) {
         setError("Paste a cURL command first");
         return;
       }
-      const parsed = parseCurl(raw);
-      if (!parsed) {
-        setError("Could not parse this cURL. Make sure it starts with 'curl' and has a URL.");
-        return;
-      }
-      onImportRequest(parsed);
-      onClose();
+      void parseCurl(raw).then((parsed) => {
+        if (!parsed) {
+          setError("Could not parse this cURL. Make sure it starts with 'curl' and has a URL.");
+          return;
+        }
+        onImportRequest(parsed);
+        onClose();
+      });
       return;
     }
 

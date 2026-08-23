@@ -1,8 +1,11 @@
 [package]
 name = "pigeon"
 version = "0.1.18"
-description = "Pigeon - Lightweight API Testing Tool"
+description = "Pigeon"
 authors = ["k1n1"]
+homepage = "https://trypigeon.dev"
+repository = "https://github.com/pigeon-client/pigeon"
+license = "MIT"
 edition = "2021"
 
 [lib]
@@ -26,6 +29,13 @@ tokio = { version = "1", features = ["full"] }
 rusqlite = { version = "0.31", features = ["bundled"] }
 dirs = "5"
 url = "2"
+base64 = "0.22"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+# Do not set panic = "abort" — macos.rs uses catch_unwind.
 
 [target.'cfg(target_os = "macos")'.dependencies]
 block2 = "0.6"

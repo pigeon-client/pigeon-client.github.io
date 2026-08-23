@@ -18,16 +18,24 @@ export function isTauri(): boolean {
   return isTauriIpcReady();
 }
 
-/** Wait for Tauri IPC during the webview bootstrap gap. No-op when already ready. */
+/** Wait for Tauri IPC during the webview bootstrap gap. No-op when already ready.
+ *  Memoized so browser/E2E persistence does not poll 2s on every table call. */
+let ipcWait: Promise<boolean> | null = null;
+
 export async function waitForTauriIpc(timeoutMs = 2000): Promise<boolean> {
   if (import.meta.env.MODE === "test") return false;
   if (isTauriIpcReady()) return true;
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    if (isTauriIpcReady()) return true;
+  if (!ipcWait) {
+    ipcWait = (async () => {
+      const start = Date.now();
+      while (Date.now() - start < timeoutMs) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        if (isTauriIpcReady()) return true;
+      }
+      return false;
+    })();
   }
-  return false;
+  return ipcWait;
 }
 
 /**

@@ -1,17 +1,13 @@
 import { Button } from "@pigeon/ui";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Download, FileCode } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { SseEvent } from "@/core/http";
 import type { ResponseKind } from "@/shared/lib/contentType";
 import { responseKindLabel } from "@/shared/lib/contentType";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { highlightCode } from "@/shared/ui/result-viewer";
-import {
-  collapsedLineText,
-  findJsonFoldRegions,
-  isFoldStart,
-  isLineHidden,
-} from "../lib/jsonFoldRegions";
+import { collapsedLineText, findJsonFoldRegions, foldRegionsByStart } from "../lib/jsonFoldRegions";
 import { SseEventList } from "./SseEventList";
 import { StatusEmptyBody } from "./StatusEmptyBody";
 import type { BodyViewMode } from "./types";
@@ -25,11 +21,11 @@ function MediaPane({
 }: {
   kind: ResponseKind;
   contentType: string;
-  bodyBytes: number[];
+  bodyBytes: Uint8Array;
   responseSize: number;
   onDownload: () => void;
 }) {
-  const blob = new Blob([new Uint8Array(bodyBytes)], { type: contentType });
+  const blob = new Blob([bodyBytes], { type: contentType });
   const url = URL.createObjectURL(blob);
   const revoke = () => setTimeout(() => URL.revokeObjectURL(url), 1000);
   const label = responseKindLabel(kind, contentType);
@@ -351,6 +347,157 @@ function MarkedCodeBlock({
 }
 
 /* ── Line-numbered code block ── */
+const VIRTUALIZE_AFTER = 400;
+const SKIP_HIGHLIGHT_CHARS = 200_000;
+const SKIP_HIGHLIGHT_LINES = 2_000;
+const CODE_LINE_H = 21;
+
+type VisibleCodeRow = {
+  i: number;
+  text: string;
+  html: string;
+  foldable: boolean;
+};
+
+function VirtualizedCodeRows({
+  rows,
+  wrap,
+  highlight,
+  language,
+  collapsed,
+  foldByStart,
+  onToggleFold,
+}: {
+  rows: VisibleCodeRow[];
+  wrap: boolean;
+  highlight: boolean;
+  language: string;
+  collapsed: ReadonlySet<number>;
+  foldByStart: ReturnType<typeof foldRegionsByStart>;
+  onToggleFold: (startLine: number) => void;
+}) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const parent =
+      (list?.closest(".overflow-auto") as HTMLElement | null) ?? list?.parentElement ?? null;
+    setScrollEl(parent);
+    if (list && parent) {
+      setScrollMargin(
+        list.getBoundingClientRect().top - parent.getBoundingClientRect().top + parent.scrollTop,
+      );
+    }
+  }, [rows.length]);
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollEl,
+    estimateSize: () => CODE_LINE_H,
+    overscan: 24,
+    scrollMargin,
+    enabled: scrollEl != null && rows.length > 0,
+  });
+
+  const codeLineStyle = {
+    flex: 1,
+    minWidth: 0,
+    margin: 0,
+    padding: "0 18px 0 0",
+    whiteSpace: wrap ? ("pre-wrap" as const) : ("pre" as const),
+    wordBreak: wrap ? ("break-word" as const) : ("normal" as const),
+    lineHeight: `${CODE_LINE_H}px`,
+    background: "transparent",
+  };
+
+  return (
+    <div
+      ref={listRef}
+      style={{
+        height: virtualizer.getTotalSize(),
+        width: "100%",
+        position: "relative",
+        fontFamily: "var(--font-mono)",
+        fontSize: "var(--text-code)",
+        lineHeight: `${CODE_LINE_H}px`,
+      }}
+    >
+      {virtualizer.getVirtualItems().map((vItem) => {
+        const row = rows[vItem.index];
+        if (!row) return null;
+        const region = row.foldable ? foldByStart.get(row.i) : undefined;
+        return (
+          <div
+            key={vItem.key}
+            data-index={vItem.index}
+            ref={virtualizer.measureElement}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              transform: `translateY(${vItem.start - scrollMargin}px)`,
+              display: "flex",
+              alignItems: "flex-start",
+              minHeight: CODE_LINE_H,
+            }}
+          >
+            <div
+              style={{
+                flexShrink: 0,
+                width: 46,
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "flex-end",
+                gap: 2,
+                paddingRight: 6,
+                color: "var(--text-placeholder)",
+                userSelect: "none",
+                fontSize: "var(--text-xs)",
+                lineHeight: `${CODE_LINE_H}px`,
+              }}
+            >
+              {region ? (
+                <button
+                  type="button"
+                  aria-label={collapsed.has(row.i) ? "Expand block" : "Collapse block"}
+                  aria-expanded={!collapsed.has(row.i)}
+                  data-testid="response-fold-toggle"
+                  onClick={() => onToggleFold(row.i)}
+                  className="flex h-[21px] w-4 shrink-0 cursor-pointer items-center justify-center rounded bg-transparent p-0 text-[10px] text-muted-foreground hover:text-foreground"
+                >
+                  {collapsed.has(row.i) ? "▸" : "▾"}
+                </button>
+              ) : row.foldable ? (
+                <span className="inline-block h-[21px] w-4 shrink-0" aria-hidden />
+              ) : null}
+              <span className="h-[21px] leading-[21px]">{row.i + 1}</span>
+            </div>
+            <div style={codeLineStyle}>
+              {highlight ? (
+                <HighlightedHtml
+                  html={row.html}
+                  className={language ? `language-${language} hljs` : "hljs"}
+                  style={{
+                    fontSize: "var(--text-code)",
+                    lineHeight: `${CODE_LINE_H}px`,
+                    fontFamily: "var(--font-mono)",
+                    background: "transparent",
+                  }}
+                />
+              ) : (
+                <code style={{ color: "var(--foreground)" }}>{row.text}</code>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CodeBlock({
   code,
   language,
@@ -365,16 +512,19 @@ function CodeBlock({
   foldable?: boolean;
 }) {
   const lines = useMemo(() => code.split("\n"), [code]);
+  const skipHighlight = code.length > SKIP_HIGHLIGHT_CHARS || lines.length > SKIP_HIGHLIGHT_LINES;
+  const doHighlight = highlight && !skipHighlight;
   const foldRegions = useMemo(() => (foldable ? findJsonFoldRegions(code) : []), [code, foldable]);
+  const foldByStart = useMemo(() => foldRegionsByStart(foldRegions), [foldRegions]);
   const [collapsed, setCollapsed] = useState<ReadonlySet<number>>(() => new Set());
   const highlighted = useMemo(
-    () => (highlight && !foldable ? highlightCode(code, language) : ""),
-    [code, language, highlight, foldable],
+    () => (doHighlight && !foldable ? highlightCode(code, language) : ""),
+    [code, language, doHighlight, foldable],
   );
   const lineHtml = useMemo(() => {
-    if (!(highlight && foldable)) return [];
+    if (!(doHighlight && foldable)) return [];
     return lines.map((line) => (line ? highlightCode(line, language) : ""));
-  }, [lines, highlight, foldable, language]);
+  }, [lines, doHighlight, foldable, language]);
 
   const toggleFold = (startLine: number) => {
     setCollapsed((prev) => {
@@ -387,6 +537,43 @@ function CodeBlock({
 
   const lineNums = useMemo(() => lines.map((_, i) => i + 1), [lines]);
   const useFoldLayout = foldable && foldRegions.length > 0;
+  const needsVirtual = lines.length > VIRTUALIZE_AFTER;
+  const visibleRows = useMemo((): VisibleCodeRow[] | null => {
+    if (!needsVirtual) return null;
+    const escapeHtml = (text: string) =>
+      text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (!useFoldLayout) {
+      return lines.map((line, i) => ({
+        i,
+        text: line,
+        html: doHighlight ? (line ? highlightCode(line, language) : "") : "",
+        foldable: false,
+      }));
+    }
+    const rows: VisibleCodeRow[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      let hidden = false;
+      for (const start of collapsed) {
+        const folded = foldByStart.get(start);
+        if (folded && i > folded.startLine && i <= folded.endLine) {
+          hidden = true;
+          break;
+        }
+      }
+      if (hidden) continue;
+      const region = foldByStart.get(i);
+      const collapsedRegion = collapsed.has(i) ? region : undefined;
+      const text = collapsedRegion ? collapsedLineText(lines[i], collapsedRegion, lines) : lines[i];
+      rows.push({
+        i,
+        text,
+        html: collapsedRegion ? escapeHtml(text) : (lineHtml[i] ?? escapeHtml(text)),
+        foldable: true,
+      });
+    }
+    return rows;
+  }, [needsVirtual, lines, useFoldLayout, collapsed, foldByStart, doHighlight, language, lineHtml]);
+
   const codeLineStyle = {
     flex: 1,
     minWidth: 0,
@@ -397,6 +584,20 @@ function CodeBlock({
     lineHeight: "21px",
     background: "transparent",
   };
+
+  if (visibleRows) {
+    return (
+      <VirtualizedCodeRows
+        rows={visibleRows}
+        wrap={wrap}
+        highlight={doHighlight}
+        language={language}
+        collapsed={collapsed}
+        foldByStart={foldByStart}
+        onToggleFold={toggleFold}
+      />
+    );
+  }
 
   if (useFoldLayout) {
     return (
@@ -410,9 +611,17 @@ function CodeBlock({
         }}
       >
         {lines.map((line, i) => {
-          if (isLineHidden(i, collapsed, foldRegions)) return null;
-          const region = isFoldStart(i, foldRegions);
-          const collapsedRegion = collapsed.has(i) ? isFoldStart(i, foldRegions) : undefined;
+          let hidden = false;
+          for (const start of collapsed) {
+            const folded = foldByStart.get(start);
+            if (folded && i > folded.startLine && i <= folded.endLine) {
+              hidden = true;
+              break;
+            }
+          }
+          if (hidden) return null;
+          const region = foldByStart.get(i);
+          const collapsedRegion = collapsed.has(i) ? region : undefined;
           const text = collapsedRegion ? collapsedLineText(line, collapsedRegion, lines) : line;
           return (
             <div
@@ -452,7 +661,7 @@ function CodeBlock({
                 <span className="h-[21px] leading-[21px]">{i + 1}</span>
               </div>
               <div style={codeLineStyle}>
-                {highlight ? (
+                {doHighlight ? (
                   <HighlightedHtml
                     html={
                       collapsedRegion
@@ -517,7 +726,7 @@ function CodeBlock({
           background: "transparent",
         }}
       >
-        {highlight ? (
+        {doHighlight ? (
           <HighlightedHtml
             html={highlighted}
             className={language ? `language-${language} hljs` : "hljs"}
@@ -558,7 +767,7 @@ export function BodyView({
   effectiveView,
   isHtml,
   bodyStr,
-  getFormattedCode,
+  formattedCode,
 }: {
   isSse: boolean;
   response: { sseEvents?: SseEvent[]; contentType: string; status: number; statusText: string };
@@ -567,7 +776,7 @@ export function BodyView({
   wordWrap: boolean;
   showMedia: boolean;
   respKind: ResponseKind;
-  bodyBytes: number[];
+  bodyBytes: Uint8Array;
   responseSize: number;
   onDownload: () => void;
   findActive: boolean;
@@ -580,7 +789,7 @@ export function BodyView({
   effectiveView: BodyViewMode;
   isHtml: boolean;
   bodyStr: string;
-  getFormattedCode: () => string;
+  formattedCode: string;
 }) {
   return (
     <>
@@ -623,7 +832,7 @@ export function BodyView({
       {!(findActive || isSse) && showText && effectiveView !== "preview" && (
         <div data-testid="response-body" style={{ padding: "12px 0 12px 16px" }}>
           <CodeBlock
-            code={getFormattedCode()}
+            code={effectiveView === "raw" ? bodyStr : formattedCode}
             language={codeLanguage}
             wrap={wordWrap}
             highlight={effectiveView === "pretty"}

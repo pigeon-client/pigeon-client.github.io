@@ -59,15 +59,11 @@ pub async fn oauth_http_request(
 
     // GET follows redirects (http→https discovery). POST (token / DCR) does not,
     // so a 302 cannot leak the authorization code or client secret.
-    let mut client_builder = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
-        .connect_timeout(Duration::from_secs(10));
-    if reqwest_method == reqwest::Method::POST {
-        client_builder = client_builder.redirect(reqwest::redirect::Policy::none());
-    }
-    let client = client_builder
-        .build()
-        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
+    let client = if reqwest_method == reqwest::Method::POST {
+        crate::http::get_or_build_client(false, true, None, false)?
+    } else {
+        crate::http::get_http_client().clone()
+    };
 
     let mut builder = client.request(reqwest_method, parsed_url);
     for h in &headers {

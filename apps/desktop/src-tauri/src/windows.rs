@@ -1,3 +1,4 @@
+use tauri::utils::config::BackgroundThrottlingPolicy;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 // --- Workspace windows ---
@@ -6,10 +7,10 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 // (created at startup by tauri.conf.json), never (re)created here.
 #[tauri::command]
 pub fn open_workspace_window(app: AppHandle, kind: String) -> Result<(), String> {
-    let (label, title, width, height) = match kind.as_str() {
-        "rest" => ("main", "Pigeon - API Tester", 1280.0, 800.0),
-        "mcp" => ("mcp", "Pigeon - MCP", 1100.0, 720.0),
-        "graphql" => ("graphql", "Pigeon - GraphQL", 1100.0, 720.0),
+    let (label, width, height) = match kind.as_str() {
+        "rest" => ("main", 1280.0, 800.0),
+        "mcp" => ("mcp", 1100.0, 720.0),
+        "graphql" => ("graphql", 1100.0, 720.0),
         other => return Err(format!("Unknown workspace kind: {}", other)),
     };
 
@@ -19,9 +20,10 @@ pub fn open_workspace_window(app: AppHandle, kind: String) -> Result<(), String>
     }
 
     WebviewWindowBuilder::new(&app, label, WebviewUrl::App("index.html".into()))
-        .title(title)
+        .title("Pigeon")
         .inner_size(width, height)
         .min_inner_size(900.0, 600.0)
+        .background_throttling(BackgroundThrottlingPolicy::Disabled)
         .build()
         .map_err(|e| e.to_string())?;
 

@@ -1,6 +1,6 @@
-import hljs from "highlight.js";
 import { bodyUiGroup } from "@/shared/lib/contentType";
 import type { BodyType } from "@/shared/types";
+import hljs from "@/shared/ui/result-viewer/hljsSetup";
 
 export type RadioId = "none" | "json" | "form-data" | "x-www-form-urlencoded" | "raw" | "binary";
 

@@ -23,6 +23,7 @@ test.describe("settings & theme", () => {
 
     await page.getByRole("button", { name: "About" }).click();
     await expect(page.getByText("Version")).toBeVisible();
+    await expect(page.getByText("Show first-request guide")).toHaveCount(0);
   });
 
   test("Clear All wipes history/drafts/environments but never collections", async ({ page }) => {

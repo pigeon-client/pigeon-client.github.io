@@ -321,8 +321,9 @@ export const requestBuilderElements: TestElement[] = [
   {
     id: "EL-RB-026",
     feature: "RB",
-    name: "Empty request state — Try an example",
-    selector: 'button:has-text("Try an example")',
+    name: "Empty request state — Load a sample",
+    selector: '[data-testid="empty-try-example"]',
+    testId: "empty-try-example",
     component: "features/rest/request-builder/components/EmptyRequestState.tsx",
   },
   {

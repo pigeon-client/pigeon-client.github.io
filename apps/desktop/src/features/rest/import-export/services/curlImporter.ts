@@ -1,4 +1,4 @@
-import { type JSONOutput, toJsonObject } from "curlconverter";
+import type { JSONOutput } from "curlconverter";
 import type {
   Body,
   Cookie,
@@ -188,11 +188,12 @@ function parseOptions(parsed: JSONOutput, input: string): RequestModel["options"
   };
 }
 
-export function importCurl(input: string): RequestModel | null {
+export async function importCurl(input: string): Promise<RequestModel | null> {
   const trimmed = input.trim();
   if (!trimmed) return null;
 
   try {
+    const { toJsonObject } = await import("curlconverter");
     const parsed = toJsonObject(trimmed);
     if (!parsed?.url) return null;
 

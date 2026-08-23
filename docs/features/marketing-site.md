@@ -22,7 +22,7 @@ without an account wall. They should **watch the story scroll**, not read a manu
 
 ## Functional requirements
 
-1. **Home** (`pages/index.astro` → `HomePage`): header, hero + animated demo, stats band,
+1. **Home** (`pages/index.astro`): header, hero + animated demo, stats band,
    features, organize, why, open source, download, footer.
 2. **Hero demo** (`useHeroDemo` / `heroDemoSteps`) steps through a fake request/response that
    mimics app UI — keep in sync when app chrome changes.
@@ -47,7 +47,7 @@ without an account wall. They should **watch the story scroll**, not read a manu
 
 ## UI
 
-Sections (current `HomePage` composition):
+Sections (`index.astro` composition):
 
 | Section | Component | Purpose |
 |---------|-----------|---------|
@@ -96,7 +96,7 @@ site e2e.
 
 ## Key files
 
-- `apps/site/src/components/HomePage.tsx`
+- `apps/site/src/pages/index.astro`
 - `apps/site/src/components/*Section.tsx`
 - `apps/site/src/pages/**`
 - `apps/site/src/worker.ts`

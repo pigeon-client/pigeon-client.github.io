@@ -1,6 +1,5 @@
 export { CollectionsTab } from "./components/CollectionsTab";
 export { FolderConfigModal, type FolderConfigModalState } from "./components/FolderConfigModal";
-export { SaveToCollectionModal } from "./components/SaveToCollectionModal";
 export { resolveInheritedRequest } from "./lib/inheritance";
 export {
   buildUrlTree,

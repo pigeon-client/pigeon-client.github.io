@@ -1,5 +1,6 @@
 import {
   type ApiResponse,
+  EMPTY_BODY,
   type SendOptions,
   type SseEvent,
   type SseMeta,
@@ -45,7 +46,7 @@ export function useSendRequest() {
         status: 0,
         statusText: String(e),
         headers: {},
-        body: [],
+        body: EMPTY_BODY,
         contentType: "text/plain",
         responseTime: 0,
         size: 0,

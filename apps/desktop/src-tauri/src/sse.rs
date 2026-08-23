@@ -2,8 +2,10 @@ use futures_util::StreamExt;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, State};
-use tokio::sync::{Mutex, Notify};
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+use tauri::{Emitter, State, WebviewWindow};
+use tokio::sync::Notify;
 
 use crate::http::{ApiResponse, MAX_RESPONSE_BYTES};
 
@@ -26,6 +28,7 @@ impl CancelHandle {
 }
 
 /// Per-request cancel handles, keyed by the frontend-generated stream id.
+#[derive(Default)]
 pub struct SseCancelState {
     pub flags: Mutex<HashMap<String, Arc<CancelHandle>>>,
 }
@@ -35,7 +38,7 @@ pub async fn cancel_sse_stream(
     state: State<'_, Arc<SseCancelState>>,
     stream_id: String,
 ) -> Result<(), String> {
-    let flags = state.flags.lock().await;
+    let flags = state.flags.lock().map_err(|e| e.to_string())?;
     if let Some(handle) = flags.get(&stream_id) {
         handle.flag.store(true, Ordering::SeqCst);
         handle.notify.notify_one();
@@ -92,18 +95,23 @@ impl SseParser {
     fn push(&mut self, chunk: &str) -> Vec<SseEventPayload> {
         self.buffer.push_str(chunk);
         let mut out = Vec::new();
+        let mut consumed = 0usize;
         loop {
-            let Some(nl) = self.buffer.find('\n') else {
+            let rest = &self.buffer[consumed..];
+            let Some(rel) = rest.find('\n') else {
                 break;
             };
-            let mut line = self.buffer[..nl].to_string();
+            let mut line = rest[..rel].to_string();
             if line.ends_with('\r') {
                 line.pop();
             }
-            self.buffer = self.buffer[nl + 1..].to_string();
+            consumed += rel + 1;
             if let Some(ev) = self.handle_line(&line) {
                 out.push(ev);
             }
+        }
+        if consumed > 0 {
+            self.buffer.drain(..consumed);
         }
         out
     }
@@ -188,10 +196,33 @@ impl SseParser {
     }
 }
 
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SseEventBatchPayload {
+    stream_id: String,
+    events: Vec<SseEventPayload>,
+}
+
+const SSE_BATCH_MAX: usize = 64;
+const SSE_BATCH_MS: Duration = Duration::from_millis(16);
+
+fn flush_sse_batch(window: &WebviewWindow, stream_id: &str, pending: &mut Vec<SseEventPayload>) {
+    if pending.is_empty() {
+        return;
+    }
+    let _ = window.emit(
+        "sse-event-batch",
+        SseEventBatchPayload {
+            stream_id: stream_id.to_string(),
+            events: std::mem::take(pending),
+        },
+    );
+}
+
 pub(crate) async fn stream_sse_response(
     response: reqwest::Response,
     start: std::time::Instant,
-    app: AppHandle,
+    window: WebviewWindow,
     cancel_handle: Arc<CancelHandle>,
     stream_id: String,
     status: u16,
@@ -199,7 +230,7 @@ pub(crate) async fn stream_sse_response(
     resp_headers: HashMap<String, String>,
     content_type: String,
 ) -> Result<ApiResponse, String> {
-    let _ = app.emit(
+    let _ = window.emit(
         "sse-meta",
         SseMetaPayload {
             stream_id: stream_id.clone(),
@@ -212,6 +243,10 @@ pub(crate) async fn stream_sse_response(
 
     let mut parser = SseParser::new();
     let mut body_acc = Vec::<u8>::new();
+    let mut body_size = 0usize;
+    let mut saw_event = false;
+    let mut pending: Vec<SseEventPayload> = Vec::new();
+    let mut last_flush = Instant::now();
     let mut stream = response.bytes_stream();
     let mut stream_error: Option<String> = None;
 
@@ -221,16 +256,25 @@ pub(crate) async fn stream_sse_response(
         }
         match item {
             Ok(bytes) => {
-                let remaining = MAX_RESPONSE_BYTES.saturating_sub(body_acc.len());
+                let remaining = MAX_RESPONSE_BYTES.saturating_sub(body_size);
                 if remaining == 0 {
                     break;
                 }
                 let take = bytes.len().min(remaining);
-                body_acc.extend_from_slice(&bytes[..take]);
+                body_size += take;
+                if !saw_event {
+                    body_acc.extend_from_slice(&bytes[..take]);
+                }
                 let chunk = String::from_utf8_lossy(&bytes[..take]);
                 for mut ev in parser.push(&chunk) {
                     ev.stream_id = stream_id.clone();
-                    let _ = app.emit("sse-event", ev);
+                    saw_event = true;
+                    body_acc.clear();
+                    pending.push(ev);
+                    if pending.len() >= SSE_BATCH_MAX || last_flush.elapsed() >= SSE_BATCH_MS {
+                        flush_sse_batch(&window, &stream_id, &mut pending);
+                        last_flush = Instant::now();
+                    }
                 }
                 // Stop reading once the body cap is hit so a hostile stream cannot
                 // grow the frontend event list unbounded.
@@ -247,10 +291,13 @@ pub(crate) async fn stream_sse_response(
 
     for mut ev in parser.flush() {
         ev.stream_id = stream_id.clone();
-        let _ = app.emit("sse-event", ev);
+        saw_event = true;
+        body_acc.clear();
+        pending.push(ev);
     }
+    flush_sse_batch(&window, &stream_id, &mut pending);
 
-    let _ = app.emit(
+    let _ = window.emit(
         "sse-done",
         SseDonePayload {
             stream_id: stream_id.clone(),
@@ -259,13 +306,14 @@ pub(crate) async fn stream_sse_response(
     );
 
     let elapsed = start.elapsed().as_millis() as u64;
-    let size = body_acc.len();
-    let truncated = size >= MAX_RESPONSE_BYTES;
+    let body = if saw_event { Vec::new() } else { body_acc };
+    let size = if saw_event { body_size } else { body.len() };
+    let truncated = body_size >= MAX_RESPONSE_BYTES;
     Ok(ApiResponse {
         status,
         status_text,
         headers: resp_headers,
-        body: body_acc,
+        body,
         content_type,
         response_time: elapsed,
         size,

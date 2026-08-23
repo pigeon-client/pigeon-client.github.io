@@ -294,7 +294,7 @@ export const requestBuilderTestCases: TestCase[] = [
     id: "TC-RB-003",
     feature: "RB",
     featureDoc: "request-builder.md",
-    title: "Clear URL shows empty state with Try an example only",
+    title: "Clear URL shows empty state with Load a sample",
     type: "ui",
     priority: "P1",
     preconditions: ["Tab with URL"],
@@ -304,7 +304,7 @@ export const requestBuilderTestCases: TestCase[] = [
         order: 2,
         action: "verify",
         elementId: "EL-RB-026",
-        expected: "Try an example CTA visible",
+        expected: "Load a sample CTA visible",
       },
       {
         order: 3,

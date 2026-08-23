@@ -3,6 +3,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { contentTypeForBody } from "@/shared/lib/contentType";
 import { methodAllowsRequestBody } from "@/shared/lib/httpMethod";
 import { isTauri } from "@/shared/lib/platform";
+import { decodeIpcResponse, type IpcApiResponse, utf8Bytes } from "../lib/bytes";
 import {
   isEventStreamContentType,
   type SseEvent,
@@ -80,6 +81,17 @@ async function sendTauriMaybeSse(
   signal?.addEventListener("abort", onAbort);
 
   try {
+    const ingestRustEvent = (payload: RustSseEvent) => {
+      const ev: SseEvent = {
+        event: payload.event,
+        data: payload.data,
+        raw: payload.raw,
+      };
+      if (payload.id) ev.id = payload.id;
+      events.push(ev);
+      handlers.onEvent?.(ev);
+    };
+
     unlisteners.push(
       await listen<RustSseMeta>("sse-meta", (e) => {
         if (e.payload.streamId !== streamId) return;
@@ -92,16 +104,9 @@ async function sendTauriMaybeSse(
       }),
     );
     unlisteners.push(
-      await listen<RustSseEvent>("sse-event", (e) => {
+      await listen<{ streamId: string; events: RustSseEvent[] }>("sse-event-batch", (e) => {
         if (e.payload.streamId !== streamId) return;
-        const ev: SseEvent = {
-          event: e.payload.event,
-          data: e.payload.data,
-          raw: e.payload.raw,
-        };
-        if (e.payload.id) ev.id = e.payload.id;
-        events.push(ev);
-        handlers.onEvent?.(ev);
+        for (const payload of e.payload.events) ingestRustEvent(payload);
       }),
     );
     // Done is informational; invoke resolves with the final ApiResponse.
@@ -111,7 +116,7 @@ async function sendTauriMaybeSse(
       }),
     );
 
-    const response = await invoke<ApiResponse>("send_api_request", {
+    const raw = await invoke<IpcApiResponse>("send_api_request", {
       method: request.method,
       url: request.url,
       headers: request.headers,
@@ -122,11 +127,12 @@ async function sendTauriMaybeSse(
       proxyUrl: request.proxyUrl,
       streamId,
     });
+    const response = decodeIpcResponse(raw);
 
     // If Rust streamed, body may already be filled; prefer collected events when present.
     if (events.length > 0) {
       const text = sseEventsToBody(events);
-      const body = Array.from(new TextEncoder().encode(text));
+      const body = utf8Bytes(text);
       return {
         ...response,
         body,
@@ -203,7 +209,7 @@ async function sendBrowserMaybeSse(
       status: res.status,
       statusText,
       headers: respHeaders,
-      body: Array.from(bytes),
+      body: bytes,
       contentType,
       responseTime: 0,
       size: bytes.length,
@@ -239,7 +245,7 @@ async function sendBrowserMaybeSse(
   }
 
   const text = sseEventsToBody(events);
-  const body = Array.from(new TextEncoder().encode(text));
+  const body = utf8Bytes(text);
   return {
     status: res.status,
     statusText,

@@ -9,6 +9,7 @@ import { methodAllowsRequestBody } from "@/shared/lib/httpMethod";
 import { isTauri } from "@/shared/lib/platform";
 import { parseUrl, stripQuery } from "@/shared/lib/url";
 import type { RequestConfig } from "@/shared/types";
+import { bytesToBase64, EMPTY_BODY } from "../lib/bytes";
 import type { SseEvent, SseMeta } from "../lib/sse";
 import type { ApiResponse } from "../types";
 import { browserHttpClient } from "./BrowserHttpClient";
@@ -128,7 +129,7 @@ export async function sendRequest(
       body = params.toString();
     } else if (isBinaryBodyType(config.bodyType) && config.file) {
       const arrayBuffer = await config.file.arrayBuffer();
-      body = Array.from(new Uint8Array(arrayBuffer)).join(",");
+      body = bytesToBase64(new Uint8Array(arrayBuffer));
     } else if (isTextualBodyType(config.bodyType) && config.body) {
       body = sub(config.body);
     }
@@ -170,7 +171,7 @@ export async function sendRequest(
       status: 0,
       statusText: cancelled ? "Cancelled" : String(e),
       headers: {},
-      body: [],
+      body: EMPTY_BODY,
       contentType: "text/plain",
       responseTime: Math.round(performance.now() - startTime),
       size: 0,
@@ -187,7 +188,7 @@ interface MultipartFieldPayload {
   text?: string;
   fileName?: string;
   mime?: string;
-  bytes?: number[];
+  bytesB64?: string;
 }
 
 async function sendMultipartRequest(
@@ -221,7 +222,7 @@ async function sendMultipartRequest(
           key: field.key,
           fileName: field.file.name,
           mime: field.file.type || "application/octet-stream",
-          bytes: Array.from(buf),
+          bytesB64: bytesToBase64(buf),
         });
       } else {
         fields.push({ key: field.key, text: sub(field.value) });
@@ -251,7 +252,7 @@ async function sendMultipartRequest(
         status: 0,
         statusText: String(err),
         headers: {},
-        body: [],
+        body: EMPTY_BODY,
         contentType: "text/plain",
         responseTime: Math.round(performance.now() - startTime),
         size: 0,
@@ -291,7 +292,7 @@ async function sendMultipartRequest(
       status: res.status,
       statusText: res.statusText,
       headers: respHeaders,
-      body: Array.from(bodyBytes),
+      body: bodyBytes,
       contentType: respHeaders["content-type"] ?? "application/octet-stream",
       responseTime: Math.round(performance.now() - startTime),
       size: bodyBytes.length,
@@ -303,7 +304,7 @@ async function sendMultipartRequest(
       status: 0,
       statusText: String(err),
       headers: {},
-      body: [],
+      body: EMPTY_BODY,
       contentType: "text/plain",
       responseTime: 0,
       size: 0,

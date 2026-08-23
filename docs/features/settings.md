@@ -31,7 +31,7 @@ destructive data wipes — without a settings store coupled into every feature (
    `pg_history_retention_days` via `features/rest/history/lib/retention.ts`) + Clear History /
    Drafts / All (envs included on Clear All; collections **not** cleared by Clear All). Retention
    is pruned once on the *next* app start, never mid-session.
-7. About: version, update status, Check / Install (Tauri updater).
+7. About: version, update status, Check / Install (Tauri updater). No onboarding replay.
 8. Shortcuts modal (`⌘⇧/`) — must match [keyboard-shortcuts.md](./keyboard-shortcuts.md).
 9. Startup silent update check; badge on gear + About; `UpdateToast` on launch.
 

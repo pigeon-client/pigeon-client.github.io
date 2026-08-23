@@ -1,5 +1,13 @@
 import { cn } from "@pigeon/ui";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { bodyUiGroup, highlightLanguageFor } from "@/shared/lib/contentType";
 import { insertText, replaceRange } from "@/shared/lib/inputEdit";
 import { formatJsonPreservingVars } from "@/shared/lib/jsonEditContext";
@@ -164,6 +172,9 @@ export function BodyEditor({
     bodyType === "application/graphql+json";
   const language = highlightLanguageFor(bodyType);
 
+  const deferredBody = useDeferredValue(body);
+  const [wrapWidth, setWrapWidth] = useState(0);
+
   // Keep gutter heights in sync when wrap is on (long lines take >1 visual row).
   useLayoutEffect(() => {
     if (!(isCodeEditor && wordWrap)) {
@@ -173,17 +184,20 @@ export function BodyEditor({
     const pane = editorPaneRef.current;
     if (!pane) return;
 
-    const update = () => {
-      // textarea px-4 = 16px each side
-      const width = Math.max(0, pane.clientWidth - 32);
-      setLineHeights(measureWrappedLineHeights(body, width));
-    };
-    update();
-
-    const ro = new ResizeObserver(update);
+    const updateWidth = () => setWrapWidth(Math.max(0, pane.clientWidth - 32));
+    updateWidth();
+    const ro = new ResizeObserver(updateWidth);
     ro.observe(pane);
     return () => ro.disconnect();
-  }, [body, wordWrap, isCodeEditor]);
+  }, [wordWrap, isCodeEditor]);
+
+  useLayoutEffect(() => {
+    if (!(isCodeEditor && wordWrap)) {
+      setLineHeights(undefined);
+      return;
+    }
+    setLineHeights(measureWrappedLineHeights(deferredBody, wrapWidth));
+  }, [deferredBody, wrapWidth, wordWrap, isCodeEditor]);
 
   const handleScroll = useCallback(() => {
     const ta = textareaRef.current;

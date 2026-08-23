@@ -21,17 +21,13 @@ export function useScrollReveal() {
           }
         }
       },
-      // Generous margins so jump-scroll / hash links still reveal.
-      { threshold: 0.01, rootMargin: "0px 0px -4% 0px" },
+      // Extra bottom margin so the last sections still reveal when hash-jumped.
+      { threshold: 0.01, rootMargin: "80px 0px 30% 0px" },
     );
 
-    const seen = new WeakSet<Element>();
     const scan = () => {
       for (const el of document.querySelectorAll(".reveal:not(.visible)")) {
-        if (!seen.has(el)) {
-          seen.add(el);
-          observer.observe(el);
-        }
+        observer.observe(el);
       }
     };
     scan();
@@ -39,10 +35,19 @@ export function useScrollReveal() {
     const raf = requestAnimationFrame(scan);
     // Re-scan after layout settles (fonts, images, late mounts).
     const t = window.setTimeout(scan, 400);
+    // Hydrated islands can rewrite className and drop `.visible` — watch for that.
+    const mo = new MutationObserver(scan);
+    mo.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
     return () => {
       cancelAnimationFrame(raf);
       window.clearTimeout(t);
+      mo.disconnect();
       observer.disconnect();
     };
   }, []);

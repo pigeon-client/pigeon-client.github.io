@@ -56,7 +56,7 @@ and Params.
 - [ ] Manual rename locks tab name; clearing rename restores auto path name.
 - [ ] `curl ` paste into URL bar populates request and shows toast.
 - [ ] Method QUERY / OPTIONS selectable; GET/HEAD body not sent.
-- [ ] Empty URL on active tab → empty state with **Try an example** only (no separate New Request CTA).
+- [ ] Empty URL on active tab → empty state; first visit shows **Send your first request** + **Load a sample**; later visits show **No request open** + the same CTA.
 
 ## UI
 
@@ -77,8 +77,10 @@ and Params.
 - **URL bar** — method dropdown, syntax-tinted URL (scheme muted, host normal, path accent, query
   muted), Send. `*` preserved as OPTIONS request-target (needs `Host` on desktop send).
 - **Editor tabs** — count badge / body dot when content present.
-- **Empty state** (`EmptyRequestState`) — headline "No request open"; single CTA **Try an example**;
-  keyboard hints. Shown when the **active tab has no URL** (tabs still exist).
+- **Empty state** (`EmptyRequestState`) — brand mark, **No request open**, **Load a sample**.
+  Shown when the **active tab has no URL** (tabs still exist). Loading a sample fills the empty
+  tab (does not open a spare). First-run send loop is the overlay in
+  [onboarding.md](./onboarding.md), not this empty state.
 
 ## UX / interactions
 
@@ -106,7 +108,7 @@ Canonical list: [keyboard-shortcuts.md](./keyboard-shortcuts.md). Tab strip deta
 
 ## States & edge cases
 
-- **No URL on active tab** → empty-request state ("No request open" + Try an example).
+- **No URL on active tab** → empty-request state ("No request open" + Load a sample).
 - Auto-close pairs in Body write through React's native setter so highlight updates.
 - Disabled params excluded from URL query and sent request.
 - Suggestion dropdowns for header keys must not trap vertical scroll of the list.
@@ -117,7 +119,7 @@ Canonical list: [keyboard-shortcuts.md](./keyboard-shortcuts.md). Tab strip deta
 
 - [ ] Create 3 tabs; switch with click and `⌘1–3`; close middle tab.
 - [ ] Rename tab; change URL path — name stays locked; clear rename — unlocks.
-- [ ] Clear URL → empty state shows Try an example only.
+- [ ] Clear URL → empty state shows Load a sample.
 - [ ] Paste long URL (~3KB); End key + horizontal scroll; overlay matches caret.
 - [ ] Paste URL with query → Params filled; edit value → URL updates.
 - [ ] Headers: add 25 rows; scroll vertically to last row.
@@ -142,7 +144,8 @@ Canonical list: [keyboard-shortcuts.md](./keyboard-shortcuts.md). Tab strip deta
 
 `url-input`, `method-trigger`, `method-option-<METHOD>`, `data-send-btn` (attribute),
 `send-error`, `env-token`, `editor-tab-params|auth|headers|body`, `param-key-<i>`,
-`param-value-<i>`, `header-key-<i>`, `header-value-<i>`, `body-wrap-toggle`.
+`param-value-<i>`, `header-key-<i>`, `header-value-<i>`, `body-wrap-toggle`,
+`empty-request-state`, `empty-try-example`, `url-bar`, `url-bar-compose`.
 Workspace tabs: `role="tab"`. Scope `url-input` / `method-trigger` to `:visible`.
 
 ## Key files
@@ -151,7 +154,7 @@ Workspace tabs: `role="tab"`. Scope `url-input` / `method-trigger` to `:visible`
 `UrlBarStatusLine.tsx`), `components/RequestEditor.tsx`,
 `components/BodyEditor.tsx` (+ `BodyTypeSelector.tsx`, `BinaryFilePane.tsx`, `HighlightLayer.tsx`,
 `LineNumbers.tsx`, `lib/bodyEditorHelpers.ts`), `components/HeadersEditor.tsx`,
-`components/HeadersEditor.tsx`, `components/EmptyRequestState.tsx`, `store.ts`,
+`components/EmptyRequestState.tsx`, `lib/firstRequest.ts`, `store.ts`,
 `hooks/useAutoClose.ts`, `hooks/useSendRequest.ts` (send + history/draft orchestration — see
 [execution.md](./execution.md)). `KeyValueEditor` itself now lives in `shared/ui/KeyValueEditor/`
 (shared with MCP's headers editor), not in this feature.

@@ -13,6 +13,10 @@ cask "pigeon" do
   app "Pigeon.app"
 
   zap trash: [
+    "~/Library/Application Support/dev.trypigeon.app",
+    "~/Library/Caches/dev.trypigeon.app",
+    "~/Library/Preferences/dev.trypigeon.app.plist",
+    "~/Library/Saved Application State/dev.trypigeon.app.savedState",
     "~/Library/Application Support/com.k1n1.pigeon",
     "~/Library/Caches/com.k1n1.pigeon",
     "~/Library/Preferences/com.k1n1.pigeon.plist",

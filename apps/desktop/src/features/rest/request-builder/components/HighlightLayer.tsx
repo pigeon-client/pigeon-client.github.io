@@ -1,5 +1,5 @@
 import { cn } from "@pigeon/ui";
-import { useMemo } from "react";
+import { useDeferredValue, useMemo } from "react";
 import { maskVarTokensForHighlight } from "@/shared/lib/varTokenSegments";
 import { HighlightedHtml } from "@/shared/ui/HighlightedHtml";
 import { hljsHighlight, LINE_HEIGHT } from "../lib/bodyEditorHelpers";
@@ -15,10 +15,13 @@ export function HighlightLayer({
   wrap: boolean;
   scrollRef: React.RefObject<HTMLDivElement | null>;
 }) {
-  const highlighted = useMemo(
-    () => hljsHighlight(maskVarTokensForHighlight(code), language),
-    [code, language],
-  );
+  const deferredCode = useDeferredValue(code);
+  const highlighted = useMemo(() => {
+    const src = maskVarTokensForHighlight(deferredCode);
+    // Skip hljs on huge bodies — escape only so typing stays responsive.
+    if (src.length > 80_000) return hljsHighlight(src, "");
+    return hljsHighlight(src, language);
+  }, [deferredCode, language]);
 
   return (
     <div

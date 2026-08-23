@@ -1,5 +1,6 @@
-import { contentTypeForBody } from "@/shared/lib/contentType";
+import { contentTypeForBody, isBinaryBodyType } from "@/shared/lib/contentType";
 import { methodAllowsRequestBody } from "@/shared/lib/httpMethod";
+import { base64ToBytes } from "../lib/bytes";
 import type { HttpClient, HttpRequest } from "../ports/HttpClient";
 import type { ApiResponse } from "../types";
 
@@ -32,14 +33,11 @@ export const browserHttpClient: HttpClient = {
     // already strips, but keep the transport honest).
     const hasBody = request.body != null && methodAllowsRequestBody(method);
 
-    // Binary body types arrive as comma-joined byte decimals from requestService.
+    // Binary body types arrive as standard base64 from requestService.
     let body: BodyInit | undefined;
     if (hasBody && request.body != null) {
-      if (request.body.includes(",") && /^\d+(,\d+)*$/.test(request.body.trim())) {
-        const bytes = Uint8Array.from(
-          request.body.split(",").map((s) => Number.parseInt(s.trim(), 10)),
-        );
-        body = bytes;
+      if (isBinaryBodyType(request.bodyType)) {
+        body = base64ToBytes(request.body);
       } else {
         body = request.body;
       }
@@ -62,7 +60,7 @@ export const browserHttpClient: HttpClient = {
       status: res.status,
       statusText: res.statusText,
       headers: respHeaders,
-      body: Array.from(bytes),
+      body: bytes,
       contentType: respHeaders["content-type"] ?? "application/octet-stream",
       responseTime: 0,
       size: bytes.length,

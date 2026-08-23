@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openApp, typeUrl, urlInput } from "./helpers";
+import { clickSend, mockJson, openApp, responseStatus, typeUrl, urlInput } from "./helpers";
 
 test.describe("smoke", () => {
   test("app boots with the shell and the empty-request state", async ({ page }) => {
@@ -10,9 +10,9 @@ test.describe("smoke", () => {
     await expect(urlInput(page)).toBeVisible();
     await expect(page.locator("[data-send-btn]")).toBeVisible();
 
-    // No URL yet → empty-request state with its CTA.
+    // No URL yet → empty-request state.
     await expect(page.getByText("No request open")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Try an example/ })).toBeVisible();
+    await expect(page.getByTestId("empty-try-example")).toBeVisible();
 
     // Typing a URL reveals the editor + response panel.
     await typeUrl(page, "https://api.example.com/users");
@@ -37,6 +37,22 @@ test.describe("smoke", () => {
 
     await page.getByTestId("sidebar-expand").click();
     await expect(page.getByTestId("sidebar-new-request")).toBeVisible();
+  });
+
+  test("Load a sample fills a public GET", async ({ page }) => {
+    await openApp(page);
+    await mockJson(page, "jsonplaceholder.typicode.com", {
+      userId: 1,
+      id: 1,
+      title: "delectus aut autem",
+      completed: false,
+    });
+
+    await page.getByTestId("empty-try-example").click();
+    await expect(urlInput(page)).toHaveValue(/jsonplaceholder/);
+
+    await clickSend(page);
+    await expect(responseStatus(page)).toContainText("200");
   });
 
   test("response resize keeps the panel reachable and double-click resets the split", async ({

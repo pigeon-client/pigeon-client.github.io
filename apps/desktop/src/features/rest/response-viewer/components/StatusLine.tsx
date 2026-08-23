@@ -45,6 +45,7 @@ export function StatusLine({
     truncated?: boolean;
     snapshotTimestamp?: number;
     snapshotTruncated?: boolean;
+    bodyEvicted?: boolean;
     responseTime: number;
   };
   statusColor: string;
@@ -107,6 +108,7 @@ export function StatusLine({
           <span className="font-mono text-code">
             {sizeLabel}
             {response.truncated ? " · truncated" : ""}
+            {response.bodyEvicted ? " · resend to view body" : ""}
           </span>
         </div>
       </div>

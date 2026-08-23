@@ -1,5 +1,6 @@
-import { create } from "zustand";
-import type { ApiResponse } from "@/core/http";
+import { useRef, useSyncExternalStore } from "react";
+import { create, type StoreApi, type UseBoundStore } from "zustand";
+import { type ApiResponse, EMPTY_BODY } from "@/core/http";
 import { getWindowKind } from "@/shared/lib/windowKind";
 import type { RequestConfig } from "@/shared/types";
 
@@ -33,6 +34,66 @@ export interface Tab {
   isLoading: boolean;
   /** When set, ⌘S updates this collection node in place instead of opening the save modal. */
   collectionRef?: { collectionId: string; nodeId: string } | null;
+}
+
+export type TabShell = { id: string; kind: TabKind; hasUrl: boolean };
+export type TabChrome = { id: string; name: string; kind: TabKind; method: string };
+
+export function selectTabShells(tabs: Tab[]): TabShell[] {
+  return tabs.map((t) => ({
+    id: t.id,
+    kind: t.kind,
+    hasUrl: t.request.url.trim().length > 0,
+  }));
+}
+
+export function tabShellsEqual(a: TabShell[], b: TabShell[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((t, i) => t.id === b[i].id && t.kind === b[i].kind && t.hasUrl === b[i].hasUrl)
+  );
+}
+
+export function selectTabChrome(tabs: Tab[]): TabChrome[] {
+  return tabs.map((t) => ({
+    id: t.id,
+    name: t.name,
+    kind: t.kind,
+    method: t.request.method,
+  }));
+}
+
+export function tabChromeEqual(a: TabChrome[], b: TabChrome[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every(
+      (t, i) =>
+        t.id === b[i].id &&
+        t.name === b[i].name &&
+        t.kind === b[i].kind &&
+        t.method === b[i].method,
+    )
+  );
+}
+
+/** Zustand `create()` in this app is typed without an equalityFn arg — compare slices ourselves. */
+export function useEqualStore<T, U>(
+  store: UseBoundStore<StoreApi<T>>,
+  selector: (state: T) => U,
+  equal: (a: U, b: U) => boolean,
+): U {
+  const selected = useRef(selector(store.getState()));
+  return useSyncExternalStore(
+    (onStoreChange) =>
+      store.subscribe(() => {
+        const next = selector(store.getState());
+        if (equal(selected.current, next)) return;
+        selected.current = next;
+        onStoreChange();
+      }),
+    () => selected.current,
+    () => selected.current,
+  );
 }
 
 interface TabState {
@@ -142,27 +203,89 @@ function persistableRequest(request: RequestConfig): RequestConfig {
   };
 }
 
-function persistTabs(state: Pick<TabState, "tabs" | "activeTabId">): void {
-  if (typeof localStorage === "undefined") return;
+const TAB_PERSIST_MS = 400;
+const BODY_LRU_MAX_TABS = 8;
+const BODY_LRU_MAX_BYTES = 48 * 1024 * 1024;
 
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let lastPersisted = "";
+const bodyTouch = new Map<string, number>();
+let bodyClock = 0;
+
+function touchTabBody(id: string): void {
+  bodyTouch.set(id, ++bodyClock);
+}
+
+function forgetTabBody(id: string): void {
+  bodyTouch.delete(id);
+}
+
+function capTabBodies(tabs: Tab[], keepId: string | null): Tab[] {
+  const ranked = tabs
+    .map((tab) => ({
+      id: tab.id,
+      bytes: tab.response?.body.length ?? 0,
+      at: bodyTouch.get(tab.id) ?? 0,
+    }))
+    .filter((row) => row.bytes > 0);
+  let total = ranked.reduce((sum, row) => sum + row.bytes, 0);
+  if (ranked.length <= BODY_LRU_MAX_TABS && total <= BODY_LRU_MAX_BYTES) return tabs;
+
+  const drop = new Set<string>();
+  for (const row of [...ranked].sort((a, b) => a.at - b.at)) {
+    if (row.id === keepId) continue;
+    if (ranked.length - drop.size <= BODY_LRU_MAX_TABS && total <= BODY_LRU_MAX_BYTES) break;
+    drop.add(row.id);
+    total -= row.bytes;
+  }
+  if (drop.size === 0) return tabs;
+  return tabs.map((tab) => {
+    if (!(drop.has(tab.id) && tab.response)) return tab;
+    forgetTabBody(tab.id);
+    return { ...tab, response: { ...tab.response, body: EMPTY_BODY, bodyEvicted: true } };
+  });
+}
+
+function serializeTabs(state: Pick<TabState, "tabs" | "activeTabId">): string {
+  return JSON.stringify({
+    activeTabId: state.activeTabId,
+    tabs: state.tabs.map((tab) => ({
+      id: tab.id,
+      kind: tab.kind,
+      name: tab.name,
+      nameLocked: tab.nameLocked,
+      request: persistableRequest(tab.request),
+      collectionRef: tab.collectionRef ?? null,
+    })),
+  });
+}
+
+function persistTabsNow(state: Pick<TabState, "tabs" | "activeTabId">): void {
+  if (typeof localStorage === "undefined") return;
+  const payload = serializeTabs(state);
+  if (payload === lastPersisted) return;
+  lastPersisted = payload;
   try {
-    localStorage.setItem(
-      storageKey(),
-      JSON.stringify({
-        activeTabId: state.activeTabId,
-        tabs: state.tabs.map((tab) => ({
-          id: tab.id,
-          kind: tab.kind,
-          name: tab.name,
-          nameLocked: tab.nameLocked,
-          request: persistableRequest(tab.request),
-          collectionRef: tab.collectionRef ?? null,
-        })),
-      }),
-    );
+    localStorage.setItem(storageKey(), payload);
   } catch {
     // Storage can be unavailable or full. In-memory tabs still work.
   }
+}
+
+function persistTabs(): void {
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    persistTabsNow(useTabStore.getState());
+  }, TAB_PERSIST_MS);
+}
+
+function flushPersistedTabs(): void {
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  persistTabsNow(useTabStore.getState());
 }
 
 function restoreTabs(): Pick<TabState, "tabs" | "activeTabId"> | null {
@@ -290,6 +413,7 @@ export const useTabStore = create<TabState>((set, get) => ({
   },
 
   closeTab: (id) => {
+    forgetTabBody(id);
     set((s) => {
       const filtered = s.tabs.filter((t) => t.id !== id);
       let newActive = s.activeTabId;
@@ -313,10 +437,14 @@ export const useTabStore = create<TabState>((set, get) => ({
     set((s) => {
       const keep = s.tabs.filter((t) => t.id === id);
       if (keep.length === 0) return s;
+      for (const tab of s.tabs) {
+        if (tab.id !== id) forgetTabBody(tab.id);
+      }
       return { tabs: keep, activeTabId: id };
     }),
 
   closeAllTabs: () => {
+    bodyTouch.clear();
     const newId = `tab-${tabCounter++}`;
     set({
       tabs: [buildTab(newId, defaultKindForWindow())],
@@ -337,7 +465,10 @@ export const useTabStore = create<TabState>((set, get) => ({
       return { tabs };
     }),
 
-  setActiveTab: (id) => set({ activeTabId: id }),
+  setActiveTab: (id) => {
+    touchTabBody(id);
+    set({ activeTabId: id });
+  },
 
   updateTabRequest: (id, req) =>
     set((s) => ({
@@ -353,10 +484,16 @@ export const useTabStore = create<TabState>((set, get) => ({
       }),
     })),
 
-  updateTabResponse: (id, res) =>
+  updateTabResponse: (id, res) => {
+    if (res?.body.length) touchTabBody(id);
+    else forgetTabBody(id);
     set((s) => ({
-      tabs: s.tabs.map((t) => (t.id === id ? { ...t, response: res } : t)),
-    })),
+      tabs: capTabBodies(
+        s.tabs.map((t) => (t.id === id ? { ...t, response: res } : t)),
+        s.activeTabId,
+      ),
+    }));
+  },
 
   setTabLoading: (id, loading) =>
     set((s) => ({
@@ -404,8 +541,12 @@ export const useTabStore = create<TabState>((set, get) => ({
     })),
 }));
 
-useTabStore.subscribe((state) => persistTabs(state));
+useTabStore.subscribe(() => persistTabs());
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", flushPersistedTabs);
+}
 
 // Initialize with one tab on first launch. Restored tabs stay untouched.
 if (!restoredTabs) useTabStore.getState().addTab();
-persistTabs(useTabStore.getState());
+else lastPersisted = serializeTabs(restoredTabs);

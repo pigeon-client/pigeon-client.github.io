@@ -5,12 +5,51 @@ pub mod mcp_oauth;
 
 use rusqlite::{params, Connection};
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, OnceLock};
 use tauri::State;
 
 pub struct DbState {
-    pub conn: Mutex<Connection>,
-    pub migration_status: Option<MigrationStatus>,
+    inner: OnceLock<(Arc<Mutex<Connection>>, Option<MigrationStatus>)>,
+}
+
+impl Default for DbState {
+    fn default() -> Self {
+        Self {
+            inner: OnceLock::new(),
+        }
+    }
+}
+
+impl DbState {
+    fn ensure(&self) -> &(Arc<Mutex<Connection>>, Option<MigrationStatus>) {
+        self.inner.get_or_init(|| {
+            let (conn, status) = init_db();
+            (Arc::new(Mutex::new(conn)), status)
+        })
+    }
+}
+
+pub(crate) async fn with_conn<T, F>(state: &DbState, f: F) -> Result<T, String>
+where
+    T: Send + 'static,
+    F: FnOnce(&Connection) -> Result<T, String> + Send + 'static,
+{
+    let conn = Arc::clone(&state.ensure().0);
+    tauri::async_runtime::spawn_blocking(move || {
+        let guard = conn.lock().map_err(|e| e.to_string())?;
+        f(&guard)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+pub(crate) fn exec_cached(
+    conn: &Connection,
+    sql: &str,
+    params: impl rusqlite::Params,
+) -> Result<usize, String> {
+    let mut stmt = conn.prepare_cached(sql).map_err(|e| e.to_string())?;
+    stmt.execute(params).map_err(|e| e.to_string())
 }
 
 fn db_path() -> PathBuf {
@@ -31,19 +70,28 @@ fn db_path() -> PathBuf {
 pub fn init_db() -> (Connection, Option<MigrationStatus>) {
     let path = db_path();
     let conn = Connection::open(&path).expect("Failed to open database");
+    conn.execute_batch(
+        "PRAGMA journal_mode=WAL;
+         PRAGMA synchronous=NORMAL;
+         PRAGMA busy_timeout=5000;
+         PRAGMA temp_store=MEMORY;
+         PRAGMA cache_size=-64000;
+         PRAGMA mmap_size=268435456;",
+    )
+    .expect("Failed to apply SQLite PRAGMAs");
 
     conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS drafts (
+        "CREATE TABLE IF NOT EXISTS rest_drafts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             data TEXT NOT NULL,
             created_at INTEGER NOT NULL
         );
-        CREATE TABLE IF NOT EXISTS history (
+        CREATE TABLE IF NOT EXISTS rest_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             data TEXT NOT NULL,
             timestamp INTEGER NOT NULL
         );
-        CREATE TABLE IF NOT EXISTS collections (
+        CREATE TABLE IF NOT EXISTS rest_collections (
             id TEXT PRIMARY KEY,
             data TEXT NOT NULL,
             created_at INTEGER NOT NULL
@@ -70,6 +118,11 @@ const MIGRATIONS: &[(&str, Migration)] = &[
     ),
     ("create_mcp_oauth_table", create_mcp_oauth_table),
     ("rename_rest_tables", rename_rest_tables),
+    ("create_list_indexes", create_list_indexes),
+    (
+        "drop_empty_legacy_rest_tables",
+        drop_empty_legacy_rest_tables,
+    ),
 ];
 
 #[derive(Clone, serde::Serialize)]
@@ -81,7 +134,7 @@ pub struct MigrationStatus {
 
 #[tauri::command]
 pub fn get_migration_status(state: State<DbState>) -> Option<MigrationStatus> {
-    state.migration_status.clone()
+    state.ensure().1.clone()
 }
 
 fn schema_version(conn: &Connection) -> Result<i64, String> {
@@ -241,10 +294,84 @@ fn rename_rest_tables(conn: &Connection) -> Result<(), String> {
         ("history", "rest_history"),
         ("collections", "rest_collections"),
     ] {
-        if table_exists(conn, old)? {
-            conn.execute(&format!("ALTER TABLE {} RENAME TO {}", old, new), [])
-                .map_err(|e| e.to_string())?;
+        if !table_exists(conn, old)? {
+            continue;
         }
+        // init_db may already have created empty rest_* tables on an unmigrated DB.
+        if table_exists(conn, new)? {
+            continue;
+        }
+        conn.execute(&format!("ALTER TABLE {} RENAME TO {}", old, new), [])
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// `init_db` used to CREATE the pre-rename names every launch, so empty `drafts` /
+/// `history` / `collections` tables came back after `rename_rest_tables`. Drop them
+/// (copying any leftover rows into `rest_*` first).
+fn drop_empty_legacy_rest_tables(conn: &Connection) -> Result<(), String> {
+    for (old, new) in [
+        ("drafts", "rest_drafts"),
+        ("history", "rest_history"),
+        ("collections", "rest_collections"),
+    ] {
+        if !table_exists(conn, old)? {
+            continue;
+        }
+        if table_exists(conn, new)? {
+            let old_count: i64 = conn
+                .query_row(&format!("SELECT COUNT(*) FROM {old}"), [], |row| row.get(0))
+                .map_err(|e| e.to_string())?;
+            let new_count: i64 = conn
+                .query_row(&format!("SELECT COUNT(*) FROM {new}"), [], |row| row.get(0))
+                .map_err(|e| e.to_string())?;
+            if old_count > 0 && new_count == 0 {
+                conn.execute(&format!("DROP TABLE {new}"), [])
+                    .map_err(|e| e.to_string())?;
+                conn.execute(&format!("ALTER TABLE {old} RENAME TO {new}"), [])
+                    .map_err(|e| e.to_string())?;
+                continue;
+            }
+            if old_count > 0 {
+                conn.execute(
+                    &format!("INSERT OR IGNORE INTO {new} SELECT * FROM {old}"),
+                    [],
+                )
+                .map_err(|e| e.to_string())?;
+            }
+        } else {
+            conn.execute(&format!("ALTER TABLE {old} RENAME TO {new}"), [])
+                .map_err(|e| e.to_string())?;
+            continue;
+        }
+        conn.execute(&format!("DROP TABLE {old}"), [])
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+fn create_list_indexes(conn: &Connection) -> Result<(), String> {
+    for (table, index, column) in [
+        ("rest_history", "idx_rest_history_timestamp", "timestamp"),
+        ("rest_drafts", "idx_rest_drafts_created_at", "created_at"),
+        (
+            "rest_collections",
+            "idx_rest_collections_created_at",
+            "created_at",
+        ),
+    ] {
+        if !table_exists(conn, table)? {
+            continue;
+        }
+        conn.execute(
+            &format!(
+                "CREATE INDEX IF NOT EXISTS {} ON {}({})",
+                index, table, column
+            ),
+            [],
+        )
+        .map_err(|e| e.to_string())?;
     }
     Ok(())
 }
@@ -272,6 +399,8 @@ mod tests {
                 "migrate_collections_id_to_text",
                 "create_mcp_oauth_table",
                 "rename_rest_tables",
+                "create_list_indexes",
+                "drop_empty_legacy_rest_tables",
             ]
         );
     }

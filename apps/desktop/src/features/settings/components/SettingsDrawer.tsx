@@ -433,7 +433,9 @@ export function SettingsDrawer({
               <div className="mb-3 flex items-center gap-3">
                 <img src={pigeonLogo} alt="Pigeon" className="h-10 w-10 rounded object-contain" />
                 <div>
-                  <div className="text-sm font-semibold text-foreground">Pigeon</div>
+                  <div className="text-[1.02rem] font-bold tracking-tight text-foreground">
+                    Pigeon
+                  </div>
                   <div className="text-2xs text-muted-foreground">The fast, native API client</div>
                 </div>
               </div>
