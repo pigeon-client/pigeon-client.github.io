@@ -42,6 +42,7 @@ Update these docs when behavior changes.
 | [command-palette.md](./command-palette.md) | Global search (`⌘K` / `⌘⇧K` / `⌘⇧P`) | Shipped | `src/features/command-palette` |
 | [settings.md](./settings.md) | Theme, request options, updates, data | Shipped | `src/features/settings` |
 | [persistence.md](./persistence.md) | SQLite vs localStorage dual backend | Shipped | `src/core/persistence` |
+| [analytics.md](./analytics.md) | Anonymous install/launch telemetry | Shipped | `src/core/analytics`, `apps/analytics-worker` |
 | [shared-ui.md](./shared-ui.md) | Shared composites + `@pigeon/ui` | Shipped | `src/shared/ui`, `packages/ui` |
 | [ui-package.md](./ui-package.md) | `@pigeon/ui` primitive API notes | Shipped | `packages/ui` |
 

@@ -3,7 +3,7 @@ title: "Environments without the mess"
 description: "Switch {{baseUrl}} between dev, staging, and prod in Pigeon. Secrets stay masked; destructive calls to production get a confirm. Free macOS API client."
 seoTitle: "API Environments & Variables in Pigeon | Dev, Staging, Prod"
 pubDate: 2026-08-11
-heroImage: /blog/environments-without-the-mess.webp
+heroImage: /blog/environments-without-the-mess.png
 heroImageAlt: "Environment switcher showing dev, staging, and prod with a masked secret value."
 ---
 

@@ -7,6 +7,9 @@ export const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`;
 /** Canonical production site (meta/OG + updater/download endpoints). */
 export const SITE_URL = "https://trypigeon.dev";
 export const SITE_NAME = "Pigeon";
+/** General contact inbox (footer mailto). */
+export const CONTACT_EMAIL = "hello@trypigeon.dev";
+export const CONTACT_MAILTO = `mailto:${CONTACT_EMAIL}`;
 
 /** Desktop app auto-update manifest (Tauri updater). */
 export const UPDATER_MANIFEST_URL = `${SITE_URL}/latest.json`;
@@ -26,14 +29,15 @@ export const HERO_HEADLINE = "Built for Real Developers, Not Showoffs.";
 export const HERO_HEADLINE_ACCENT = "Real Developers";
 export const HERO_SUB = "Focus on building. Pigeon keeps your APIs organized.";
 
-/** Browser tab / OG title — brand voice first; competitor keywords stay on /postman-alternative + FAQ. */
+/** Browser tab / OG title — brand voice first; competitor keywords on comparison pages + FAQ. */
 export const DEFAULT_TITLE = `${HERO_HEADLINE.replace(/\.$/, "")} | ${SITE_NAME}`;
 export const DEFAULT_DESCRIPTION = `${HERO_HEADLINE} ${HERO_SUB} Free open-source macOS API client — no account, no cloud.`;
 
-/** Default Open Graph image (1200×630-ish PNG). */
-export const DEFAULT_OG_IMAGE = "/og/home.webp";
-export const BLOG_OG_IMAGE = "/og/blog.webp";
-export const POSTMAN_ALT_OG_IMAGE = "/og/postman-alternative.webp";
+/** Footer comparison pages — not in header nav (landing covers “why Pigeon”). */
+export const COMPARISON_LINKS = [
+  { href: "/postman-alternative", label: "Postman alternative" },
+  { href: "/insomnia-alternative", label: "Insomnia alternative" },
+] as const;
 
 /**
  * Install one-liner for the current host.

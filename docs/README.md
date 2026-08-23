@@ -12,6 +12,7 @@ Organized product and engineering reference for the monorepo.
 | **Testing** | [`testing.md`](./testing.md) | Vitest, Playwright, testids, CI |
 | **Release** | [`release.md`](./release.md) | Packaging, signing, Homebrew |
 | **CI / deploy** | [`ci-deploy.md`](./ci-deploy.md) | GitHub Actions + Cloudflare site deploy |
+| **Analytics** | [`analytics.md`](./analytics.md) | Anonymous install telemetry (Worker + D1) |
 | **Launch readiness** | [`launch-readiness.md`](./launch-readiness.md) | Ship checklist |
 | **Security** | [`security-audit.md`](./security-audit.md) | Security notes |
 | **Specs** | [`specs/`](./specs/) | Narrow technical specs (e.g. environments v1) |
@@ -27,11 +28,12 @@ Organized product and engineering reference for the monorepo.
 ## Repo map
 
 ```
-apps/desktop/     Tauri + React desktop API client
-apps/site/        Marketing site (Astro / Cloudflare Workers)
-packages/ui/      Shared UI primitives + design tokens
-packages/brand/   Brand assets / helpers
-docs/             All project documentation (this tree)
+apps/desktop/            Tauri + React desktop API client
+apps/site/               Marketing site (Astro / Cloudflare Workers)
+apps/analytics-worker/   Anonymous install analytics API (Worker + D1)
+packages/ui/             Shared UI primitives + design tokens
+packages/brand/          Brand assets / helpers
+docs/                    All project documentation (this tree)
 ```
 
 ## Conventions

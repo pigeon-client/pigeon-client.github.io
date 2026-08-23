@@ -2,6 +2,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@pigeon/ui
 import { invoke } from "@tauri-apps/api/core";
 import { PanelLeftOpen } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { initializeAnalytics } from "@/core/analytics";
 import { selectActiveEnv, useEnvStore } from "@/features/environments";
 import { Onboarding } from "@/features/onboarding";
 import { findNode, findUniqueSavedRequest, useCollectionStore } from "@/features/rest/collections";
@@ -111,6 +112,8 @@ export function AppContent() {
         void useHistoryStore.getState().load();
         void useCollectionStore.getState().load();
         scheduleIdle(() => checkForUpdates(true));
+        // Anonymous install/launch telemetry — never awaited; failures are ignored.
+        scheduleIdle(() => initializeAnalytics());
       }
     })();
   }, [windowKind]);

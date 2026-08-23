@@ -2,17 +2,22 @@
 import SiteLayout from "../layouts/SiteLayout.astro";
 import { BlogGetPigeon } from "../components/BlogGetPigeon";
 import {
-  POSTMAN_ALT_OG_IMAGE,
+  COMPARISON_LINKS,
   SITE_NAME,
   SITE_URL,
 } from "../lib/constants";
 import "../styles/blog.css";
 
-const title = `Why Choose Pigeon over Postman? | Free Local-First macOS API Client`;
+const title = `Why Choose Pigeon over Postman? | Pigeon`;
 const description =
   "Looking for a Postman alternative? Pigeon is a free, open-source macOS API client with no account, local data, auto-named tabs, and history filed by domain.";
 const canonicalPath = "/postman-alternative";
+const ogImage = "/og/postman-alternative.png";
 const origin = Astro.url.origin;
+
+const otherLinks = COMPARISON_LINKS.filter(
+  (link) => link.href !== canonicalPath,
+);
 
 const webPageJsonLd = {
   "@context": "https://schema.org",
@@ -59,11 +64,14 @@ const faqJsonLd = {
   title={title}
   description={description}
   canonicalPath={canonicalPath}
-  ogImage={POSTMAN_ALT_OG_IMAGE}
+  ogImage={ogImage}
   bodyClass="page-blog"
 >
   <Fragment slot="head">
-    <script type="application/ld+json" set:html={JSON.stringify(webPageJsonLd)} />
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(webPageJsonLd)}
+    />
     <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
   </Fragment>
   <main class="site-main">
@@ -74,10 +82,10 @@ const faqJsonLd = {
         <p class="blog-dek">{description}</p>
         <figure class="blog-hero">
           <img
-            src={POSTMAN_ALT_OG_IMAGE}
+            src={ogImage}
             alt="Pigeon — a local-first macOS API client, a lighter alternative to heavy workspace tools."
-            width={1200}
-            height={630}
+            width={1600}
+            height={840}
             decoding="async"
             fetchpriority="high"
           />
@@ -86,60 +94,75 @@ const faqJsonLd = {
 
       <div class="blog-prose">
         <p>
-          API clients got heavy. Sign-in walls, cloud sync, workspaces, updates that want the
-          network again. If that still fits your team, great — keep it.
+          API clients got heavy. Sign-in walls, cloud sync, workspaces, updates
+          that want the network again. If that still fits your team, great —
+          keep it.
         </p>
         <p>
-          <strong>Pigeon went the other way:</strong> a native macOS app that organizes itself so
-          you can send a request and move on. No account. Data on your disk. Free and open source.
+          <strong>Pigeon went the other way:</strong> a native macOS app that organizes
+          itself so you can send a request and move on. No account. Data on your disk.
+          Free and open source.
         </p>
 
         <h2>What Pigeon optimizes for</h2>
         <ul>
           <li>
-            <strong>No account, ever</strong> — open the app and send. No invite, no workspace
-            setup.
+            <strong>No account, ever</strong> — open the app and send. No invite,
+            no workspace setup.
           </li>
           <li>
-            <strong>Local by default</strong> — collections, history, environments, and keys stay
-            on your Mac.
+            <strong>Local by default</strong> — collections, history, environments,
+            and keys stay on your Mac.
           </li>
           <li>
-            <strong>Tabs that name themselves</strong> — the path becomes the tab name when you
-            send.
+            <strong>Tabs that name themselves</strong> — the path becomes the tab
+            name when you send.
           </li>
           <li>
-            <strong>History filed by domain</strong> — calls land under the host, not a flat pile
-            of timestamps.
+            <strong>History filed by domain</strong> — calls land under the host,
+            not a flat pile of timestamps.
           </li>
           <li>
-            <strong>cURL and Postman import</strong> — paste docs commands or bring a collection
-            with you.
+            <strong>cURL and Postman import</strong> — paste docs commands or bring
+            a collection with you.
           </li>
           <li>
-            <strong>Keyboard-first</strong> — send with <code>⌘↵</code>, find anything with{" "}
+            <strong>Keyboard-first</strong> — send with <code>⌘↵</code>, find
+            anything with{" "}
             <code>⌘K</code>.
           </li>
         </ul>
 
         <h2>Who it’s for</h2>
         <p>
-          Solo developers and small teams who want a fast local client — not a cloud workspace.
-          If you live in the terminal and an editor already, Pigeon should feel familiar.
+          Solo developers and small teams who want a fast local client — not a
+          cloud workspace. If you live in the terminal and an editor already,
+          Pigeon should feel familiar.
         </p>
 
         <h2>Who should stick with a heavier client</h2>
         <p>
-          If you need built-in cloud sync across many devices, large team workspaces, or a full
-          collaboration suite in the product, a bigger platform may still be the better fit. Pigeon
-          is intentionally smaller.
+          If you need built-in cloud sync across many devices, large team
+          workspaces, or a full collaboration suite in the product, a bigger
+          platform may still be the better fit. Pigeon is intentionally smaller.
         </p>
+
+        <h2>More comparisons</h2>
+        <ul>
+          {
+            otherLinks.map((link) => (
+              <li>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))
+          }
+        </ul>
 
         <h2>Try it in a minute</h2>
         <p>
-          Install on macOS, paste a <code>curl</code> from the docs, send three requests to
-          different hosts, and watch tabs and history sort themselves. That’s the product pitch —
-          not a feature matrix.
+          Install on macOS, paste a <code>curl</code> from the docs, send three requests
+          to different hosts, and watch tabs and history sort themselves. That’s the
+          product pitch — not a feature matrix.
         </p>
         <p>
           Read more on the <a href="/blog">blog</a>, or start from the{" "}

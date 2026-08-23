@@ -3,7 +3,7 @@ title: "Watching SSE streams live"
 description: "Open text/event-stream endpoints in Pigeon and watch SSE events arrive live. Newest on top, Stop anytime. Free open-source macOS API client."
 seoTitle: "SSE Streaming in Pigeon API Client | Watch Events Live"
 pubDate: 2026-08-15
-heroImage: /blog/watching-sse-streams-live.webp
+heroImage: /blog/watching-sse-streams-live.png
 heroImageAlt: "Live SSE event stream panel with tick events arriving in a dark response viewer."
 ---
 

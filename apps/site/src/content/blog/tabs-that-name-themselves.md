@@ -3,7 +3,7 @@ title: "Tabs that name themselves"
 description: "Pigeon names request tabs from the URL path when you send. Rename once to lock it. Free open-source macOS API client — a lighter Postman alternative."
 seoTitle: "Auto-Named Tabs in Pigeon API Client | No More Untitled Requests"
 pubDate: 2026-08-10
-heroImage: /blog/tabs-that-name-themselves.webp
+heroImage: /blog/tabs-that-name-themselves.png
 heroImageAlt: "Dark tab strip with auto-named paths like /users/42 instead of Untitled."
 ---
 

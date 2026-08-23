@@ -25,6 +25,8 @@
       "!apps/site/src/content",
       "apps/site/astro.config.mjs",
       "apps/site/wrangler.jsonc",
+      "apps/analytics-worker/src/**",
+      "apps/analytics-worker/wrangler.jsonc",
       "packages/*/src/**"
     ],
     "ignoreUnknown": false

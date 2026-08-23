@@ -1,7 +1,7 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import { getCollection } from "astro:content";
-import { BLOG_OG_IMAGE, SITE_NAME, SITE_URL } from "../../lib/constants";
+import { SITE_NAME, SITE_URL } from "../../lib/constants";
 import "../../styles/blog.css";
 
 const posts = (await getCollection("blog"))
@@ -26,7 +26,7 @@ const blogJsonLd = {
   title={title}
   description={description}
   canonicalPath="/blog"
-  ogImage={BLOG_OG_IMAGE}
+  ogImage="/og/blog.png"
   bodyClass="page-blog"
 >
   <Fragment slot="head">
@@ -38,7 +38,8 @@ const blogJsonLd = {
         <p class="blog-kicker">Blog</p>
         <h1>Notes from the nest</h1>
         <p class="blog-dek">
-          What we shipped, how things work, and a few tips for getting more out of Pigeon.
+          What we shipped, how things work, and a few tips for getting more out
+          of Pigeon.
         </p>
       </header>
 

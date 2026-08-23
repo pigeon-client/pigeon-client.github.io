@@ -228,16 +228,28 @@
 
   /* Footer */
   footer {
-    padding: 28px 0;
+    padding: 40px 0 28px;
   }
   .foot {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding-bottom: 32px;
   }
-  .foot nav {
-    flex-wrap: wrap;
-    gap: 14px 18px;
+  .foot-brand {
+    max-width: none;
+  }
+  .foot-cols {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px 20px;
+  }
+  .foot-legal {
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  .foot-cols {
+    grid-template-columns: 1fr 1fr;
   }
 }
 

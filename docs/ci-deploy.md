@@ -55,6 +55,22 @@ pnpm deploy:site                                 # build → R2 sync → worker 
 
 ---
 
+## Anonymous analytics — `apps/analytics-worker`
+
+Separate Worker + D1 database for anonymous desktop install/launch events.
+See [`docs/analytics.md`](./analytics.md).
+
+```bash
+cd apps/analytics-worker
+pnpm d1:create          # once — paste database_id into wrangler.jsonc
+pnpm d1:migrate:remote
+pnpm deploy             # or: pnpm deploy:analytics from repo root
+```
+
+Set desktop release builds with `VITE_ANALYTICS_API_URL=https://analytics.trypigeon.dev`.
+
+---
+
 ## Desktop release — `release.yml`
 
 On `v*` tag push:

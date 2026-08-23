@@ -1,7 +1,6 @@
 ---
 import {
   DEFAULT_DESCRIPTION,
-  DEFAULT_OG_IMAGE,
   DEFAULT_TITLE,
   SITE_NAME,
   SITE_URL,
@@ -14,6 +13,7 @@ interface Props {
   description?: string;
   canonicalPath?: string;
   ogType?: "website" | "article";
+  /** Public path under `/og/` or `/blog/` — set per page; blog posts use `heroImage`. */
   ogImage?: string;
   noindex?: boolean;
   /** SoftwareApplication JSON-LD — landing page only. */
@@ -27,7 +27,7 @@ const {
   description = DEFAULT_DESCRIPTION,
   canonicalPath = "/",
   ogType = "website",
-  ogImage = DEFAULT_OG_IMAGE,
+  ogImage = "/og/home.webp",
   noindex = false,
   softwareSchema = false,
   bodyClass = "",

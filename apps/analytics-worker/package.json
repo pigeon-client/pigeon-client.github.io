@@ -1,0 +1,22 @@
+{
+  "name": "@pigeon/analytics-worker",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "d1:create": "wrangler d1 create pigeon-analytics",
+    "d1:migrate:local": "wrangler d1 migrations apply pigeon-analytics --local",
+    "d1:migrate:remote": "wrangler d1 migrations apply pigeon-analytics --remote"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250821.0",
+    "typescript": "~5.8.3",
+    "vitest": "2",
+    "wrangler": "^4.120.0"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pigeon-analytics",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-09",
+  "workers_dev": true,
+  "preview_urls": true,
+  // Public API host (Cloudflare manages DNS + cert for this zone subdomain).
+  "routes": [
+    {
+      "pattern": "analytics.trypigeon.dev",
+      "custom_domain": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pigeon-analytics",
+      "database_id": "d1b392fe-6a34-44b7-bada-8ef614d9752f",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Optional secrets / vars (set via `wrangler secret put` or dashboard):
+  // STATS_TOKEN — Bearer token required for GET /v1/stats when set
+  // CORS_ORIGINS — comma-separated extra allowed origins (default allows *)
+  "vars": {
+    "CORS_ORIGINS": "*"
+  }
+}

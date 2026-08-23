@@ -12,6 +12,7 @@ dist
 dist-ssr
 .vite
 *.local
+.pnpm-store/
 
 # Editor directories and files
 .vscode/*
@@ -46,3 +47,8 @@ Cargo.lock
 
 # TestSprite artifacts (removed from repo)
 testsprite_tests/
+
+# Wrangler local state
+**/.wrangler/
+**/.dev.vars
+

@@ -1,0 +1,168 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { BlogGetPigeon } from "../components/BlogGetPigeon";
+import { COMPARISON_LINKS, SITE_NAME, SITE_URL } from "../lib/constants";
+import "../styles/blog.css";
+
+const title = `Why Choose Pigeon over Insomnia? | Free Local-First macOS API Client`;
+const description =
+  "Looking for an Insomnia alternative? Pigeon is a free, open-source macOS API client with no account, local data, auto-named tabs, and history filed by domain.";
+const canonicalPath = "/insomnia-alternative";
+const ogImage = "/og/insomnia-alternative.png";
+const origin = Astro.url.origin;
+
+const otherLinks = COMPARISON_LINKS.filter(
+  (link) => link.href !== canonicalPath,
+);
+
+const webPageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: title,
+  description,
+  url: new URL(canonicalPath, SITE_URL).href,
+  isPartOf: { "@type": "WebSite", name: SITE_NAME, url: SITE_URL },
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Is Pigeon a free Insomnia alternative?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Pigeon is free and open source under the MIT license. There are no paid tiers and no account required.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does Pigeon work offline like Insomnia?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Collections, history, environments, and keys stay on your Mac. Send requests without signing in or syncing to a cloud workspace.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I import collections into Pigeon?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Import Postman collections and paste cURL commands to rebuild requests from docs without starting from scratch.",
+      },
+    },
+  ],
+};
+---
+
+<SiteLayout
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  ogImage={ogImage}
+  bodyClass="page-blog"
+>
+  <Fragment slot="head">
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(webPageJsonLd)}
+    />
+    <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
+  </Fragment>
+  <main class="site-main">
+    <article class="blog-post wrap compare-page">
+      <header class="blog-post-header">
+        <p class="blog-kicker"><a href="/">Home</a></p>
+        <h1>Why choose Pigeon over Insomnia?</h1>
+        <p class="blog-dek">{description}</p>
+        <figure class="blog-hero">
+          <img
+            src={ogImage}
+            alt="Pigeon — a native macOS API client, a focused alternative to Insomnia."
+            width={1600}
+            height={840}
+            decoding="async"
+            fetchpriority="high"
+          />
+        </figure>
+      </header>
+
+      <div class="blog-prose">
+        <p>
+          Insomnia started lean — design-first, local, fast. Over time many API
+          clients pick up accounts, sync, and platform baggage. If you liked the
+          early version more than the later one, Pigeon is worth a look.
+        </p>
+        <p>
+          <strong>Pigeon keeps the local-first idea and strips the rest:</strong
+          > native macOS, no sign-in, data on disk, organization that happens while
+          you work.
+        </p>
+
+        <h2>What Pigeon does differently</h2>
+        <ul>
+          <li>
+            <strong>No account wall</strong> — launch and send. No login step before
+            your first request.
+          </li>
+          <li>
+            <strong>Native macOS app</strong> — not another Electron shell. Feels
+            at home next to your editor and terminal.
+          </li>
+          <li>
+            <strong>Auto-named tabs</strong> — paths become tab names when you send,
+            so you stop hunting “Untitled”.
+          </li>
+          <li>
+            <strong>History by domain</strong> — stripe, github, and localhost each
+            get their own folder in history.
+          </li>
+          <li>
+            <strong>Import paths</strong> — Postman collections and pasted <code
+              >curl</code
+            >{" "}
+            commands land as real requests.
+          </li>
+          <li>
+            <strong>Keyboard-first</strong> — <code>⌘↵</code> to send, <code
+              >⌘K</code
+            > to find anything.
+          </li>
+        </ul>
+
+        <h2>Who it’s for</h2>
+        <p>
+          Developers who want a quiet local client for daily API work — not
+          another app managing workspaces in the cloud.
+        </p>
+
+        <h2>Who should keep Insomnia</h2>
+        <p>
+          If you rely on Insomnia’s cloud sync, team features, or a specific
+          plugin ecosystem, stay where those integrations live. Pigeon is
+          intentionally smaller and Mac-only today.
+        </p>
+
+        <h2>More comparisons</h2>
+        <ul>
+          {
+            otherLinks.map((link) => (
+              <li>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))
+          }
+        </ul>
+
+        <h2>Try it in a minute</h2>
+        <p>
+          Install on macOS, paste a <code>curl</code>, send a few requests to
+          different hosts, and watch tabs and history organize themselves.
+        </p>
+      </div>
+
+      <BlogGetPigeon client:load origin={origin} />
+    </article>
+  </main>
+</SiteLayout>

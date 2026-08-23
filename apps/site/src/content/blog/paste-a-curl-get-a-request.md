@@ -3,7 +3,7 @@ title: "Paste a curl, get a request"
 description: "Paste any curl from API docs into Pigeon and get a full request — method, headers, body. Copy back out as curl anytime. Free open-source macOS client."
 seoTitle: "Import cURL into Pigeon | Paste Docs Commands as Ready Requests"
 pubDate: 2026-08-12
-heroImage: /blog/paste-a-curl-get-a-request.webp
+heroImage: /blog/paste-a-curl-get-a-request.png
 heroImageAlt: "curl command transforming into a ready POST request in a dark API client UI."
 ---
 

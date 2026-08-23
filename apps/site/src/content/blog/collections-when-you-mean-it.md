@@ -3,7 +3,7 @@ title: "Collections when you mean it"
 description: "History files itself; collections are the tree you build on purpose. Save with ⌘S, nest folders, keep everything local. Free Postman alternative for macOS."
 seoTitle: "API Collections in Pigeon | Save Requests Locally with ⌘S"
 pubDate: 2026-08-14
-heroImage: /blog/collections-when-you-mean-it.webp
+heroImage: /blog/collections-when-you-mean-it.png
 heroImageAlt: "Collection tree with domain folders and nested GET and POST requests."
 ---
 

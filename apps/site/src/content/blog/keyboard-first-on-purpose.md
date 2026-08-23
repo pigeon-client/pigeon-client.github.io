@@ -3,7 +3,7 @@ title: "Keyboard-first, on purpose"
 description: "Send with ⌘↵, switch environments with ⌘⇧E, search with ⌘K. Pigeon is a keyboard-first macOS API client — free, open source, no account."
 seoTitle: "Keyboard Shortcuts for Pigeon API Client | ⌘↵ Send, ⌘K Palette"
 pubDate: 2026-08-13
-heroImage: /blog/keyboard-first-on-purpose.webp
+heroImage: /blog/keyboard-first-on-purpose.png
 heroImageAlt: "Shortcut keys ⌘↵, ⌘⇧E, and ⌘K highlighted on a dark developer UI."
 ---
 

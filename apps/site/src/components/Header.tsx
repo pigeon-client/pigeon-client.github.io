@@ -13,7 +13,6 @@ export function Header() {
           <a href="/#features">features</a>
           <a href="/#open-source">open-source</a>
           <a href="/blog">blog</a>
-          <a href="/postman-alternative">why {SITE_NAME}</a>
           <a href="/#download">download</a>
         </nav>
         <div className="nav-cta">

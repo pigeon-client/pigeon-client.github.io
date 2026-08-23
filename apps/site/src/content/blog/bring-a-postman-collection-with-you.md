@@ -3,7 +3,7 @@ title: "Bring a Postman collection with you"
 description: "Import a Postman collection into Pigeon and keep working locally — folders, requests, no account wall. Free open-source macOS API client."
 seoTitle: "Import Postman Collections into Pigeon | Switch Without Rebuilding"
 pubDate: 2026-08-18
-heroImage: /blog/bring-a-postman-collection-with-you.webp
+heroImage: /blog/bring-a-postman-collection-with-you.png
 heroImageAlt: "Import flow showing a collection file landing in a local folder tree."
 ---
 

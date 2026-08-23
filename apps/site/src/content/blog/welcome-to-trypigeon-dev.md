@@ -3,8 +3,8 @@ title: "Welcome to trypigeon.dev"
 description: "Pigeon’s new home at trypigeon.dev — free open-source macOS API client with auto-named tabs, domain history, environments, and cURL import."
 seoTitle: "Welcome to trypigeon.dev | Pigeon macOS API Client Blog"
 pubDate: 2026-08-09
-heroImage: /blog/welcome-to-trypigeon-dev.webp
-heroImageAlt: "Pigeon mark on a dark background."
+heroImage: /blog/welcome-to-trypigeon-dev.png
+heroImageAlt: "Dark Pigeon API client UI with the brand mark and trypigeon.dev in the URL bar."
 ---
 
 Pigeon is a free macOS API client. You open it, type a URL, hit send. No account. Your history, collections, and keys stay on your disk.
