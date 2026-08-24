@@ -1,6 +1,6 @@
 [package]
 name = "pigeon"
-version = "0.1.20"
+version = "0.1.21"
 description = "Pigeon"
 authors = ["k1n1"]
 homepage = "https://trypigeon.dev"
