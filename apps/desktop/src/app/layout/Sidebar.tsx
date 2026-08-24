@@ -34,23 +34,7 @@ export function Sidebar({ onImportClick, onCollapse, search }: SidebarProps) {
   const loadRequest = (
     req: RequestConfig,
     origin?: { collectionId: string; nodeId: string },
-  ): string => {
-    const {
-      tabs,
-      addTab: add,
-      loadTabRequest: load,
-      setActiveTab: activate,
-    } = useTabStore.getState();
-    if (tabs.length === 1 && !tabs[0].request.url) {
-      load(tabs[0].id, req, origin ?? null);
-      activate(tabs[0].id);
-      return tabs[0].id;
-    }
-    const id = add();
-    load(id, req, origin ?? null);
-    activate(id);
-    return id;
-  };
+  ): string => useTabStore.getState().openRequestTab(req, origin ?? null);
 
   /* History rows carry a response snapshot — render it immediately, no re-send. */
   const loadHistoryItem = (item: HistoryItem) => {

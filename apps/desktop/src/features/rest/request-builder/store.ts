@@ -1,6 +1,7 @@
 import { useRef, useSyncExternalStore } from "react";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { type ApiResponse, EMPTY_BODY } from "@/core/http";
+import { normalizeUrlForMatch, parseUrl } from "@/shared/lib/url";
 import { getWindowKind } from "@/shared/lib/windowKind";
 import type { RequestConfig } from "@/shared/types";
 
@@ -14,6 +15,14 @@ function pathFromUrl(url: string): string {
     return m?.[1] || url || "Untitled Request";
   }
 }
+
+/** Same key shape as draft upsert (`method` + host/path), so reopen finds the editing tab. */
+function requestMatchKey(method: string, url: string): string {
+  const normalized = url.startsWith("http://") || url.startsWith("https://") ? url : parseUrl(url);
+  return normalizeUrlForMatch(method, normalized);
+}
+
+export type CollectionOrigin = { collectionId: string; nodeId: string };
 
 /** What a workspace tab hosts: an HTTP request (default), or a coming-soon MCP / GraphQL pane.
  *  Non-http tabs keep an (unused) default request so every consumer of `tab.request` stays total. */
@@ -104,6 +113,11 @@ interface TabState {
   addTab: (kind?: TabKind) => string;
   /** Focus the existing tab of this kind, or open one — singleton per kind. */
   openKindTab: (kind: Exclude<TabKind, "http">) => string;
+  /**
+   * Open a request in a tab. If that draft/collection is already open, focus it
+   * instead of duplicating. Returns the tab id.
+   */
+  openRequestTab: (req: RequestConfig, collectionRef?: CollectionOrigin | null) => string;
   /** Clone a tab's request into a new tab (clears response). Returns new id or null. */
   duplicateTab: (id: string) => string | null;
   closeTab: (id: string) => void;
@@ -116,13 +130,9 @@ interface TabState {
   setTabLoading: (id: string, loading: boolean) => void;
   setTabName: (id: string, name: string) => void;
   setTabNameLocked: (id: string, locked: boolean) => void;
-  setTabCollectionRef: (id: string, ref: { collectionId: string; nodeId: string } | null) => void;
+  setTabCollectionRef: (id: string, ref: CollectionOrigin | null) => void;
   /** Load a full request into a tab and set/clear its collection link atomically. */
-  loadTabRequest: (
-    id: string,
-    req: RequestConfig,
-    collectionRef?: { collectionId: string; nodeId: string } | null,
-  ) => void;
+  loadTabRequest: (id: string, req: RequestConfig, collectionRef?: CollectionOrigin | null) => void;
 }
 
 const defaultRequest = (): RequestConfig => ({
@@ -385,6 +395,55 @@ export const useTabStore = create<TabState>((set, get) => ({
       return existing.id;
     }
     return get().addTab(kind);
+  },
+
+  openRequestTab: (req, collectionRef = null) => {
+    const { tabs } = get();
+
+    if (collectionRef) {
+      const existing = tabs.find(
+        (t) =>
+          t.collectionRef?.collectionId === collectionRef.collectionId &&
+          t.collectionRef?.nodeId === collectionRef.nodeId,
+      );
+      if (existing) {
+        get().setActiveTab(existing.id);
+        return existing.id;
+      }
+    } else if (req.id != null) {
+      const byId = tabs.find((t) => t.kind === "http" && t.request.id === req.id);
+      if (byId) {
+        get().setActiveTab(byId.id);
+        return byId.id;
+      }
+      // Draft was auto-saved while editing — tab may not have stamped `request.id` yet.
+      if (req.url.trim()) {
+        const key = requestMatchKey(req.method, req.url);
+        const byKey = tabs.find(
+          (t) =>
+            t.kind === "http" &&
+            !t.collectionRef &&
+            t.request.url.trim().length > 0 &&
+            requestMatchKey(t.request.method, t.request.url) === key,
+        );
+        if (byKey) {
+          if (byKey.request.id !== req.id) get().updateTabRequest(byKey.id, { id: req.id });
+          get().setActiveTab(byKey.id);
+          return byKey.id;
+        }
+      }
+    }
+
+    if (tabs.length === 1 && tabs[0].kind === "http" && !tabs[0].request.url) {
+      get().loadTabRequest(tabs[0].id, req, collectionRef);
+      get().setActiveTab(tabs[0].id);
+      return tabs[0].id;
+    }
+
+    const id = get().addTab();
+    get().loadTabRequest(id, req, collectionRef);
+    get().setActiveTab(id);
+    return id;
   },
 
   duplicateTab: (id) => {

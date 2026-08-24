@@ -56,17 +56,8 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         result.source === "collection" && result.collectionId && result.nodeId
           ? { collectionId: result.collectionId, nodeId: result.nodeId }
           : null;
-      const { tabs, addTab, loadTabRequest, setActiveTab, updateTabResponse } =
-        useTabStore.getState();
-      let id: string;
-      if (tabs.length === 1 && !tabs[0].request.url) {
-        id = tabs[0].id;
-        loadTabRequest(id, req, origin);
-      } else {
-        id = addTab();
-        loadTabRequest(id, req, origin);
-      }
-      setActiveTab(id);
+      const { openRequestTab, updateTabResponse } = useTabStore.getState();
+      const id = openRequestTab(req, origin);
       if (result.source === "history") {
         const parsedId = Number(result.key.slice("history:".length));
         const historyItem = useHistoryStore

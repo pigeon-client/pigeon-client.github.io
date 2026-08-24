@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { EMPTY_BODY } from "@/core/http";
+import type { RequestConfig } from "@/shared/types";
 import { useTabStore } from "./store";
 
 // The store auto-creates one tab at import. Reset to a single fresh tab per test.
@@ -136,6 +137,81 @@ describe("reorderTabs", () => {
     const state = useTabStore.getState();
     expect(state.tabs.map((tab) => tab.id)).toEqual([third, first, second]);
     expect(state.activeTabId).toBe(second);
+  });
+});
+
+describe("openRequestTab", () => {
+  function makeConfig(over: Partial<RequestConfig> = {}): RequestConfig {
+    return {
+      name: "t",
+      method: "GET",
+      url: "",
+      params: [],
+      headers: [],
+      bodyType: "none",
+      body: "",
+      formData: [],
+      multipart: [],
+      file: null,
+      auth: {
+        type: "none",
+        username: "",
+        password: "",
+        token: "",
+        apiKey: "",
+        apiValue: "",
+        apiAddTo: "header",
+      },
+      ...over,
+    };
+  }
+
+  it("focuses an existing tab when the same draft id is already open", () => {
+    const s = useTabStore.getState();
+    const draft = makeConfig({ id: 42, url: "https://api.example.com/todos" });
+    const first = s.openRequestTab(draft);
+    const second = useTabStore.getState().addTab();
+    useTabStore.getState().setActiveTab(second);
+
+    const focused = useTabStore.getState().openRequestTab(draft);
+    expect(focused).toBe(first);
+    expect(useTabStore.getState().activeTabId).toBe(first);
+    expect(useTabStore.getState().tabs).toHaveLength(2);
+  });
+
+  it("focuses by method+url when the tab lacks a stamped draft id", () => {
+    const s = useTabStore.getState();
+    const id = s.tabs[0].id;
+    s.updateTabRequest(id, { method: "GET", url: "https://api.example.com/users" });
+    s.addTab();
+
+    const focused = useTabStore
+      .getState()
+      .openRequestTab(makeConfig({ id: 7, method: "GET", url: "https://api.example.com/users" }));
+    expect(focused).toBe(id);
+    expect(useTabStore.getState().tabs.find((t) => t.id === id)?.request.id).toBe(7);
+    expect(useTabStore.getState().tabs).toHaveLength(2);
+  });
+
+  it("focuses an existing collection tab by collectionRef", () => {
+    const s = useTabStore.getState();
+    const req = makeConfig({ url: "https://api.example.com/a" });
+    const origin = { collectionId: "c1", nodeId: "n1" };
+    const first = s.openRequestTab(req, origin);
+    s.openRequestTab(makeConfig({ url: "https://api.example.com/b" }));
+
+    const focused = useTabStore.getState().openRequestTab(req, origin);
+    expect(focused).toBe(first);
+    expect(useTabStore.getState().activeTabId).toBe(first);
+    expect(useTabStore.getState().tabs).toHaveLength(2);
+  });
+
+  it("reuses the sole empty tab instead of opening another", () => {
+    const s = useTabStore.getState();
+    const emptyId = s.tabs[0].id;
+    const opened = s.openRequestTab(makeConfig({ id: 1, url: "https://api.example.com/x" }));
+    expect(opened).toBe(emptyId);
+    expect(useTabStore.getState().tabs).toHaveLength(1);
   });
 });
 
